@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         updateBadge(count: 0)
     }
 
+    @MainActor
     func updateBadge(count: Int) {
         guard let button = statusItem?.button else { return }
         if count == 0 {

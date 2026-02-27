@@ -48,5 +48,6 @@ struct TerminalViewRepresentable: NSViewRepresentable {
         func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
         func setTerminalTitle(source: LocalProcessTerminalView, title: String) {}
         func processTerminated(source: TerminalView, exitCode: Int32?) {}
+        func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}
     }
 }
