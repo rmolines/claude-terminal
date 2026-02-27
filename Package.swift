@@ -16,6 +16,8 @@ let package = Package(
         .package(url: "https://github.com/trilemma-dev/SecureXPC", from: "0.8.0"),
     ],
     targets: [
+        // Note: .defaultIsolation(MainActor.self) requires SPM 6.1+ (Xcode 16.3+).
+        // Set defaultIsolation in the Xcode project's Swift Compiler settings instead.
         .executableTarget(
             name: "ClaudeTerminal",
             dependencies: [
@@ -23,10 +25,7 @@ let package = Package(
                 .product(name: "SwiftTerm", package: "SwiftTerm"),
                 .product(name: "SecureXPC", package: "SecureXPC"),
             ],
-            path: "ClaudeTerminal",
-            swiftSettings: [
-                .defaultIsolation(MainActor.self),
-            ]
+            path: "ClaudeTerminal"
         ),
         .executableTarget(
             name: "ClaudeTerminalHelper",
@@ -34,20 +33,14 @@ let package = Package(
                 "Shared",
                 .product(name: "SecureXPC", package: "SecureXPC"),
             ],
-            path: "ClaudeTerminalHelper",
-            swiftSettings: [
-                .defaultIsolation(MainActor.self),
-            ]
+            path: "ClaudeTerminalHelper"
         ),
         .target(
             name: "Shared",
             dependencies: [
                 .product(name: "SecureXPC", package: "SecureXPC"),
             ],
-            path: "Shared",
-            swiftSettings: [
-                .defaultIsolation(MainActor.self),
-            ]
+            path: "Shared"
         ),
         .testTarget(
             name: "ClaudeTerminalTests",
