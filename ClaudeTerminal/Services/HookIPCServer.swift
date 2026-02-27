@@ -53,12 +53,13 @@ actor HookIPCServer {
 
         var addr = sockaddr_un()
         addr.sun_family = sa_family_t(AF_UNIX)
+        let sunPathSize = MemoryLayout.size(ofValue: addr.sun_path)  // pre-compute: avoids overlapping access in Swift 6
         _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
             path.withCString { cstr in
                 strlcpy(UnsafeMutableRawPointer(ptr)
                     .assumingMemoryBound(to: CChar.self),
                     cstr,
-                    MemoryLayout.size(ofValue: addr.sun_path))
+                    sunPathSize)
             }
         }
 
