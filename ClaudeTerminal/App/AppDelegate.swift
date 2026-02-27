@@ -3,6 +3,7 @@ import UserNotifications
 
 /// AppDelegate handles: NSStatusItem (menu bar badge), NSPanel (HITL HUD),
 /// UNUserNotificationCenter setup, and lifecycle events.
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     private var statusItem: NSStatusItem?
 
@@ -22,7 +23,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         updateBadge(count: 0)
     }
 
-    @MainActor
     func updateBadge(count: Int) {
         guard let button = statusItem?.button else { return }
         if count == 0 {
