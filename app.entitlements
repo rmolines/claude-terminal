@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+    Hardened Runtime is required for notarization.
+
+    Intentionally empty: ClaudeTerminal runs without sandbox (required for
+    LocalProcessTerminalView / PTY). PTY uses standard POSIX syscalls that
+    Hardened Runtime allows without any entitlements.
+
+    NEVER ADD:
+      com.apple.security.cs.disable-library-validation  (library injection vector)
+      com.apple.security.cs.allow-unsigned-executable-memory  (unsigned code execution)
+      com.apple.security.cs.disable-executable-page-protection  (disables W^X)
+      com.apple.security.get-task-allow  (blocked by notarization anyway)
+    -->
+</dict>
+</plist>

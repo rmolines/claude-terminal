@@ -1,67 +1,104 @@
-# CLAUDE.md — Instructions for Claude Code
-<!-- TODO: Replace this file with your project's specific instructions after forking -->
+# CLAUDE.md — Claude Terminal
 
-## Project overview
-<!-- TODO: 2-3 sentences about what this project does and why it exists -->
+## Visão geral
+
+**Claude Terminal** é um app macOS nativo que funciona como Mission Control para uma squad
+de agentes Claude Code rodando em paralelo. Em vez de gerenciar N janelas de terminal
+empilhadas, o dev cria tasks, acompanha progresso em tempo real e aprova pedidos HITL sem
+quebrar o foco.
+
+**WHY:** Dev solo usando Claude Code como força multiplicadora não tem interface projetada para
+esse workflow — tem um amontoado de terminais de texto e zero contexto sobre o que cada agente
+está fazendo.
+
+**WHAT:** Dashboard com status de cada agente (tokens, fase da skill, sub-agentes em
+background), menu bar com badge de HITL pendentes, backlog de tasks persistente (SwiftData),
+e terminal opcional para inspecionar a sessão raw do Claude Code.
+
+**HOW:** Claude Code hooks → `ClaudeTerminalHelper` (thin CLI, lê stdin JSON) → Unix domain
+socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor` → SwiftUI.
+
+## Stack
+
+- **Swift 6.2** com `defaultIsolation = MainActor` em todos os targets
+- **SwiftUI 70% + AppKit 30%** — NSStatusItem manual, NSPanel para HUD flutuante
+- **SwiftTerm** (`LocalProcessTerminalView`) — PTY engine, uma `DispatchQueue` por instância
+- **SwiftData** para entidades de negócio (ClaudeTask, ClaudeAgent); Core Data para event streams de alta frequência
+- **SecureXPC** — IPC tipado entre app e helper com verificação por audit token (não PID)
+- **Unix Domain Socket** — hooks → app, latência ~2-5µs, `~/Library/Application Support/ClaudeTerminal/hooks.sock`
+- Distribuição: DMG notarizado via `xcrun notarytool`, fora da App Store
+- CI: `swift build` em `macos-14`; Release: `xcodebuild archive` + notarize + DMG
 
 ## Critical rules — NEVER do without explicit approval
 
-- Never commit tokens, keys, or passwords — use environment variables or secret managers
-- Never force-push to main — always use PRs with CI passing
-- Never skip pre-commit hooks (--no-verify) — fix the underlying issue
-- Never delete data without a dry-run step first
+- Nunca commit de tokens, keys ou passwords — usar env vars ou secret managers
+- Nunca force-push para main — sempre PRs com CI verde
+- Nunca `--no-verify` em hooks — corrigir o problema subjacente
+- Nunca modificar `~/.claude/settings.json` sem escrita atômica (`replaceItem`) — TOCTOU
+- Nunca passar args de hook diretamente para shell — sempre allowlist (CVE-2025-59536)
+- Nunca usar PID para validar identidade XPC — audit token obrigatório
 
-## Feature workflow — complete cycle
+## Feature workflow
 
-Use the skills below for any non-trivial feature (>2-3 files or with architectural decisions):
+1. `/start-feature <nome>` — intake + hot files → worktree → plano
+2. Implementar no worktree em `.claude/worktrees/<nome>`
+3. `/ship-feature` — build + tests + PR
+4. `/close-feature` — cleanup + LEARNINGS.md
 
-1. `/start-feature` — intake + research (Phase A) → `/clear` → planning (Phase B) → `/clear` → worktree + execution (Phase C)
-2. Build and iterate in the worktree
-3. `/ship-feature` — commit + rebase + PR + CI + smoke test
-4. `/close-feature` — documentation (HANDOVER, MEMORY, LEARNINGS, CLAUDE.md) + cleanup
+## Hot files — ler SEMPRE antes de planejar qualquer feature
 
-**Why the `/clear` between phases?**
-Clean context = less hallucination. Each phase saves output to `.claude/feature-plans/<name>/`
-so the next phase can read it without relying on conversation memory.
+| Arquivo | Por quê |
+|---|---|
+| `Shared/IPCProtocol.swift` | Contrato entre app e helper — mudanças afetam ambos os targets |
+| `ClaudeTerminal/Services/HookIPCServer.swift` | Critical path de todos os eventos dos agentes |
+| `ClaudeTerminal/Services/SessionManager.swift` | Actor central — estado mutável de sessões ativas |
+| `ClaudeTerminal/Models/ClaudeTask.swift` | Schema SwiftData — mudanças requerem `VersionedSchema` |
+| `ClaudeTerminal/Models/ClaudeAgent.swift` | Schema SwiftData — idem |
+| `ClaudeTerminalHelper/main.swift` | Entry point do helper — afetado por mudanças de protocolo |
+| `.github/workflows/release.yml` | Pipeline de notarização — ler antes de mudar targets/entitlements |
+| `app.entitlements` + `helper.entitlements` | Entitlements — mudanças podem causar falha na notarização |
+| `Package.swift` | Dependências e targets — mudanças afetam CI |
 
-## Hot files — always read before editing
+## Armadilhas conhecidas
 
-These files are modified by almost every feature — coordinate with other agents:
-
-- `CLAUDE.md`
-- `.github/workflows/ci.yml`
-- `.claude/commands/*.md`
-- `README.md`
-- `Makefile`
-
-## Known pitfalls
-
-| Component | Pitfall | Fix |
+| Componente | Armadilha | Solução |
 |---|---|---|
-| template-sync.yml | Runs on template repo itself → no-op | Guard: `!github.event.repository.is_template` |
-| bootstrap.yml | Only fires on first push (run_number == 1) | Don't re-run manually — it will apply protection twice |
-| Hooks | Run in non-interactive shells; `~/.zshrc` with unconditional `echo` breaks JSON | Use `#!/bin/bash` with `set -euo pipefail`; no shell rc sourcing |
-| settings.json | Hooks execute shell without confirmation (CVE-2025-59536) | Comment warns users; hooks in `.claude/hooks/` are auditable |
-| SYNC_VERSION | SHA must match upstream main HEAD | Update with `git rev-parse upstream/main` after sync |
+| SwiftData | Array ordering não preservado ao recarregar | Adicionar `sortOrder: Int` em todos os arrays |
+| SwiftData | Auto-save não é confiável | Sempre `context.save()` após mutations |
+| SwiftData | `ModelContext` não é thread-safe | Um contexto por actor/thread |
+| SwiftData | `let` em propriedades de relacionamento crasha em runtime | Sempre `var` e optional |
+| SwiftData | `Task` como nome de @Model causa conflito | Usar `ClaudeTask` |
+| XPC | Validar identidade por PID é vulnerável a race condition | `xpc_connection_set_peer_code_signing_requirement` (audit token) |
+| SwiftTerm | `DispatchQueue.main` compartilhada trava UI com 4+ agentes | Uma queue separada por instância de `LocalProcessTerminalView` |
+| Hooks | Input não sanitizado → RCE via repo malicioso | Allowlist antes de qualquer execução (CVE-2025-59536) |
+| Code signing | Ordem errada causa falha no Gatekeeper | Helper PRIMEIRO, frameworks, app por último — nunca `--deep` |
+| SwiftUI @main + SPM | Conflito com `main.swift` no mesmo target | Usar `@main` OU `main.swift`, nunca ambos |
+| bootstrap.yml | Só dispara no primeiro push (`run_number == 1`) | Não re-rodar manualmente |
 
 ## Worktree convention
 
 - Path: `.claude/worktrees/<feature-name>`
-- Branch: `feat/<feature-name>` (kebab-case)
-- Always rebase before starting: `git fetch origin && git rebase origin/main`
+- Branch: `feature/<feature-name>` (kebab-case)
+- Sempre fazer `git fetch origin && git rebase origin/main` antes de começar
+
+## Secrets
+
+| Secret (GitHub Actions) | Uso |
+|---|---|
+| `CERTIFICATE_P12_BASE64` | Certificado Developer ID em base64 |
+| `CERTIFICATE_PASSWORD` | Senha do .p12 |
+| `KEYCHAIN_PASSWORD` | Senha do keychain temporário no CI |
+| `APPLE_ID` | Apple ID para notarização |
+| `NOTARIZATION_PASSWORD` | App-specific password do appleid.apple.com |
+| `TEAM_ID` | Team ID do Developer account |
+
+Nenhum secret é necessário para desenvolvimento local — apenas para o pipeline de release.
 
 ## Daily commands
 
 ```bash
-make help            # List all available commands
-make check           # Run lint + validate
-make lint            # Lint Markdown files
-make validate        # Validate JSON + structure
-make sync-skills     # Pull latest skills from upstream template
-make clean           # Remove generated files (.claude/worktrees/, .claude/cache/)
+make help            # Lista todos os comandos disponíveis
+make check           # Lint + validate
+swift build          # Build local de todos os targets
+swift test           # Rodar testes
 ```
-
-## Secrets
-
-None required — this template has no backend. Add secrets in `.env` (never commit) when
-your project needs them. Document them here and in `.env.example`.

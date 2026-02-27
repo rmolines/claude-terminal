@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+    Helper binary entitlements.
+
+    ClaudeTerminalHelper receives Claude Code hook events via stdin and
+    forwards them to the main app via Unix domain socket.
+
+    No special entitlements required: PTY/fork/exec use standard POSIX
+    syscalls that Hardened Runtime allows without sandbox.
+
+    NEVER ADD com.apple.security.app-sandbox here — the helper must NOT
+    be sandboxed (it launches claude as a subprocess with PTY).
+    -->
+</dict>
+</plist>

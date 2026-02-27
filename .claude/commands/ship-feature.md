@@ -1,70 +1,85 @@
 # /ship-feature
 
-You are an engineer running the `/ship-feature` skill in the **claude-kickstart** project.
+Entrega uma feature do claude-terminal: build, tests, PR.
 
-## Project context
+O argumento é o nome da feature (mesmo nome usado no `/start-feature`).
 
-- Template repository — no runtime deploy
-- CI: Markdown lint + JSON validation + structure check
-- "Smoke test" = `make check` locally
-- Branch protection: requires CI green before merge
+---
 
-## Step 1 — Check state
+## Pré-condições
+
+- Worktree ativo em `.claude/worktrees/<nome>`
+- Todos os arquivos commitados no branch `feature/<nome>`
+
+---
+
+## Passo 1 — Build de todos os targets
 
 ```bash
-git status
-git log --oneline -5
-make check  # Lint + validate locally before anything else
+cd .claude/worktrees/<nome>
+
+swift build --configuration debug 2>&1
 ```
 
-## Step 2 — Commit
+Se falhar: parar, reportar o erro completo, não continuar.
+
+---
+
+## Passo 2 — Testes
 
 ```bash
-git add <relevant files>
-git commit -m "type(scope): description
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+swift test --configuration debug 2>&1
 ```
 
-If other agents are active: push immediately after commit.
+Se falhar: parar, reportar, não criar PR.
 
-If skills were modified, update SYNC_VERSION:
+---
+
+## Passo 3 — Checklist manual antes do PR
+
+- [ ] Schema SwiftData mudou? → `VersionedSchema` foi atualizado com `MigrationStage`?
+- [ ] `IPCProtocol.swift` mudou? → ClaudeTerminal E ClaudeTerminalHelper compilam com a mesma versão?
+- [ ] Entitlements mudaram? → `app.entitlements` e `helper.entitlements` estão corretos?
+- [ ] Novo código processa input de hook? → allowlist aplicada?
+- [ ] Novo código executa processo filho? → env vars filtrados?
+- [ ] Nova dependência SPM adicionada? → `Package.resolved` foi atualizado (committed)?
+
+---
+
+## Passo 4 — Commit final e PR
 
 ```bash
-git rev-parse HEAD > .claude/commands/SYNC_VERSION
-git add .claude/commands/SYNC_VERSION
-```
+cd .claude/worktrees/<nome>
 
-## Step 3 — Rebase and PR
+# Push do branch
+git push origin feature/<nome>
 
-```bash
-git fetch origin
-git rebase origin/main
-git push origin HEAD
-gh pr create --title "type: description" --body "$(cat <<'EOF'
+# Criar PR
+gh pr create \
+  --title "<título conciso em inglês>" \
+  --body "$(cat <<'EOF'
 ## Summary
-- [bullet]
+- <o que muda e por quê>
+- <targets afetados: ClaudeTerminal / ClaudeTerminalHelper / Shared>
 
-## Checklist
-- [ ] `make check` passed locally
-- [ ] CLAUDE.md updated if needed
-- [ ] SYNC_VERSION updated if skills were modified
+## Test plan
+- [ ] `swift build` passa sem warnings novos
+- [ ] `swift test` passa
+- [ ] Testado manualmente: <descrever o fluxo testado>
+
+## Schema / Protocol changes
+<"None" ou descrever a MigrationStage adicionada / mudança no IPCProtocol>
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )"
 ```
 
-## Step 4 — CI and merge
+---
 
-```bash
-gh pr checks --watch  # Wait for CI green
-gh pr merge --squash --delete-branch
-```
+## Critério de "done"
 
-## Step 5 — Smoke test
-
-```bash
-git checkout main && git pull
-make check
-```
-
-If `make check` passes: delivery complete. Run `/close-feature` for documentation.
+- `swift build` e `swift test` passam sem erros
+- CI verde no PR (lint + build + test)
+- PR criado com descrição adequada
+- Nenhum item do checklist manual em aberto

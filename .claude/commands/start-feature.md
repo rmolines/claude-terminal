@@ -1,66 +1,62 @@
 # /start-feature
 
-You are an assistant running the `/start-feature` skill in the **claude-kickstart** project.
+Inicia uma nova feature no claude-terminal com worktree isolado.
 
-## Phase detection
+O argumento é o nome da feature (kebab-case). Ex: `/start-feature hitl-notifications`
 
-| File present | Phase |
-|---|---|
-| None | Phase A — Intake + Research |
-| `research.md` | Phase B — Plan |
-| `plan.md` | Phase C — Worktree + Execution |
+---
 
-Check `.claude/feature-plans/<name>/` for existing files to determine current phase.
+## Fase A — Contexto obrigatório (ler ANTES de qualquer planejamento)
 
-## Project context
+Leia estes arquivos na ordem — sem exceção:
 
-**Hot files** — read before planning any feature:
+1. `CLAUDE.md` — visão geral, stack, armadilhas do projeto
+2. `Shared/IPCProtocol.swift` — contrato IPC app ↔ helper
+3. `ClaudeTerminal/Services/SessionManager.swift` — actor central de estado
+4. `ClaudeTerminal/Models/ClaudeTask.swift` + `ClaudeAgent.swift` — schema SwiftData
+5. `ClaudeTerminalHelper/main.swift` — entry point do helper
+6. `Package.swift` — targets e dependências
 
-- `CLAUDE.md`
-- `.claude/commands/*.md` (all existing skills — they are the product)
-- `.github/workflows/ci.yml`
-- `README.md`
-- `Makefile`
+Se a feature tocar em release/signing/entitlements, leia também:
+- `.github/workflows/release.yml`
+- `app.entitlements` + `helper.entitlements`
 
-**Branch convention:** `feat/<name-kebab-case>`
-**Worktree path:** `.claude/worktrees/<name>`
+---
 
-**Project-specific pitfalls:**
+## Fase B — Checklist de infraestrutura (verificar antes de propor implementação)
 
-- Skills are the product — changes to `.claude/commands/` affect users who already forked
-- `SYNC_VERSION` must be updated whenever `.claude/commands/` changes (run `git rev-parse HEAD > .claude/commands/SYNC_VERSION`)
-- `bootstrap.yml` and `template-sync.yml` have `!is_template` guards — test in a fork, not the template repo
-- Hooks in `settings.json` point to scripts in `.claude/hooks/` — never inline commands in `settings.json`
-- CI runs `validate-structure.sh` — adding required files to that script means adding them to the repo too
+- [ ] A feature muda o schema SwiftData? → adicionar `MigrationStage` no `VersionedSchema` antes de qualquer outra mudança
+- [ ] A feature muda `Shared/IPCProtocol.swift`? → app E helper precisam ser atualizados juntos no mesmo PR
+- [ ] A feature adiciona entitlement? → verificar compatibilidade com notarização (evitar `temporary-exception.*`)
+- [ ] A feature cria nova instância de `LocalProcessTerminalView`? → garantir `DispatchQueue` separada por instância
+- [ ] A feature executa processo filho? → filtrar env vars (allowlist: `PATH`, `HOME`, `TERM`)
+- [ ] A feature processa input de hook? → validar via allowlist antes de qualquer execução (CVE-2025-59536)
+- [ ] A feature adiciona dependência SPM? → atualizar `Package.swift` e confirmar que CI continua verde
 
-## Phase A — Intake + Research
+---
 
-1. Read the hot files listed above
-2. Use WebSearch if the feature involves:
-   - External APIs (GitHub, Claude Code CLI features)
-   - GitHub Actions changes (verify action versions)
-   - Claude Code CLI skill/hook patterns
-3. Save findings to `.claude/feature-plans/<name>/research.md`
-4. Run `/clear` before Phase B
+## Fase C — Worktree
 
-## Phase B — Plan
+```bash
+FEATURE="<nome-da-feature>"
+BRANCH="feature/${FEATURE}"
+WORKTREE_PATH=".claude/worktrees/${FEATURE}"
 
-1. Read `research.md`
-2. Design the plan with impact on each hot file
-3. Save to `.claude/feature-plans/<name>/plan.md`
-4. Present plan to user for approval
-5. Run `/clear` before Phase C
+git fetch origin
+git worktree add -b "$BRANCH" "$WORKTREE_PATH" origin/main
+cd "$WORKTREE_PATH"
+```
 
-## Phase C — Worktree + Execution
+> Se o Xcode estiver aberto com o projeto, feche e reabra após criar o worktree.
 
-1. Read `plan.md`
-2. Create the worktree:
+---
 
-   ```bash
-   git worktree add .claude/worktrees/<name> -b feat/<name>
-   cd .claude/worktrees/<name>
-   git fetch origin && git rebase origin/main
-   ```
+## Fase D — Plano
 
-3. Execute the plan in the worktree
-4. When done: run `/ship-feature`
+Com o contexto lido e o checklist verificado, use o modo `/plan` para propor a implementação.
+
+O plano deve especificar explicitamente:
+- Arquivos a criar ou modificar
+- Targets afetados (ClaudeTerminal / ClaudeTerminalHelper / Shared)
+- Se há mudança de schema SwiftData (e a migration stage correspondente)
+- Se há mudança no IPCProtocol (e os dois targets que precisam ser atualizados)

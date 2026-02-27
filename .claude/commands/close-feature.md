@@ -1,58 +1,89 @@
 # /close-feature
 
-You are an assistant running the `/close-feature` skill in the **claude-kickstart** project.
+Fecha uma feature após PR merged: cleanup do worktree e atualiza LEARNINGS.md.
 
-## Precondition
+O argumento é o nome da feature (mesmo nome usado no `/start-feature`).
 
-- `/ship-feature` was executed and CI passed
-- PR was merged into main
+---
 
-## Step 1 — Documentation
+## Passo 1 — Verificar que PR foi merged
 
-### HANDOVER.md
-
-Add an entry at the top:
-
-```markdown
-## [date] — <feature name>
-- What was done: [bullet]
-- Architectural decisions: [if any]
-- Modified files: [list]
+```bash
+gh pr view feature/<nome> --json state --jq '.state'
+# Deve retornar "MERGED"
 ```
+
+Se não retornar "MERGED": não continuar. PR ainda está aberto ou foi fechado sem merge.
+
+---
+
+## Passo 2 — Cleanup do worktree
+
+```bash
+FEATURE="<nome>"
+WORKTREE_PATH=".claude/worktrees/${FEATURE}"
+BRANCH="feature/${FEATURE}"
+
+# Remover worktree
+git worktree remove "$WORKTREE_PATH" --force
+
+# Deletar branch local
+git branch -d "$BRANCH" 2>/dev/null || true
+
+# Atualizar main
+git checkout main
+git pull origin main
+
+# Prune worktrees residuais (limpeza preventiva)
+git worktree prune
+```
+
+---
+
+## Passo 3 — Documentação
 
 ### LEARNINGS.md
 
-If you discovered something not yet documented — a gotcha, a GitHub Actions limitation,
-a Claude Code CLI behavior — add it to `LEARNINGS.md`.
-
-### memory/MEMORY.md
-
-If the learning is relevant for future features (architectural pattern, permanent decision):
-add it to `memory/MEMORY.md`.
+Adicionar entry com:
+- Data e nome da feature
+- O que foi aprendido sobre o stack (SwiftData gotchas, IPC, concurrency, etc.)
+- O que funcionou bem
+- O que teria feito diferente
+- Armadilhas novas encontradas (se houver, adicionar também em `CLAUDE.md`)
 
 ### CLAUDE.md
 
-If you identified a new hot file, a new pitfall, or changed a Makefile command:
-update `CLAUDE.md` accordingly.
+Se descobriu novo hot file, nova armadilha, ou a armadilha é diferente do que estava documentado:
+atualizar a tabela de armadilhas.
 
-## Step 2 — Cleanup worktree
+### memory/MEMORY.md
+
+Se o aprendizado é relevante para futuras features (padrão arquitetural, decisão permanente):
+adicionar em `memory/MEMORY.md`.
+
+---
+
+## Passo 4 — Commit (se houve mudança em docs)
 
 ```bash
-cd /path/to/repo/root
-git worktree remove .claude/worktrees/<name> --force
-git branch -d feat/<name> 2>/dev/null || true
+git add LEARNINGS.md CLAUDE.md memory/MEMORY.md
+git commit -m "docs: add learnings from feature/<nome>
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+git push origin main
 ```
 
-## Step 3 — Archive feature-plan
+---
+
+## Passo 5 — Verificação final
 
 ```bash
-mkdir -p .claude/feature-plans/archived
-mv .claude/feature-plans/<name> .claude/feature-plans/archived/<name>
-```
+# Confirmar que não há worktrees residuais
+git worktree list
 
-## Step 4 — Confirm
+# Confirmar que o branch foi removido
+git branch --list "feature/<nome>"
 
-```bash
-git status  # Should be clean
-make check  # Should pass
+# Build deve continuar passando no main
+swift build --configuration debug
 ```
