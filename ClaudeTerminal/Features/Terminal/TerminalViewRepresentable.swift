@@ -21,17 +21,12 @@ struct TerminalViewRepresentable: NSViewRepresentable {
         let tv = LocalProcessTerminalView(frame: .zero)
         tv.processDelegate = context.coordinator
 
-        do {
-            try tv.startProcess(
-                executable: executable,
-                args: args,
-                environment: environment,
-                execName: nil
-            )
-        } catch {
-            // Process failed to start — show error in terminal
-            tv.feed(text: "\r\nFailed to start process: \(error.localizedDescription)\r\n")
-        }
+        tv.startProcess(
+            executable: executable,
+            args: args,
+            environment: environment,
+            execName: nil
+        )
 
         return tv
     }
