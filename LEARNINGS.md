@@ -57,6 +57,44 @@ uses: actions/checkout@v4
 
 ---
 
+## 2026-03-01 — Actor deadlock com blocking C calls (accept/read)
+
+Chamadas C bloqueantes (`accept()`, `read()`, `recv()`) dentro de métodos de ator Swift seguram
+o ator indefinidamente. Qualquer outro método do mesmo ator que seja chamado enquanto isso
+fica enfileirado esperando — nunca executa. Isso inclui métodos chamados via `Task.detached`.
+
+**Sintoma:** eventos chegam no socket (conexão aceita pelo kernel), mas `handleConnection`
+nunca roda. Nenhum print, nenhum erro, silêncio total.
+
+**Causa raiz:** `runServer()` era um método do ator com `while { accept(...) }` bloqueante.
+`handleConnection()` era outro método do mesmo ator — nunca conseguia adquirir o ator.
+
+**Solução:** mover todo I/O bloqueante para funções `nonisolated` rodando em `Thread`s
+dedicadas (não em `Task` do Swift Concurrency — `Task.detached` usa o cooperative pool que
+também não deve bloquear). O ator fica responsável apenas por mutações de estado, acessadas
+nas bordas via `Task { await ... }`.
+
+```swift
+// ERRADO — bloqueia o ator
+private func runServer() async {
+    while isRunning { let fd = accept(...) ... }  // deadlock
+}
+
+// CERTO — I/O bloqueante fora do ator
+nonisolated private func acceptLoop(...) {
+    while true { let fd = accept(...) ... }       // Thread, não ator
+}
+func start() {
+    let t = Thread { self.acceptLoop(...) }       // Thread dedicada
+    t.start()
+}
+```
+
+**Regra geral:** nunca chamar `accept()`, `read()`, `recv()`, `sem_wait()` ou qualquer
+syscall bloqueante de dentro de um método de ator. Usar `Thread` dedicada + `nonisolated`.
+
+---
+
 ## 2026-03-01 — `TimelineView` é a forma correta de timers live no SwiftUI
 
 Para tickers que precisam atualizar a cada segundo (ex: elapsed time), usar `TimelineView(.periodic(from: .now, by: 1.0))`. Alternativas como `Timer.publish` ou `onAppear + Task { while true { sleep } }` são mais frágeis e não se integram bem com o ciclo de vida do SwiftUI.
