@@ -15,9 +15,44 @@ actor SettingsWriter {
             .appendingPathComponent("settings.json")
     }()
 
-    private let helperPath = "/Applications/ClaudeTerminal.app/Contents/MacOS/ClaudeTerminalHelper"
+    /// Resolves the helper binary path at runtime.
+    /// Works for dev builds (.build/debug/ClaudeTerminalHelper) and
+    /// release .app bundles (Contents/MacOS/ClaudeTerminalHelper).
+    private var helperPath: String {
+        let execURL = URL(fileURLWithPath: ProcessInfo.processInfo.arguments[0])
+        return execURL.deletingLastPathComponent()
+            .appendingPathComponent("ClaudeTerminalHelper").path
+    }
 
     private init() {}
+
+    /// Returns the current install status of ClaudeTerminal hooks in settings.json.
+    func hookInstallStatus() throws -> HookInstallStatus {
+        guard FileManager.default.fileExists(atPath: settingsURL.path) else {
+            return .notInstalled
+        }
+        let settings = try readSettings()
+        guard let hooks = settings["hooks"] as? [String: Any],
+              let notificationMatchers = hooks["Notification"] as? [[String: Any]],
+              let firstMatcher = notificationMatchers.first,
+              let hookList = firstMatcher["hooks"] as? [[String: Any]],
+              let firstHook = hookList.first,
+              let command = firstHook["command"] as? String else {
+            return .notInstalled
+        }
+
+        // If the command doesn't contain "ClaudeTerminalHelper", it's a foreign hook — don't touch it.
+        guard command.contains("ClaudeTerminalHelper") else {
+            return .notInstalled
+        }
+
+        let expectedCommand = "\(helperPath) notify"
+        if command == expectedCommand {
+            return .installed
+        } else {
+            return .outdated(reason: "helper path changed to \(helperPath)")
+        }
+    }
 
     /// Installs hook configuration in ~/.claude/settings.json.
     /// Merges with existing settings — does not overwrite other keys.
@@ -44,6 +79,12 @@ actor SettingsWriter {
                 "hooks": [[
                     "type": "command",
                     "command": "\(helperPath) guard",
+                ]],
+            ]],
+            "PermissionRequest": [[
+                "hooks": [[
+                    "type": "command",
+                    "command": "\(helperPath) permission",
                 ]],
             ]],
         ]
@@ -84,4 +125,12 @@ actor SettingsWriter {
     enum SettingsError: Error {
         case invalidFormat
     }
+}
+
+// MARK: - HookInstallStatus
+
+public enum HookInstallStatus: Equatable {
+    case notInstalled
+    case installed
+    case outdated(reason: String)
 }
