@@ -25,7 +25,18 @@ let package = Package(
                 .product(name: "SwiftTerm", package: "SwiftTerm"),
                 .product(name: "SecureXPC", package: "SecureXPC"),
             ],
-            path: "ClaudeTerminal"
+            path: "ClaudeTerminal",
+            exclude: ["App/Info.plist"],
+            linkerSettings: [
+                // Embeds Info.plist into __TEXT __info_plist so Bundle.main has a bundle identifier.
+                // Required for proper key window management and macOS system integrations.
+                .unsafeFlags([
+                    "-Xlinker", "-sectcreate",
+                    "-Xlinker", "__TEXT",
+                    "-Xlinker", "__info_plist",
+                    "-Xlinker", "ClaudeTerminal/App/Info.plist",
+                ]),
+            ]
         ),
         .executableTarget(
             name: "ClaudeTerminalHelper",

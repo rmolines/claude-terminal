@@ -69,6 +69,20 @@ struct NewAgentSheet: View {
                 }
             }
 
+            // Skill dispatch preview
+            if let task = selectedTask, let cmd = skillCommand(for: task) {
+                HStack(spacing: 6) {
+                    Text("Will dispatch:")
+                        .font(.callout).foregroundStyle(.secondary)
+                    Text(cmd)
+                        .font(.system(.callout, design: .monospaced))
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(.blue.opacity(0.12))
+                        .foregroundStyle(.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+            }
+
             // Error banner
             if let error = spawnError {
                 HStack(spacing: 8) {
@@ -112,6 +126,18 @@ struct NewAgentSheet: View {
 
     // MARK: - Actions
 
+    private func skillCommand(for task: ClaudeTask) -> String? {
+        let slug = task.title
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .filter { $0.isLetter || $0.isNumber || $0 == "-" }
+        switch task.taskType {
+        case "feature": return "/start-feature \(slug)"
+        case "fix":     return "/fix \(slug)"
+        default:        return nil
+        }
+    }
+
     private func browseForRepo() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
@@ -151,7 +177,8 @@ struct NewAgentSheet: View {
         let config = AgentTerminalConfig(
             sessionID: sessionID,
             worktreePath: worktreePath,
-            taskTitle: task.title
+            taskTitle: task.title,
+            skillCommand: skillCommand(for: task)
         )
         openWindow(id: "agent-terminal", value: config)
 

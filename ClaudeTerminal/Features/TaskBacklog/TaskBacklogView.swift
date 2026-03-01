@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AppKit
 
 /// Persistent backlog of features, fixes, and projects.
 struct TaskBacklogView: View {
@@ -11,14 +12,18 @@ struct TaskBacklogView: View {
     @State private var newTaskType = "feature"
 
     var body: some View {
-        List {
-            ForEach(tasks) { task in
-                TaskRow(task: task)
+        VStack(spacing: 0) {
+            List {
+                ForEach(tasks) { task in
+                    TaskRow(task: task)
+                }
+                .onDelete(perform: deleteTasks)
             }
-            .onDelete(perform: deleteTasks)
 
             if isAddingTask {
-                newTaskRow
+                Divider()
+                newTaskForm
+                    .padding(12)
             }
         }
         .navigationTitle("Backlog")
@@ -36,32 +41,42 @@ struct TaskBacklogView: View {
         }
     }
 
-    // MARK: - New task inline row
+    // MARK: - New task form
 
-    private var newTaskRow: some View {
-        HStack(spacing: 8) {
-            Picker("", selection: $newTaskType) {
-                Text("feat").tag("feature")
-                Text("fix").tag("fix")
-                Text("proj").tag("project")
+    private var newTaskForm: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // AutoFocusTextField bypasses SwiftUI @FocusState limitations inside
+            // NavigationSplitView sidebar — calls makeFirstResponder at AppKit level.
+            AutoFocusTextField(
+                text: $newTaskTitle,
+                placeholder: "Task title…",
+                onSubmit: commitNewTask
+            )
+            .frame(height: 22)
+
+            HStack(spacing: 6) {
+                Picker("", selection: $newTaskType) {
+                    Text("feat").tag("feature")
+                    Text("fix").tag("fix")
+                    Text("proj").tag("project")
+                }
+                .labelsHidden()
+                .frame(width: 72)
+
+                Spacer()
+
+                Button("Cancel") {
+                    isAddingTask = false
+                    newTaskTitle = ""
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
+                Button("Add", action: commitNewTask)
+                    .disabled(newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            .labelsHidden()
-            .frame(width: 60)
-
-            TextField("Task title…", text: $newTaskTitle)
-                .onSubmit { commitNewTask() }
-
-            Button("Add", action: commitNewTask)
-                .disabled(newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty)
-
-            Button("Cancel") {
-                isAddingTask = false
-                newTaskTitle = ""
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 
     // MARK: - Mutations
@@ -86,6 +101,62 @@ struct TaskBacklogView: View {
             context.delete(tasks[index])
         }
         try? context.save()
+    }
+}
+
+// MARK: - AutoFocusTextField
+
+/// NSTextField wrapper that grabs AppKit first responder on appear.
+///
+/// SwiftUI's @FocusState only controls the visual focus ring — it does not
+/// change the AppKit first responder when NavigationSplitView sidebar holds it.
+/// This view calls makeFirstResponder directly after a short delay.
+private struct AutoFocusTextField: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    var onSubmit: () -> Void
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField()
+        field.placeholderString = placeholder
+        field.bezelStyle = .roundedBezel
+        field.focusRingType = .default
+        field.delegate = context.coordinator
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak field] in
+            guard let field, let window = field.window else { return }
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+            window.makeFirstResponder(field)
+        }
+        return field
+    }
+
+    func updateNSView(_ nsView: NSTextField, context: Context) {
+        if nsView.stringValue != text {
+            nsView.stringValue = text
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: AutoFocusTextField
+
+        init(parent: AutoFocusTextField) { self.parent = parent }
+
+        func controlTextDidChange(_ obj: Notification) {
+            guard let field = obj.object as? NSTextField else { return }
+            parent.text = field.stringValue
+        }
+
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+                parent.onSubmit()
+                return true
+            }
+            return false
+        }
     }
 }
 
