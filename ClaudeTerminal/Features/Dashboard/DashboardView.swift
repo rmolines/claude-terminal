@@ -4,20 +4,30 @@ import Shared
 /// Main dashboard — shows all active/paused/completed agent sessions.
 struct DashboardView: View {
     private let store = SessionStore.shared
+    @State private var selectedSessionID: String?
 
     private var sortedSessions: [AgentSession] {
         store.sessions.values.sorted { $0.lastEventAt > $1.lastEventAt }
+    }
+
+    private var selectedSession: AgentSession? {
+        guard let id = selectedSessionID else { return nil }
+        return store.sessions[id]
     }
 
     var body: some View {
         NavigationSplitView {
             TaskBacklogView()
                 .frame(minWidth: 200)
+        } content: {
+            List(sortedSessions, id: \.sessionID, selection: $selectedSessionID) { session in
+                SessionRow(session: session)
+            }
         } detail: {
-            if sortedSessions.isEmpty {
-                emptyState
+            if let session = selectedSession {
+                AgentTerminalView(session: session)
             } else {
-                sessionList
+                emptyState
             }
         }
         .navigationTitle("Claude Terminal")
@@ -32,18 +42,10 @@ struct DashboardView: View {
                 .foregroundStyle(.secondary)
             Text("Claude Terminal")
                 .font(.title2.bold())
-            Text("No active agents")
+            Text("Select an agent session to open a terminal")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: - Session list
-
-    private var sessionList: some View {
-        List(sortedSessions, id: \.sessionID) { session in
-            SessionRow(session: session)
-        }
     }
 }
 
