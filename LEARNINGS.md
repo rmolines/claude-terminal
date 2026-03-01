@@ -494,6 +494,65 @@ Enums com associated values de tipos `Sendable` se tornam `Sendable` com a decla
 
 ---
 
+## 2026-03-01 — release-pipeline: SPM-only project não pode usar `xcodebuild archive`
+
+`xcodebuild archive -project ClaudeTerminal.xcodeproj` falha com `does not exist` quando o repo é puro SPM (sem `.xcodeproj`).
+`swift package generate-xcodeproj` foi removido no Xcode 14+ e não é uma alternativa viável.
+
+**Pipeline correto para SPM + Developer ID + notarização:**
+
+```bash
+# 1. Build
+swift build --configuration release
+
+# 2. Montar .app manualmente
+APP="$RUNNER_TEMP/ClaudeTerminal.app"
+mkdir -p "$APP/Contents/MacOS"
+cp .build/release/ClaudeTerminal "$APP/Contents/MacOS/"
+cp .build/release/ClaudeTerminalHelper "$APP/Contents/MacOS/"
+cp ClaudeTerminal/App/Info.plist "$APP/Contents/"
+
+# 3. Assinar — helper PRIMEIRO, bundle por ÚLTIMO
+codesign --sign "Developer ID Application" --entitlements helper.entitlements \
+  --options runtime --timestamp --force "$APP/Contents/MacOS/ClaudeTerminalHelper"
+
+codesign --sign "Developer ID Application" --entitlements app.entitlements \
+  --options runtime --timestamp --force "$APP"
+
+# 4. Verificar
+codesign --verify --deep --strict --verbose=2 "$APP"
+```
+
+**`--options runtime` + `--timestamp` são obrigatórios** — sem eles `xcrun notarytool submit` falha com
+`"The executable does not have the Hardened Runtime enabled"`.
+
+---
+
+## 2026-03-01 — release-pipeline: `$(TEAM_ID)` em plists não é substituído automaticamente
+
+`ExportOptions.plist` tinha `<string>$(TEAM_ID)</string>` — sintaxe de variável do Xcode build system,
+não de plist. Em scripts de shell ou CI, esse valor chega literalmente como `$(TEAM_ID)`, causando falha
+silenciosa na exportação.
+
+**Solução:** substituir com `envsubst` ou `sed` antes de usar, ou passar o Team ID direto como string hardcoded
+(ou via secret no CI usando `sed -i`). Para o pipeline SPM, `ExportOptions.plist` se tornou irrelevante —
+usamos `codesign` diretamente.
+
+---
+
+## 2026-03-01 — release-pipeline: `rm cert.p12` logo após import do certificado
+
+O certificado `.p12` decodificado fica no disco do runner entre o passo de import e o final do job.
+Remover imediatamente após `security import` reduz a janela de exposição — a chave privada já foi
+importada para o keychain, o arquivo `.p12` em disco não é mais necessário.
+
+```bash
+security import cert.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
+rm cert.p12  # remover imediatamente — chave já está no keychain
+```
+
+---
+
 ## markdownlint
 
 - Use `npx --yes markdownlint-cli2` to avoid requiring global install
