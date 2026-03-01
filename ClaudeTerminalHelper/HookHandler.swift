@@ -33,10 +33,19 @@ final class HookHandler: @unchecked Sendable {
         }
 
         let eventType = mapEventType(hookName: payload.hookEventName, toolName: payload.toolName)
+        let detail: String?
+        if eventType == .bashToolUse {
+            detail = payload.toolInput?["command"].map { String($0.prefix(80)) }
+        } else if eventType == .permissionRequest {
+            detail = payload.toolInput?["description"].map { String($0.prefix(80)) }
+        } else {
+            detail = nil
+        }
         let event = AgentEvent(
             sessionID: payload.sessionID,
             type: eventType,
-            cwd: payload.cwd
+            cwd: payload.cwd,
+            detail: detail
         )
 
         if eventType == .permissionRequest {

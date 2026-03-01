@@ -29,12 +29,14 @@ public struct AgentEvent: Codable, Sendable {
     public let type: AgentEventType
     public let cwd: String
     public let timestamp: Date
+    public let detail: String?          // truncated bash cmd, permission desc, etc.
 
-    public init(sessionID: String, type: AgentEventType, cwd: String) {
+    public init(sessionID: String, type: AgentEventType, cwd: String, detail: String? = nil) {
         self.sessionID = sessionID
         self.type = type
         self.cwd = cwd
         self.timestamp = Date()
+        self.detail = detail
     }
 }
 
