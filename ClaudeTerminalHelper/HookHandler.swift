@@ -14,22 +14,22 @@ final class HookHandler: @unchecked Sendable {
         client = IPCClient()
     }
 
-    func run() {
+    func run() -> Int32 {
         // Read JSON payload from stdin (Claude Code sends hook data via stdin)
         guard let data = readStdin() else {
             fputs("claude-terminal-helper: failed to read stdin\n", stderr)
-            exit(1)
+            return 1
         }
 
         guard let payload = parsePayload(data) else {
             fputs("claude-terminal-helper: invalid hook payload\n", stderr)
-            exit(1)
+            return 1
         }
 
         // Validate sessionID is a UUID (allowlist check)
         guard UUID(uuidString: payload.sessionID) != nil else {
             fputs("claude-terminal-helper: invalid sessionID format\n", stderr)
-            exit(1)
+            return 1
         }
 
         let eventType = mapEventType(hookName: payload.hookEventName, toolName: payload.toolName)
@@ -39,7 +39,16 @@ final class HookHandler: @unchecked Sendable {
             cwd: payload.cwd
         )
 
-        client.send(event: event)
+        if eventType == .permissionRequest {
+            // Block until app responds — exit code controls Claude Code's action:
+            //   0 = allow the operation
+            //   2 = block the operation (Claude Code spec for permission hooks)
+            let approved = client.sendAndAwaitResponse(event: event)
+            return approved == 1 ? 0 : 2
+        } else {
+            client.send(event: event)
+            return 0
+        }
     }
 
     // MARK: - Private

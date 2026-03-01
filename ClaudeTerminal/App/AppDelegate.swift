@@ -1,4 +1,5 @@
 import AppKit
+import Observation
 import UserNotifications
 
 /// AppDelegate handles: NSStatusItem (menu bar badge), NSPanel (HITL HUD),
@@ -10,10 +11,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBar()
         setupNotifications()
+        Task { await HookIPCServer.shared.start() }
+        observeSessionStore()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false  // Stay alive as menu bar app even when window is closed
+    }
+
+    // MARK: - Badge observation
+
+    /// Reactively updates the badge whenever SessionStore.pendingHITLCount changes.
+    /// Re-subscribes after each change — the canonical pattern for @Observable outside SwiftUI.
+    private func observeSessionStore() {
+        withObservationTracking {
+            _ = SessionStore.shared.pendingHITLCount
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.updateBadge(count: SessionStore.shared.pendingHITLCount)
+                self?.observeSessionStore()
+            }
+        }
     }
 
     // MARK: - Menu bar
