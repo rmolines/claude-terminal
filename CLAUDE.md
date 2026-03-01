@@ -76,6 +76,10 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | bootstrap.yml | Só dispara no primeiro push (`run_number == 1`) | Não re-rodar manualmente |
 | gh pr merge | `--delete-branch` falha em worktree (`main` já checked out no repo pai) | Usar `--squash` sem `--delete-branch`; deletar remote via `gh api -X DELETE repos/.../git/refs/heads/<branch>` |
 | SPM executável | `@testable import` não funciona em `.executableTarget` | Mover lógica testável para `.target` (library); ou usar actor mirror local no test file |
+| SPM binário (sem .app bundle) | Keyboard input não funciona — janelas não recebem events do OS | `NSApp.setActivationPolicy(.regular)` + `NSApp.activate(ignoringOtherApps: true)` em `applicationDidFinishLaunching` |
+| SPM binário (sem .app bundle) | `Bundle.main.bundleIdentifier` é nil → erros de window tabs, SwiftData, notificações | Embedar `Info.plist` via linker flag: `.unsafeFlags(["-Xlinker", "-sectcreate", "-Xlinker", "__TEXT", "-Xlinker", "__info_plist", "-Xlinker", "ClaudeTerminal/App/Info.plist"])` em `Package.swift` |
+| NavigationSplitView sidebar | `@FocusState` + `TextField` mostra anel mas não recebe keyboard | Usar `NSViewRepresentable` com `NSTextField` que chama `window.makeFirstResponder(field)` diretamente |
+| PTY environment | PATH hardcoded não inclui `~/.local/bin`, nvm, etc. | Usar `zsh -l -i -c "..."` para herdar PATH completo do usuário |
 
 ## Worktree convention
 

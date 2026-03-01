@@ -368,6 +368,100 @@ que precisam do `zsh` pai. Deixar o `zsh -c` wrapping intacto.
 
 ---
 
+## 2026-03-01 — task-orchestration: PTY input injection via `send(data:)` após delay
+
+Para enviar texto automaticamente ao PTY depois que o processo inicializa, usar
+`tv.send(data:)` com um `DispatchQueue.main.asyncAfter` de 1.5s. O delay dá tempo
+para o processo imprimir seu prompt inicial antes da injeção.
+
+```swift
+if let input = initialInput {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak tv] in
+        guard let tv else { return }
+        tv.send(data: Array((input + "\n").utf8)[...])
+    }
+}
+```
+
+O `[weak tv]` evita retain cycle se a janela for fechada antes do timer disparar.
+Não usar `[unowned tv]` — a janela pode ser dealocada no intervalo.
+
+---
+
+## 2026-03-01 — task-orchestration: SPM binary sem `.app` bundle não recebe keyboard events no macOS 14+
+
+**Sintoma:** TextFields mostram anel de foco (SwiftUI + AppKit) mas teclado não responde.
+Input vai para o Xcode ou para o processo em foreground.
+
+**Causa:** app rodando como binário SPM puro não registra como app regular no macOS →
+sem Dock icon → janelas não recebem keyboard events do OS mesmo com `@FocusState` e
+`makeFirstResponder` corretos.
+
+**Fix obrigatório em `applicationDidFinishLaunching`:**
+```swift
+NSApp.setActivationPolicy(.regular)
+NSApp.activate(ignoringOtherApps: true)
+```
+
+**Por que as tentativas intermediárias falharam:**
+- `@FocusState` — controla só o anel visual, não o AppKit first responder
+- `makeKeyAndOrderFront` — funciona dentro do app, mas o OS não roteia keyboard sem activation policy correta
+- `NSApp.activate` em `asyncAfter` — macOS 14+ ignora essa chamada fora de user interaction context
+- Mover form para fora do `List` — correto para o problema de `NavigationSplitView`, mas não era o único problema
+
+**Sintoma correlato:** `Cannot index window tabs due to missing main bundle identifier`
+→ fix paralelo: embedar `Info.plist` via linker flag no `Package.swift`:
+```swift
+linkerSettings: [.unsafeFlags(["-Xlinker", "-sectcreate", "-Xlinker", "__TEXT",
+                                "-Xlinker", "__info_plist", "-Xlinker", "ClaudeTerminal/App/Info.plist"])]
+```
+O `Info.plist` já existia em `ClaudeTerminal/App/Info.plist` — adicionar ao `exclude:` do target para silenciar warning de SPM.
+
+---
+
+## 2026-03-01 — task-orchestration: `NavigationSplitView` sidebar captura keyboard mesmo fora do `List`
+
+`@FocusState` + `.focused()` num `TextField` dentro da coluna sidebar de `NavigationSplitView`
+mostra o anel visual mas não recebe keyboard — a coluna sidebar tem um responder chain que
+intercepta eventos antes do `TextField`.
+
+**Fix:** mover o form para fora do `List` (para um `VStack` abaixo dele) não é suficiente.
+A solução completa é usar `NSViewRepresentable` com `NSTextField` que chama
+`window.makeFirstResponder(field)` diretamente — isso bypassa o responder chain do SwiftUI.
+
+```swift
+func makeNSView(context: Context) -> NSTextField {
+    let field = NSTextField()
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak field] in
+        guard let field, let window = field.window else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(field)
+    }
+    return field
+}
+```
+
+---
+
+## 2026-03-01 — task-orchestration: `zsh -l -i -c` para herdar PATH completo do usuário
+
+Ao spawnar `claude` via `TerminalViewRepresentable`, um PATH hardcoded não inclui
+tools instalados via `~/.local/bin`, nvm, pipx, etc. A solução é usar login+interactive shell:
+
+```swift
+args: ["-l", "-i", "-c", "cd '\(escaped)' && claude"]
+```
+
+- `-l` (login): carrega `/etc/zprofile` e `~/.zprofile`
+- `-i` (interactive): carrega `~/.zshrc`
+- Juntos: PATH idêntico ao que o usuário tem no seu terminal normal
+
+Alternativa mais simples para outros casos: `ProcessInfo.processInfo.environment["PATH"]`
+herda o PATH do processo pai — funciona se o app foi lançado de um terminal, mas não de Xcode.
+
+---
+
 ## markdownlint
 
 - Use `npx --yes markdownlint-cli2` to avoid requiring global install
