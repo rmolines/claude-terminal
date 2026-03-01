@@ -12,15 +12,16 @@ O argumento é o nome da feature (kebab-case). Ex: `/start-feature hitl-notifica
 
 **Se `$ARGUMENTS` está vazio:**
 
-1. Leia `.claude/feature-plans/<projeto>/roadmap.md` (procure o projeto em `.claude/feature-plans/` ou use o nome do repo)
-2. Encontre o primeiro item `- [ ]` em `### M1` que ainda não foi iniciado (sem branch `feature/` correspondente em `git branch -a`)
+1. Verifique se existe `sprint.md` em `.claude/feature-plans/claude-terminal/<milestone>/sprint.md` (gerado pelo `/start-milestone`)
+   - Se existir: leia e identifique o primeiro item `- [ ]` sem branch `feature/` correspondente em `git branch -a`
+2. Se não houver `sprint.md`, leia `.claude/feature-plans/claude-terminal/roadmap.md` e encontre o primeiro item `- [ ]` em `### M1` sem branch `feature/` correspondente
 3. Derive o nome kebab-case a partir do texto do item (ex: "Dashboard de status dos agentes" → `agent-status-dashboard`)
 4. Apresente ao usuário:
 
 ```text
-Nenhuma feature especificada. Encontrei no roadmap.md:
+Nenhuma feature especificada. Encontrei no <sprint.md|roadmap.md>:
 
-Próxima feature do M1: "<texto do item>"
+Próxima feature: "<texto do item>"
 Slug sugerido: <slug-kebab-case>
 
 Confirma? (ou informe outro nome)
@@ -84,3 +85,9 @@ O plano deve especificar explicitamente:
 - Targets afetados (ClaudeTerminal / ClaudeTerminalHelper / Shared)
 - Se há mudança de schema SwiftData (e a migration stage correspondente)
 - Se há mudança no IPCProtocol (e os dois targets que precisam ser atualizados)
+
+---
+
+## Após implementar
+
+Antes de rodar `/ship-feature`, rode `/validate` para verificar se o que foi implementado ainda resolve o problema original definido nesta Fase D.
