@@ -6,6 +6,8 @@ struct DashboardView: View {
     private let store = SessionStore.shared
     @State private var selectedSessionID: String?
     @State private var showNewAgent = false
+    @State private var showOnboarding = false
+    @State private var hookStatus: HookInstallStatus = .notInstalled
 
     private var sortedSessions: [AgentSession] {
         store.sessions.values.sorted { $0.lastEventAt > $1.lastEventAt }
@@ -33,6 +35,15 @@ struct DashboardView: View {
         }
         .navigationTitle("Claude Terminal")
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                if hookStatus != .installed {
+                    Button { showOnboarding = true } label: {
+                        Label("Hooks not set up", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                    .help("Claude Code hooks are not installed. Click to set up.")
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button { showNewAgent = true } label: {
                     Label("New Agent", systemImage: "plus")
@@ -41,6 +52,17 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showNewAgent) {
             NewAgentSheet()
+        }
+        .sheet(isPresented: $showOnboarding) {
+            OnboardingView(hookStatus: $hookStatus) {
+                showOnboarding = false
+            }
+        }
+        .task {
+            hookStatus = (try? await SettingsWriter.shared.hookInstallStatus()) ?? .notInstalled
+            if hookStatus != .installed {
+                showOnboarding = true
+            }
         }
     }
 
