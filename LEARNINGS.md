@@ -295,6 +295,79 @@ O `List` com `selection:` binding atualiza `selectedID` automaticamente ao clica
 
 ---
 
+## 2026-03-01 — agent-spawn-ui: segundo `WindowGroup` precisa de `.modelContainer` próprio
+
+Ao adicionar um segundo `WindowGroup` (para janelas de agente) no `App`, SwiftData **não** herda
+o container da scene principal — cada `WindowGroup` precisa da sua própria chamada `.modelContainer(for:)`:
+
+```swift
+WindowGroup("Agent", id: "agent-terminal", for: AgentTerminalConfig.self) { $config in
+    SpawnedAgentView(config: config!)
+}
+.modelContainer(for: [ClaudeTask.self, ClaudeAgent.self])  // obrigatório
+```
+
+Sem isso, views dentro do segundo `WindowGroup` não recebem `ModelContext` via `@Environment`
+e queries com `@Query` ficam vazias silenciosamente.
+
+---
+
+## 2026-03-01 — agent-spawn-ui: `openWindow(id:value:)` para tipagem segura na API de janelas
+
+Para abrir uma janela com dados, usar `openWindow(id:value:)` onde `value` é um tipo `Codable & Hashable`.
+SwiftUI serializa o valor e o entrega ao `WindowGroup` via o binding `$config`:
+
+```swift
+// Em qualquer view com @Environment(\.openWindow):
+openWindow(id: "agent-terminal", value: AgentTerminalConfig(...))
+
+// No App:
+WindowGroup("Agent", id: "agent-terminal", for: AgentTerminalConfig.self) { $config in
+    if let c = config { SpawnedAgentView(config: c) }
+}
+```
+
+Esse padrão funciona para qualquer dado que precise ser passado a uma janela — alternativa
+type-safe ao `NSWindowController` manual ou `NotificationCenter`.
+
+---
+
+## 2026-03-01 — agent-spawn-ui: `NSOpenPanel` em SwiftUI via chamada síncrona em `@MainActor`
+
+`NSOpenPanel.runModal()` é síncrono e deve rodar na main thread. Em SwiftUI, como views já rodam
+em `@MainActor`, basta chamar diretamente — sem `Task` ou `await`:
+
+```swift
+private func browseForRepo() {
+    let panel = NSOpenPanel()
+    panel.canChooseDirectories = true
+    panel.canChooseFiles = false
+    if panel.runModal() == .OK, let url = panel.url {
+        repoPath = url.path
+    }
+}
+```
+
+Não envolver em `Task { ... }` — `NSOpenPanel.runModal()` bloqueia o run loop corretamente
+e retorna quando o usuário fecha o painel.
+
+---
+
+## 2026-03-01 — agent-spawn-ui: `zsh -c "cd '...' && claude"` para iniciar agent no worktree
+
+Para spawnar `claude` em um diretório específico via `TerminalViewRepresentable`, usar
+o mesmo padrão de `cd` via args que já foi documentado, mas com `claude` em vez de `exec zsh`:
+
+```swift
+let escaped = worktreePath.replacingOccurrences(of: "'", with: "'\\''")
+args: ["-c", "cd '\(escaped)' && claude"]
+```
+
+Não usar `exec claude` — o `exec` substitui o processo, mas Claude Code pode abrir sub-processos
+que precisam do `zsh` pai. Deixar o `zsh -c` wrapping intacto.
+
+---
+
 ## markdownlint
 
 - Use `npx --yes markdownlint-cli2` to avoid requiring global install
