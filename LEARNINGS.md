@@ -97,7 +97,8 @@ syscall bloqueante de dentro de um método de ator. Usar `Thread` dedicada + `no
 
 ## 2026-03-01 — `TimelineView` é a forma correta de timers live no SwiftUI
 
-Para tickers que precisam atualizar a cada segundo (ex: elapsed time), usar `TimelineView(.periodic(from: .now, by: 1.0))`. Alternativas como `Timer.publish` ou `onAppear + Task { while true { sleep } }` são mais frágeis e não se integram bem com o ciclo de vida do SwiftUI.
+Para tickers que precisam atualizar a cada segundo (ex: elapsed time), usar `TimelineView(.periodic(from: .now, by: 1.0))`.
+Alternativas como `Timer.publish` ou `onAppear + Task { while true { sleep } }` são mais frágeis e não se integram bem com o ciclo de vida do SwiftUI.
 
 `TimelineView` re-renderiza apenas a view interna — não invalida views pai — então é seguro usá-lo em cada row de uma lista sem degradar performance.
 
@@ -105,7 +106,9 @@ Para tickers que precisam atualizar a cada segundo (ex: elapsed time), usar `Tim
 
 ## 2026-03-01 — Propagar `detail` por toda a pipeline IPC sem breaking change
 
-Adicionar um campo `optional` com default `nil` em `AgentEvent` (Codable) é totalmente backward-compatible: decoders antigos ignoram o campo, encoders antigos omitem-no. Isso permite introduzir contexto extra (ex: bash command, permission description) sem versionar o protocolo.
+Adicionar um campo `optional` com default `nil` em `AgentEvent` (Codable) é totalmente backward-compatible:
+decoders antigos ignoram o campo, encoders antigos omitem-no. Isso permite introduzir contexto extra
+(ex: bash command, permission description) sem versionar o protocolo.
 
 **Padrão:** sempre usar `optional` + `default = nil` para campos novos em structs `Codable` de IPC.
 
