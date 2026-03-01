@@ -20,5 +20,11 @@
     <string>14.0</string>
     <key>NSUserNotificationAlertStyle</key>
     <string>alert</string>
+    <key>SUFeedURL</key>
+    <string>https://raw.githubusercontent.com/rmolines/claude-terminal/main/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>REPLACE_WITH_PUBLIC_KEY_FROM_generate_keys</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
 </dict>
 </plist>

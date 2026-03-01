@@ -97,6 +97,7 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | `APPLE_ID` | Apple ID para notarização |
 | `NOTARIZATION_PASSWORD` | App-specific password do appleid.apple.com |
 | `TEAM_ID` | Team ID do Developer account |
+| `SPARKLE_PRIVATE_KEY` | EdDSA private key for signing Sparkle updates |
 
 Nenhum secret é necessário para desenvolvimento local — apenas para o pipeline de release.
 

@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+import Sparkle
 import UserNotifications
 
 /// AppDelegate handles: NSStatusItem (menu bar badge), NSPanel (HITL HUD),
@@ -7,12 +8,19 @@ import UserNotifications
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     private var statusItem: NSStatusItem?
+    var updaterController: SPUStandardUpdaterController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Force regular activation policy so the app receives keyboard events properly
         // when running as an SPM binary without a full .app bundle.
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
 
         setupMenuBar()
         setupNotifications()

@@ -43,12 +43,42 @@ jobs:
           cp .build/release/ClaudeTerminalHelper "$APP/Contents/MacOS/"
           cp ClaudeTerminal/App/Info.plist "$APP/Contents/"
 
-      - name: Sign (helper → app)
+      - name: Embed Sparkle.framework
         run: |
           set -euo pipefail
           APP="$RUNNER_TEMP/ClaudeTerminal.app"
+          SPARKLE_FW=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+          mkdir -p "$APP/Contents/Frameworks"
+          cp -R "$SPARKLE_FW" "$APP/Contents/Frameworks/"
 
-          # Sign helper first — required before signing the containing bundle
+      - name: Sign (Sparkle helpers → Sparkle.framework → helper → app)
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/ClaudeTerminal.app"
+          SPARKLE_FW="$APP/Contents/Frameworks/Sparkle.framework"
+
+          # Sign Sparkle nested executables first
+          for nested in Autoupdate Updater.app; do
+            target="$SPARKLE_FW/$nested"
+            if [ -e "$target" ]; then
+              codesign \
+                --sign "Developer ID Application" \
+                --options runtime \
+                --timestamp \
+                --force \
+                "$target"
+            fi
+          done
+
+          # Sign Sparkle.framework
+          codesign \
+            --sign "Developer ID Application" \
+            --options runtime \
+            --timestamp \
+            --force \
+            "$SPARKLE_FW"
+
+          # Sign helper — required before signing the containing bundle
           codesign \
             --sign "Developer ID Application" \
             --entitlements helper.entitlements \
@@ -102,3 +132,53 @@ jobs:
         with:
           files: ${{ runner.temp }}/ClaudeTerminal-${{ github.ref_name }}.dmg
           generate_release_notes: true
+
+      - name: Update appcast.xml
+        run: |
+          set -euo pipefail
+          DMG="$RUNNER_TEMP/ClaudeTerminal-${{ github.ref_name }}.dmg"
+          SIGN_UPDATE=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework/Versions/B/Resources/sign_update"
+          VERSION="${{ github.ref_name }}"
+          SHORT_VERSION="${VERSION#v}"
+          DMG_URL="https://github.com/rmolines/claude-terminal/releases/download/${VERSION}/ClaudeTerminal-${VERSION}.dmg"
+
+          # Write private key to temp file
+          echo "${{ secrets.SPARKLE_PRIVATE_KEY }}" > /tmp/sparkle_key
+          chmod 600 /tmp/sparkle_key
+
+          # Get EdDSA signature
+          ED_SIG=$("$SIGN_UPDATE" "$DMG" -f /tmp/sparkle_key | grep -o 'edSignature="[^"]*"' | cut -d'"' -f2)
+          DMG_SIZE=$(stat -f%z "$DMG")
+          rm -f /tmp/sparkle_key
+
+          # Insert new item into appcast.xml before </channel>
+          # Shell variables are expanded before Python sees the script (unquoted heredoc).
+          python3 - "$SHORT_VERSION" "$DMG_URL" "$DMG_SIZE" "$ED_SIG" <<'PYEOF'
+          import sys, datetime
+          short_ver, dmg_url, dmg_size, ed_sig = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+          pub_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S +0000')
+          new_item = (
+              "        <item>\n"
+              f"            <title>Claude Terminal {short_ver}</title>\n"
+              f"            <pubDate>{pub_date}</pubDate>\n"
+              f"            <sparkle:version>{short_ver}</sparkle:version>\n"
+              f"            <sparkle:shortVersionString>{short_ver}</sparkle:shortVersionString>\n"
+              "            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>\n"
+              f'            <enclosure url="{dmg_url}" length="{dmg_size}" type="application/octet-stream" sparkle:edSignature="{ed_sig}"/>\n'
+              "        </item>"
+          )
+          with open("appcast.xml", "r") as f:
+              content = f.read()
+          updated = content.replace("    </channel>", new_item + "\n    </channel>")
+          with open("appcast.xml", "w") as f:
+              f.write(updated)
+          PYEOF
+
+          # Commit and push appcast.xml to main
+          git config user.email "action@github.com"
+          git config user.name "GitHub Actions"
+          git fetch origin main
+          git checkout main
+          git add appcast.xml
+          git commit -m "chore: update appcast.xml for $VERSION"
+          git push origin main

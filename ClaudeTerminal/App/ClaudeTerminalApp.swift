@@ -13,6 +13,11 @@ struct ClaudeTerminalApp: App {
         .modelContainer(for: [ClaudeTask.self, ClaudeAgent.self])
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    appDelegate.updaterController?.checkForUpdates(nil)
+                }
+            }
         }
 
         WindowGroup("Agent", id: "agent-terminal", for: AgentTerminalConfig.self) { $config in

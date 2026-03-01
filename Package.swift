@@ -14,6 +14,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", from: "1.3.0"),
         .package(url: "https://github.com/trilemma-dev/SecureXPC", from: "0.8.0"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.4"),
     ],
     targets: [
         // Note: .defaultIsolation(MainActor.self) requires SPM 6.1+ (Xcode 16.3+).
@@ -24,6 +25,7 @@ let package = Package(
                 "Shared",
                 .product(name: "SwiftTerm", package: "SwiftTerm"),
                 .product(name: "SecureXPC", package: "SecureXPC"),
+                .product(name: "Sparkle", package: "Sparkle"),
             ],
             path: "ClaudeTerminal",
             exclude: ["App/Info.plist"],
