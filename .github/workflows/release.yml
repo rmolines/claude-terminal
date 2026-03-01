@@ -10,16 +10,14 @@ permissions:
 
 jobs:
   build-and-release:
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.3.app
-
       - name: Import Certificate
         run: |
+          set -euo pipefail
           echo "${{ secrets.CERTIFICATE_P12_BASE64 }}" | base64 --decode > cert.p12
           security create-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
           security default-keychain -s build.keychain
@@ -31,31 +29,49 @@ jobs:
           security set-key-partition-list \
             -S apple-tool:,apple: \
             -s -k "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
+          rm cert.p12
 
-      - name: Build Archive
+      - name: Build (release)
+        run: swift build --configuration release
+
+      - name: Assemble .app bundle
         run: |
-          xcodebuild archive \
-            -project ClaudeTerminal.xcodeproj \
-            -scheme ClaudeTerminal \
-            -destination "generic/platform=macOS" \
-            -archivePath "$RUNNER_TEMP/ClaudeTerminal.xcarchive" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Developer ID Application"
+          set -euo pipefail
+          APP="$RUNNER_TEMP/ClaudeTerminal.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          cp .build/release/ClaudeTerminal "$APP/Contents/MacOS/"
+          cp .build/release/ClaudeTerminalHelper "$APP/Contents/MacOS/"
+          cp ClaudeTerminal/App/Info.plist "$APP/Contents/"
 
-      - name: Export .app (bottom-up signing)
+      - name: Sign (helper → app)
         run: |
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/ClaudeTerminal.xcarchive" \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath "$RUNNER_TEMP/export"
+          set -euo pipefail
+          APP="$RUNNER_TEMP/ClaudeTerminal.app"
 
-          # Verify signing (helper was signed first by Xcode archive)
-          codesign --verify --deep --strict --verbose=2 \
-            "$RUNNER_TEMP/export/ClaudeTerminal.app"
+          # Sign helper first — required before signing the containing bundle
+          codesign \
+            --sign "Developer ID Application" \
+            --entitlements helper.entitlements \
+            --options runtime \
+            --timestamp \
+            --force \
+            "$APP/Contents/MacOS/ClaudeTerminalHelper"
+
+          # Sign app bundle last
+          codesign \
+            --sign "Developer ID Application" \
+            --entitlements app.entitlements \
+            --options runtime \
+            --timestamp \
+            --force \
+            "$APP"
+
+          codesign --verify --deep --strict --verbose=2 "$APP"
 
       - name: Create and Sign DMG
         run: |
-          APP="$RUNNER_TEMP/export/ClaudeTerminal.app"
+          set -euo pipefail
+          APP="$RUNNER_TEMP/ClaudeTerminal.app"
           DMG="$RUNNER_TEMP/ClaudeTerminal-${{ github.ref_name }}.dmg"
 
           hdiutil create \
@@ -65,10 +81,12 @@ jobs:
 
           codesign \
             --sign "Developer ID Application" \
+            --timestamp \
             "$DMG"
 
       - name: Notarize
         run: |
+          set -euo pipefail
           DMG="$RUNNER_TEMP/ClaudeTerminal-${{ github.ref_name }}.dmg"
 
           xcrun notarytool submit "$DMG" \
@@ -80,7 +98,7 @@ jobs:
           xcrun stapler staple "$DMG"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
           files: ${{ runner.temp }}/ClaudeTerminal-${{ github.ref_name }}.dmg
           generate_release_notes: true
