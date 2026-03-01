@@ -74,6 +74,8 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | Code signing | Ordem errada causa falha no Gatekeeper | Helper PRIMEIRO, frameworks, app por último — nunca `--deep` |
 | SwiftUI @main + SPM | Conflito com `main.swift` no mesmo target | Usar `@main` OU `main.swift`, nunca ambos |
 | bootstrap.yml | Só dispara no primeiro push (`run_number == 1`) | Não re-rodar manualmente |
+| gh pr merge | `--delete-branch` falha em worktree (`main` já checked out no repo pai) | Usar `--squash` sem `--delete-branch`; deletar remote via `gh api -X DELETE repos/.../git/refs/heads/<branch>` |
+| SPM executável | `@testable import` não funciona em `.executableTarget` | Mover lógica testável para `.target` (library); ou usar actor mirror local no test file |
 
 ## Worktree convention
 
