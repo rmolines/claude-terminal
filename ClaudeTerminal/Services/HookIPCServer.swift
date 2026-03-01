@@ -11,6 +11,10 @@ actor HookIPCServer {
     private var isRunning = false
     private var serverFD: Int32 = -1
 
+    /// Stores open client file descriptors for in-flight HITL requests.
+    /// The fd is kept open until respondHITL writes the approval byte and closes it.
+    private var pendingHITLConnections: [String: Int32] = [:]
+
     private var socketPath: String {
         let appSupport = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
@@ -79,9 +83,9 @@ actor HookIPCServer {
             let clientFD = accept(fd, nil, nil)
             guard clientFD >= 0 else { continue }
 
-            // Read and process in a background task to not block the accept loop
+            // Read and process in a background task to not block the accept loop.
+            // handleConnection is responsible for closing clientFD (or keeping it open for HITL).
             Task.detached(priority: .background) { [weak self] in
-                defer { close(clientFD) }
                 await self?.handleConnection(clientFD: clientFD)
             }
         }
@@ -90,16 +94,40 @@ actor HookIPCServer {
     private func handleConnection(clientFD: Int32) async {
         // Read 4-byte big-endian length prefix
         var lengthBytes = [UInt8](repeating: 0, count: 4)
-        guard read(clientFD, &lengthBytes, 4) == 4 else { return }
+        guard read(clientFD, &lengthBytes, 4) == 4 else {
+            close(clientFD)
+            return
+        }
         let length = Int(UInt32(bigEndian: lengthBytes.withUnsafeBytes { $0.load(as: UInt32.self) }))
 
         // Read payload
         var buffer = [UInt8](repeating: 0, count: length)
-        guard read(clientFD, &buffer, length) == length else { return }
+        guard read(clientFD, &buffer, length) == length else {
+            close(clientFD)
+            return
+        }
 
         let data = Data(buffer)
-        guard let event = try? JSONDecoder().decode(AgentEvent.self, from: data) else { return }
+        guard let event = try? JSONDecoder().decode(AgentEvent.self, from: data) else {
+            close(clientFD)
+            return
+        }
 
         await SessionManager.shared.handleEvent(event)
+
+        if event.type == .permissionRequest {
+            // Keep fd open — respondHITL will write 1 byte and close it.
+            pendingHITLConnections[event.sessionID] = clientFD
+        } else {
+            close(clientFD)
+        }
+    }
+
+    /// Writes a 1-byte approval/rejection response to the waiting helper process and closes the fd.
+    func respondHITL(sessionID: String, approved: Bool) {
+        guard let fd = pendingHITLConnections.removeValue(forKey: sessionID) else { return }
+        var byte: UInt8 = approved ? 1 : 0
+        write(fd, &byte, 1)
+        close(fd)
     }
 }

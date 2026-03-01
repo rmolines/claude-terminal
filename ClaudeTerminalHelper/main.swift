@@ -9,4 +9,4 @@ import Foundation
 // Security: never pass hook args directly to shell. Always validate via allowlist.
 
 let handler = HookHandler()
-handler.run()
+exit(handler.run())

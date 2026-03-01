@@ -15,32 +15,45 @@ actor SessionManager {
 
     // MARK: - Session lifecycle
 
-    func handleEvent(_ event: AgentEvent) {
+    func handleEvent(_ event: AgentEvent) async {
         switch event.type {
         case .notification, .bashToolUse, .subAgentStarted:
             updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
 
         case .permissionRequest:
             updateOrCreate(sessionID: event.sessionID, cwd: event.cwd, status: .awaitingInput)
+            await NotificationService.shared.requestHITLApproval(
+                sessionID: event.sessionID,
+                description: "Agent at \(event.cwd) awaiting approval"
+            )
 
         case .stopped:
             sessions[event.sessionID]?.status = .completed
+            let sid = event.sessionID
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(30))
+                SessionStore.shared.remove(sessionID: sid)
+            }
 
         case .heartbeat:
             sessions[event.sessionID]?.lastHeartbeat = Date()
         }
+
+        if let session = sessions[event.sessionID] {
+            Task { @MainActor in SessionStore.shared.update(session) }
+        }
     }
 
-    func approveHITL(sessionID: String) {
+    func approveHITL(sessionID: String) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
         sessions[sessionID]?.status = .running
-        // TODO: signal approval to the hook via socket response
+        await HookIPCServer.shared.respondHITL(sessionID: sessionID, approved: true)
     }
 
-    func rejectHITL(sessionID: String) {
+    func rejectHITL(sessionID: String) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
         sessions[sessionID]?.status = .blocked
-        // TODO: signal rejection to the hook via socket response
+        await HookIPCServer.shared.respondHITL(sessionID: sessionID, approved: false)
     }
 
     // MARK: - Private
