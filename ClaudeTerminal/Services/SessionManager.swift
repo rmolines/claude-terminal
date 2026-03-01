@@ -17,11 +17,23 @@ actor SessionManager {
 
     func handleEvent(_ event: AgentEvent) async {
         switch event.type {
-        case .notification, .bashToolUse, .subAgentStarted:
+        case .notification:
             updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
+
+        case .bashToolUse:
+            updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
+            if let cmd = event.detail {
+                sessions[event.sessionID]?.currentActivity = "$ \(cmd)"
+            }
+
+        case .subAgentStarted:
+            updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
+            sessions[event.sessionID]?.subAgentCount += 1
+            sessions[event.sessionID]?.currentActivity = "Sub-agent spawned"
 
         case .permissionRequest:
             updateOrCreate(sessionID: event.sessionID, cwd: event.cwd, status: .awaitingInput)
+            sessions[event.sessionID]?.currentActivity = event.detail ?? "Awaiting approval"
             await NotificationService.shared.requestHITLApproval(
                 sessionID: event.sessionID,
                 description: "Agent at \(event.cwd) awaiting approval"
@@ -29,6 +41,7 @@ actor SessionManager {
 
         case .stopped:
             sessions[event.sessionID]?.status = .completed
+            sessions[event.sessionID]?.currentActivity = "Completed"
             let sid = event.sessionID
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(30))
@@ -80,4 +93,6 @@ struct AgentSession: Sendable {
     var lastEventAt: Date = Date()
     var lastHeartbeat: Date = Date()
     let startedAt: Date = Date()
+    var currentActivity: String?
+    var subAgentCount: Int = 0
 }

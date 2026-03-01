@@ -53,28 +53,55 @@ private struct SessionRow: View {
     let session: AgentSession
 
     var body: some View {
-        HStack(spacing: 12) {
-            statusIcon
-            VStack(alignment: .leading, spacing: 2) {
-                Text(session.cwd)
-                    .font(.system(.body, design: .monospaced))
-                    .lineLimit(1)
-                Text(session.sessionID)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        TimelineView(.periodic(from: .now, by: 1.0)) { _ in
+            HStack(spacing: 12) {
+                statusIcon
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(session.cwd)
+                            .font(.system(.body, design: .monospaced))
+                            .lineLimit(1)
+                        Spacer()
+                        Text(formatElapsed(session.startedAt))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    HStack(spacing: 6) {
+                        if let activity = session.currentActivity {
+                            Text(activity)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        } else {
+                            Text(session.sessionID)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if session.subAgentCount > 0 {
+                            Text("×\(session.subAgentCount) sub")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(.gray.opacity(0.2))
+                                .foregroundStyle(.secondary)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        }
+                        if session.status == .awaitingInput {
+                            Text("HITL")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.orange)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        }
+                    }
+                }
             }
-            Spacer()
-            if session.status == .awaitingInput {
-                Text("HITL")
-                    .font(.caption.bold())
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.orange)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
+            .padding(.vertical, 4)
         }
-        .padding(.vertical, 4)
     }
 
     @ViewBuilder
@@ -93,5 +120,13 @@ private struct SessionRow: View {
             Image(systemName: "xmark.circle.fill")
                 .foregroundStyle(.red)
         }
+    }
+
+    private func formatElapsed(_ from: Date) -> String {
+        let s = Int(Date().timeIntervalSince(from))
+        if s < 60 { return "\(s)s" }
+        let m = s / 60; let sec = s % 60
+        if m < 60 { return "\(m)m \(sec)s" }
+        return "\(m / 60)h \(m % 60)m"
     }
 }
