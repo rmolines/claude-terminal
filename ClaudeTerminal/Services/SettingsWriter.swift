@@ -129,7 +129,7 @@ actor SettingsWriter {
 
 // MARK: - HookInstallStatus
 
-public enum HookInstallStatus: Equatable {
+public enum HookInstallStatus: Equatable, Sendable {
     case notInstalled
     case installed
     case outdated(reason: String)
