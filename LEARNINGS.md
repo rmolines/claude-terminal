@@ -4,6 +4,52 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-01 — dashboard-tokens: `@ViewBuilder` com `if` é mais limpo que `AnyView`
+
+Para views condicionais em SwiftUI, `@ViewBuilder` com `if` simples é idiomático e elimina o boxing de `AnyView`:
+
+```swift
+// ERRADO — boxing desnecessário
+private var tokenBadge: some View {
+    guard total > 0 else { return AnyView(EmptyView()) }
+    return AnyView(Text("..."))
+}
+
+// CERTO — @ViewBuilder infere o tipo condicional
+@ViewBuilder
+private var tokenBadge: some View {
+    if total > 0 {
+        Text("...")
+    }
+}
+```
+
+`AnyView` apaga o tipo e prejudica a diff tree do SwiftUI. Preferir sempre `@ViewBuilder` + `if`.
+
+---
+
+## 2026-03-01 — dashboard-tokens: actor mirror em testes precisa de `SessionState` struct quando acumula estado
+
+Quando o `LocalSessionManager` mirror nos testes precisa rastrear mais do que status (ex: contadores
+de tokens), modelar com uma `struct SessionState` interna é mais legível do que múltiplos
+dicionários paralelos:
+
+```swift
+// EVITAR — dicionários paralelos por campo
+private var statuses: [String: AgentStatus] = [:]
+private var inputTokens: [String: Int] = [:]
+
+// PREFERIR — struct interna
+private struct SessionState {
+    var status: AgentStatus = .running
+    var totalInputTokens: Int = 0
+    ...
+}
+private var sessions: [String: SessionState] = [:]
+```
+
+---
+
 ## 2026-03-01 — `gh pr merge --delete-branch` falha em worktrees
 
 `gh pr merge --squash --delete-branch` tenta fazer `git checkout main` localmente para deletar o branch.
