@@ -11,7 +11,7 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationSplitView {
-            Text("Task Backlog")
+            TaskBacklogView()
                 .frame(minWidth: 200)
         } detail: {
             if sortedSessions.isEmpty {
