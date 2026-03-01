@@ -5,6 +5,7 @@ import Shared
 struct DashboardView: View {
     private let store = SessionStore.shared
     @State private var selectedSessionID: String?
+    @State private var showNewAgent = false
 
     private var sortedSessions: [AgentSession] {
         store.sessions.values.sorted { $0.lastEventAt > $1.lastEventAt }
@@ -31,6 +32,16 @@ struct DashboardView: View {
             }
         }
         .navigationTitle("Claude Terminal")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showNewAgent = true } label: {
+                    Label("New Agent", systemImage: "plus")
+                }
+            }
+        }
+        .sheet(isPresented: $showNewAgent) {
+            NewAgentSheet()
+        }
     }
 
     // MARK: - Empty state

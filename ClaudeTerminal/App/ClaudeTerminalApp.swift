@@ -14,5 +14,12 @@ struct ClaudeTerminalApp: App {
         .commands {
             CommandGroup(replacing: .newItem) {}
         }
+
+        WindowGroup("Agent", id: "agent-terminal", for: AgentTerminalConfig.self) { $config in
+            if let c = config {
+                SpawnedAgentView(config: c)
+            }
+        }
+        .modelContainer(for: [ClaudeTask.self, ClaudeAgent.self])
     }
 }
