@@ -3,7 +3,7 @@ import Shared
 
 /// Main dashboard — shows all active/paused/completed agent sessions.
 struct DashboardView: View {
-    @State private var store = SessionStore.shared
+    private let store = SessionStore.shared
 
     private var sortedSessions: [AgentSession] {
         store.sessions.values.sorted { $0.lastEventAt > $1.lastEventAt }

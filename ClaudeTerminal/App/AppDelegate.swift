@@ -75,6 +75,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // MARK: - Notifications
 
     private func setupNotifications() {
+        // UNUserNotificationCenter requires a proper app bundle (CFBundleIdentifier).
+        // When running as a bare SPM executable (no .app wrapper), skip notification setup.
+        guard Bundle.main.bundleIdentifier != nil else { return }
         let center = UNUserNotificationCenter.current()
         center.delegate = self
 
