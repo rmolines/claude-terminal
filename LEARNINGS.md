@@ -226,6 +226,75 @@ This was documented in CVE-2025-59536. Mitigation: keep hook logic in external s
 
 ---
 
+## 2026-03-01 — terminal-per-agent-ui: `.id(sessionID)` força recriação de PTY no SwiftUI
+
+`TerminalViewRepresentable` é um `NSViewRepresentable` — SwiftUI reutiliza a NSView quando a
+view é "a mesma" na árvore. Para forçar a destruição e recriação do PTY ao trocar de sessão,
+usar `.id(session.sessionID)` na view: SwiftUI trata views com IDs diferentes como instâncias
+distintas e cria uma nova.
+
+```swift
+TerminalViewRepresentable(...)
+    .id(session.sessionID)  // novo sessionID → novo PTY
+```
+
+Sem isso, trocar de sessão reutiliza o shell da sessão anterior no processo existente.
+
+---
+
+## 2026-03-01 — terminal-per-agent-ui: cwd via `cd && exec` em args, não `workingDirectory:`
+
+`LocalProcessTerminalView.startProcess` não expõe um parâmetro `workingDirectory:`. Para
+iniciar o shell no diretório correto, passar via args com single-quote escaping:
+
+```swift
+let escaped = cwd.replacingOccurrences(of: "'", with: "'\\''")
+args: ["-c", "cd '\(escaped)' && exec zsh"]
+```
+
+O `exec zsh` substitui o processo de shell intermediário (`-c`) pelo shell interativo
+final — o processo filho fica limpo, sem um processo pai `-c` residual.
+
+---
+
+## 2026-03-01 — terminal-per-agent-ui: env allowlist para processos filhos
+
+Ao spawnar processos via `startProcess(environment:)`, nunca passar o ambiente do processo
+pai inteiro — pode conter tokens, variáveis de sessão, credenciais. Usar allowlist mínima:
+
+```swift
+environment: [
+    "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin",
+    "HOME=\(NSHomeDirectory())",
+    "TERM=xterm-256color"
+]
+```
+
+Homebrew no macOS arm64 fica em `/opt/homebrew/bin` — incluir explicitamente para que
+ferramentas como `git`, `gh`, `brew` funcionem no terminal embedado.
+
+---
+
+## 2026-03-01 — terminal-per-agent-ui: 3-column `NavigationSplitView` é idiomático para master-detail-detail
+
+Para layouts com sidebar + lista de seleção + painel de detalhe, o 3-column `NavigationSplitView`
+é a API correta no macOS/SwiftUI:
+
+```swift
+NavigationSplitView {
+    // sidebar
+} content: {
+    List(items, id: \.id, selection: $selectedID) { ... }
+} detail: {
+    if let item = selected { DetailView(item) } else { EmptyState() }
+}
+```
+
+macOS gerencia o colapso/expansão das colunas laterais nativamente — sem código extra.
+O `List` com `selection:` binding atualiza `selectedID` automaticamente ao clicar numa row.
+
+---
+
 ## markdownlint
 
 - Use `npx --yes markdownlint-cli2` to avoid requiring global install

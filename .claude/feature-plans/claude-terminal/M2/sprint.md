@@ -12,7 +12,7 @@ _Gerado em: 2026-03-01_
 | # | Feature | Slug | Deps | Esforço | Status |
 |---|---------|------|------|---------|--------|
 | 1 | Setup ModelContainer + TaskBacklogView com CRUD completo (list, create, delete) via SwiftData | `task-backlog-persistence` | — | baixo | ✅ done |
-| 2 | Terminal embedado no dashboard como detail pane toggleável por agente | `terminal-per-agent-ui` | — | médio | pending |
+| 2 | Terminal embedado no dashboard como detail pane toggleável por agente | `terminal-per-agent-ui` | — | médio | ✅ done |
 | 3 | Botão "New Agent": seleciona task do backlog → cria worktree → spawna processo Claude Code | `agent-spawn-ui` | `task-backlog-persistence` | médio | pending |
 | 4 | Dispatch da skill correta (start-feature/fix) no worktree ao criar/associar task | `task-orchestration` | `agent-spawn-ui` | médio | pending |
 
@@ -29,7 +29,7 @@ terminal-per-agent-ui (independente)
 |---|---|
 | `ClaudeTask` + `ClaudeAgent` (@Model) | Definidos — ModelContainer configurado via `.modelContainer(for:)` na `WindowGroup` |
 | `TaskBacklogView` | Implementado — CRUD completo com `@Query`, inline create, swipe-to-delete |
-| `TerminalViewRepresentable` | Implementado com isolation de queue — não embedado em nenhuma view |
+| `TerminalViewRepresentable` | Implementado com isolation de queue — embedado em `AgentTerminalView` |
 | `WorktreeManager` | Implementado e pronto para uso |
 | `SessionManager` + `HookIPCServer` | Implementados — suportam N sessões simultâneas |
 | `DashboardView` | Funcional — mostra sessões via hook events, sem SwiftData |
@@ -45,9 +45,6 @@ Uma feature está bem-scoped quando:
 
 ## Próximo passo
 
-Paralelo (sem deps entre si):
-
 ```
-/start-feature terminal-per-agent-ui
 /start-feature agent-spawn-ui
 ```
