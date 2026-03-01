@@ -19,7 +19,7 @@ struct DashboardView: View {
     var body: some View {
         NavigationSplitView {
             TaskBacklogView()
-                .frame(minWidth: 200)
+                .frame(minWidth: 240)
         } content: {
             List(sortedSessions, id: \.sessionID, selection: $selectedSessionID) { session in
                 SessionRow(session: session)

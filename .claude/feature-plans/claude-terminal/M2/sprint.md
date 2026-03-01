@@ -13,7 +13,7 @@ _Gerado em: 2026-03-01_
 |---|---------|------|------|---------|--------|
 | 1 | Setup ModelContainer + TaskBacklogView com CRUD completo (list, create, delete) via SwiftData | `task-backlog-persistence` | — | baixo | ✅ done |
 | 2 | Terminal embedado no dashboard como detail pane toggleável por agente | `terminal-per-agent-ui` | — | médio | ✅ done |
-| 3 | Botão "New Agent": seleciona task do backlog → cria worktree → spawna processo Claude Code | `agent-spawn-ui` | `task-backlog-persistence` | médio | pending |
+| 3 | Botão "New Agent": seleciona task do backlog → cria worktree → spawna processo Claude Code | `agent-spawn-ui` | `task-backlog-persistence` | médio | ✅ done |
 | 4 | Dispatch da skill correta (start-feature/fix) no worktree ao criar/associar task | `task-orchestration` | `agent-spawn-ui` | médio | pending |
 
 ## Grafo de dependências
@@ -46,5 +46,5 @@ Uma feature está bem-scoped quando:
 ## Próximo passo
 
 ```
-/start-feature agent-spawn-ui
+/start-feature task-orchestration
 ```

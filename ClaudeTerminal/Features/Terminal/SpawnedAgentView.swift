@@ -34,6 +34,14 @@ struct SpawnedAgentView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                if let skill = config.skillCommand {
+                    Text(skill)
+                        .font(.system(.caption, design: .monospaced))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(.blue.opacity(0.15))
+                        .foregroundStyle(.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
             }
             Spacer()
         }
@@ -47,14 +55,16 @@ struct SpawnedAgentView: View {
     private var terminal: some View {
         // Single-quote escape: replace ' with '\'' so the path is safe inside 'cd '...''.
         let escaped = config.worktreePath.replacingOccurrences(of: "'", with: "'\\''")
+        // Use login+interactive shell (-l -i) so zsh sources both .zprofile and .zshrc,
+        // giving the full user PATH (Homebrew, nvm, ~/.local/bin, etc.).
         return TerminalViewRepresentable(
             executable: "/bin/zsh",
-            args: ["-c", "cd '\(escaped)' && claude"],
+            args: ["-l", "-i", "-c", "cd '\(escaped)' && claude"],
             environment: [
-                "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin",
                 "HOME=\(NSHomeDirectory())",
                 "TERM=xterm-256color"
-            ]
+            ],
+            initialInput: config.skillCommand
         )
     }
 }

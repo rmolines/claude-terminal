@@ -9,6 +9,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Force regular activation policy so the app receives keyboard events properly
+        // when running as an SPM binary without a full .app bundle.
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+
         setupMenuBar()
         setupNotifications()
         Task { await HookIPCServer.shared.start() }

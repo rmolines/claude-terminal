@@ -10,6 +10,7 @@ struct TerminalViewRepresentable: NSViewRepresentable {
     let executable: String
     let args: [String]
     let environment: [String]?
+    var initialInput: String? = nil
 
     // Each instance gets an isolated queue for background parsing
     private let queue = DispatchQueue(
@@ -27,6 +28,14 @@ struct TerminalViewRepresentable: NSViewRepresentable {
             environment: environment,
             execName: nil
         )
+
+        if let input = initialInput {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak tv] in
+                guard let tv else { return }
+                let bytes = Array((input + "\n").utf8)
+                tv.send(data: bytes[...])
+            }
+        }
 
         return tv
     }
