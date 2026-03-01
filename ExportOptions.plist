@@ -10,7 +10,13 @@
     <string>Developer ID Application</string>
     <key>stripSwiftSymbols</key>
     <true/>
+    <!--
+    ExportOptions for xcodebuild -exportArchive (Xcode project builds only).
+    Not used by the SPM-based release pipeline in .github/workflows/release.yml.
+
+    Replace YOUR_TEAM_ID with your Apple Developer Team ID before use.
+    -->
     <key>teamID</key>
-    <string>$(TEAM_ID)</string>
+    <string>YOUR_TEAM_ID</string>
 </dict>
 </plist>

@@ -27,7 +27,7 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 - **SecureXPC** — IPC tipado entre app e helper com verificação por audit token (não PID)
 - **Unix Domain Socket** — hooks → app, latência ~2-5µs, `~/Library/Application Support/ClaudeTerminal/hooks.sock`
 - Distribuição: DMG notarizado via `xcrun notarytool`, fora da App Store
-- CI: `swift build` em `macos-14`; Release: `xcodebuild archive` + notarize + DMG
+- CI: `swift build` em `macos-15`; Release: `swift build -c release` → bundle manual → sign Developer ID → notarize → DMG
 
 ## Critical rules — NEVER do without explicit approval
 
