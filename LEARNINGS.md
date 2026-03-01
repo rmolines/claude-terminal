@@ -462,6 +462,38 @@ herda o PATH do processo pai — funciona se o app foi lançado de um terminal, 
 
 ---
 
+## 2026-03-01 — hook-setup-onboarding: `.foregroundStyle(.accent)` não existe — usar `Color.accentColor`
+
+`.accent` não é um membro válido de `ShapeStyle` no SwiftUI macOS 14+.
+O correto é `Color.accentColor` como argumento direto:
+
+```swift
+// ERRADO
+.foregroundStyle(.accent)
+
+// CERTO
+.foregroundStyle(Color.accentColor)
+```
+
+---
+
+## 2026-03-01 — hook-setup-onboarding: enum com associated value cruzando boundary de ator precisa de `Sendable`
+
+`HookInstallStatus` tem um case com associated value (`outdated(reason: String)`).
+Ao retornar esse enum de um método de ator para `@MainActor` (ex: em `.task {}`),
+o Swift 6 exige conformidade com `Sendable` — sem ela o compilador emite erro de concorrência.
+
+`String` já é `Sendable`, então basta declarar:
+
+```swift
+public enum HookInstallStatus: Equatable, Sendable { ... }
+```
+
+Regra geral: todo tipo que cruza boundaries de isolamento (ator → MainActor) precisa ser `Sendable`.
+Enums com associated values de tipos `Sendable` se tornam `Sendable` com a declaração explícita.
+
+---
+
 ## markdownlint
 
 - Use `npx --yes markdownlint-cli2` to avoid requiring global install
