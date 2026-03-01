@@ -4,6 +4,33 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-01 — `gh pr merge --delete-branch` falha em worktrees
+
+`gh pr merge --squash --delete-branch` tenta fazer `git checkout main` localmente para deletar o branch.
+Em worktrees, `main` já está checked out no repo pai — o comando falha com:
+`fatal: 'main' is already checked out at '...'`
+
+**Solução:** usar `gh pr merge --squash` (sem `--delete-branch`) e deletar o remote branch separadamente via API:
+```bash
+gh api -X DELETE repos/<owner>/<repo>/git/refs/heads/<branch>
+```
+
+---
+
+## 2026-03-01 — Targets executáveis SPM não suportam `@testable import`
+
+SPM não permite `@testable import` de targets do tipo `.executableTarget`.
+Qualquer lógica que precise ser testada diretamente deve viver em um `.target` (library).
+
+**Solução adotada:** criar um actor mirror local no arquivo de testes que reimplementa a state machine
+usando apenas tipos do módulo `Shared` (que é uma library). Documentar no comentário do test file
+o motivo do padrão.
+
+**Solução ideal a longo prazo:** extrair `SessionManager`, `SessionStore` e `HookIPCServer` para um
+target `ClaudeTerminalCore` do tipo `.target`, e o executável depende desse target.
+
+---
+
 ## GitHub Actions
 
 ### `bootstrap.yml`: `run_number == 1` guard
@@ -27,6 +54,22 @@ uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 # Bad (tag can be hijacked)
 uses: actions/checkout@v4
 ```
+
+---
+
+## 2026-03-01 — `TimelineView` é a forma correta de timers live no SwiftUI
+
+Para tickers que precisam atualizar a cada segundo (ex: elapsed time), usar `TimelineView(.periodic(from: .now, by: 1.0))`. Alternativas como `Timer.publish` ou `onAppear + Task { while true { sleep } }` são mais frágeis e não se integram bem com o ciclo de vida do SwiftUI.
+
+`TimelineView` re-renderiza apenas a view interna — não invalida views pai — então é seguro usá-lo em cada row de uma lista sem degradar performance.
+
+---
+
+## 2026-03-01 — Propagar `detail` por toda a pipeline IPC sem breaking change
+
+Adicionar um campo `optional` com default `nil` em `AgentEvent` (Codable) é totalmente backward-compatible: decoders antigos ignoram o campo, encoders antigos omitem-no. Isso permite introduzir contexto extra (ex: bash command, permission description) sem versionar o protocolo.
+
+**Padrão:** sempre usar `optional` + `default = nil` para campos novos em structs `Codable` de IPC.
 
 ---
 
