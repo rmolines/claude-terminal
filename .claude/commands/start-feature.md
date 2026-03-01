@@ -6,6 +6,30 @@ O argumento é o nome da feature (kebab-case). Ex: `/start-feature hitl-notifica
 
 ---
 
+## Fase 0 — Detectar a feature a iniciar
+
+**Se `$ARGUMENTS` foi fornecido**, use esse valor como nome da feature e pule para a Fase A.
+
+**Se `$ARGUMENTS` está vazio:**
+
+1. Leia `.claude/feature-plans/<projeto>/roadmap.md` (procure o projeto em `.claude/feature-plans/` ou use o nome do repo)
+2. Encontre o primeiro item `- [ ]` em `### M1` que ainda não foi iniciado (sem branch `feature/` correspondente em `git branch -a`)
+3. Derive o nome kebab-case a partir do texto do item (ex: "Dashboard de status dos agentes" → `agent-status-dashboard`)
+4. Apresente ao usuário:
+
+```
+Nenhuma feature especificada. Encontrei no roadmap.md:
+
+Próxima feature do M1: "<texto do item>"
+Slug sugerido: <slug-kebab-case>
+
+Confirma? (ou informe outro nome)
+```
+
+Aguarde confirmação antes de continuar.
+
+---
+
 ## Fase A — Contexto obrigatório (ler ANTES de qualquer planejamento)
 
 Leia estes arquivos na ordem — sem exceção:
