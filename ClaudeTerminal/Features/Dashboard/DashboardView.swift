@@ -79,6 +79,7 @@ private struct SessionRow: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
+                        tokenBadge
                         if session.subAgentCount > 0 {
                             Text("×\(session.subAgentCount) sub")
                                 .font(.caption.bold())
@@ -101,6 +102,23 @@ private struct SessionRow: View {
                 }
             }
             .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
+    private var tokenBadge: some View {
+        let total = session.totalInputTokens + session.totalOutputTokens
+        if total > 0 {
+            let cost = Double(session.totalInputTokens) * 3.0 / 1_000_000
+                     + Double(session.totalOutputTokens) * 15.0 / 1_000_000
+                     + Double(session.totalCacheReadTokens) * 0.30 / 1_000_000
+            let tokLabel = total >= 1000
+                ? String(format: "%.1fk tok", Double(total) / 1000)
+                : "\(total) tok"
+            Text("\(tokLabel) · \(String(format: "$%.2f", cost))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
         }
     }
 

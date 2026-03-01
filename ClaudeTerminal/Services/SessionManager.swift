@@ -52,6 +52,12 @@ actor SessionManager {
             sessions[event.sessionID]?.lastHeartbeat = Date()
         }
 
+        if let usage = event.tokenUsage {
+            sessions[event.sessionID]?.totalInputTokens += usage.inputTokens
+            sessions[event.sessionID]?.totalOutputTokens += usage.outputTokens
+            sessions[event.sessionID]?.totalCacheReadTokens += usage.cacheReadTokens
+        }
+
         if let session = sessions[event.sessionID] {
             Task { @MainActor in SessionStore.shared.update(session) }
         }
@@ -95,4 +101,7 @@ struct AgentSession: Sendable {
     let startedAt: Date = Date()
     var currentActivity: String?
     var subAgentCount: Int = 0
+    var totalInputTokens: Int = 0
+    var totalOutputTokens: Int = 0
+    var totalCacheReadTokens: Int = 0
 }
