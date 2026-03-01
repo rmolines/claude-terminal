@@ -45,7 +45,8 @@ final class HookHandler: @unchecked Sendable {
             sessionID: payload.sessionID,
             type: eventType,
             cwd: payload.cwd,
-            detail: detail
+            detail: detail,
+            tokenUsage: payload.usage
         )
 
         if eventType == .permissionRequest {
