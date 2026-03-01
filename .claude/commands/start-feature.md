@@ -17,7 +17,7 @@ O argumento é o nome da feature (kebab-case). Ex: `/start-feature hitl-notifica
 3. Derive o nome kebab-case a partir do texto do item (ex: "Dashboard de status dos agentes" → `agent-status-dashboard`)
 4. Apresente ao usuário:
 
-```
+```text
 Nenhuma feature especificada. Encontrei no roadmap.md:
 
 Próxima feature do M1: "<texto do item>"
