@@ -4,6 +4,64 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-01 — task-backlog-persistence: `ModelContainer` fica na cena App, não na view raiz
+
+O `ModelContainer` deve ser configurado uma única vez na `Scene` (via `.modelContainer(for:)` na `WindowGroup`),
+não na view raiz nem em views filhas. Isso injeta `ModelContext` em toda a hierarquia.
+
+```swift
+// CERTO — na Scene (ClaudeTerminalApp.swift)
+WindowGroup("...") { RootView() }
+    .modelContainer(for: [ClaudeTask.self, ClaudeAgent.self])
+
+// ERRADO — na view raiz ou filha
+struct RootView: View {
+    let container = try! ModelContainer(for: ClaudeTask.self) // não compartilhado
+}
+```
+
+**Por quê importa:** múltiplos containers criam múltiplos `ModelContext`s isolados — mutations em um
+não aparecem em queries do outro. Definindo na `Scene`, todas as views compartilham o mesmo container.
+
+---
+
+## 2026-03-01 — task-backlog-persistence: `sortOrder` manual é obrigatório em toda lista SwiftData
+
+SwiftData não preserva a ordem de inserção de arrays ao recarregar do disco. Sem um `sortOrder` explícito,
+a lista reordena aleatoriamente a cada restart.
+
+```swift
+// SEMPRE passar sort para @Query
+@Query(sort: \ClaudeTask.sortOrder) private var tasks: [ClaudeTask]
+
+// SEMPRE calcular sortOrder antes de inserir
+let nextOrder = (tasks.map(\.sortOrder).max() ?? -1) + 1
+task.sortOrder = nextOrder
+```
+
+Já documentado em CLAUDE.md como armadilha — confirma que o padrão é necessário.
+
+---
+
+## 2026-03-01 — task-backlog-persistence: `context.save()` explícito após toda mutation
+
+SwiftData tem auto-save não confiável. Após `context.insert()` ou `context.delete()`, sempre chamar
+`try? context.save()` para garantir persistência imediata. Omitir pode resultar em dados perdidos se
+o app crasha antes do próximo ciclo de auto-save.
+
+---
+
+## 2026-03-01 — `git pull --rebase origin main` é necessário após squash merge em worktree workflow
+
+Após um squash merge via `gh pr merge --squash`, o commit local do `main` que foi feito durante o
+período do PR (ex: docs, outros merges) diverge do squash commit no remote. `git pull` sem `--rebase`
+falha porque os branches divergem.
+
+**Solução:** sempre usar `git pull --rebase origin main` no fechamento de features para reconciliar
+sem criar merge commits desnecessários.
+
+---
+
 ## 2026-03-01 — dashboard-tokens: `@ViewBuilder` com `if` é mais limpo que `AnyView`
 
 Para views condicionais em SwiftUI, `@ViewBuilder` com `if` simples é idiomático e elimina o boxing de `AnyView`:
