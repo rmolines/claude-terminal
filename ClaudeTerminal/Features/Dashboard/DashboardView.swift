@@ -8,6 +8,7 @@ struct DashboardView: View {
     @State private var showNewAgent = false
     @State private var showOnboarding = false
     @State private var hookStatus: HookInstallStatus = .notInstalled
+    @State private var showSkillRegistry = false
 
     private var sortedSessions: [AgentSession] {
         store.sessions.values.sorted { $0.lastEventAt > $1.lastEventAt }
@@ -45,10 +46,19 @@ struct DashboardView: View {
                 }
             }
             ToolbarItem(placement: .primaryAction) {
+                Button { showSkillRegistry = true } label: {
+                    Label("Skills", systemImage: "sparkles")
+                }
+                .help("Browse installed skills and commands")
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button { showNewAgent = true } label: {
                     Label("New Agent", systemImage: "plus")
                 }
             }
+        }
+        .sheet(isPresented: $showSkillRegistry) {
+            SkillRegistryView(projectCwds: sortedSessions.map(\.cwd))
         }
         .sheet(isPresented: $showNewAgent) {
             NewAgentSheet()
