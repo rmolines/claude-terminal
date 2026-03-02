@@ -86,7 +86,7 @@ Se todos os milestones estão 100% done: reportar conclusão do projeto.
 
 Produzir o relatório no formato abaixo.
 
-```
+```text
 ## 🧭 Project Compass — <projeto>
 _<data e hora atual>_
 
@@ -131,7 +131,7 @@ Bloqueios abertos: <PRs abertos em review, ou "nenhum">
 
 ### ▶ Próxima ação
 
-```
+```bash
 /start-feature <slug>
 ```
 

@@ -6,7 +6,9 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ## 2026-03-02 — Worktrees: escrever plan.md no worktree, não no main
 
-Ao usar `/start-feature`, o `plan.md` deve ser escrito no path do worktree (`/worktrees/<feature>/...`), não no working tree do `main`. Se escrito no `main` antes do worktree existir, o arquivo fica não-rastreado no branch errado — na hora do `git pull` após o merge, git recusa com "untracked file would be overwritten". Fix: `rm` o arquivo do main e `pull` novamente.
+Ao usar `/start-feature`, o `plan.md` deve ser escrito no path do worktree (`/worktrees/<feature>/...`), não no working tree do `main`.
+Se escrito no `main` antes do worktree existir, o arquivo fica não-rastreado no branch errado — na hora do `git pull` após o merge,
+git recusa com "untracked file would be overwritten". Fix: `rm` o arquivo do main e `pull` novamente.
 
 ---
 

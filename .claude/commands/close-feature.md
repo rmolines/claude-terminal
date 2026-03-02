@@ -110,7 +110,7 @@ Gerar entrada no `CHANGELOG.md` (raiz do repo). Criar o arquivo se não existir.
 ---
 ```
 
-**Inserir:** logo após a linha `# Changelog` (antes da primeira entrada `## `).
+**Inserir:** logo após a linha `# Changelog` (antes da primeira entrada `##`).
 Usar Edit tool com `old_string` = primeira linha após o cabeçalho e `new_string` = nova entrada + essa mesma linha.
 
 #### 1c. MEMORY.md coordinator — commit direto em main (se existir)
@@ -189,7 +189,7 @@ git -C "$REPO_ROOT" worktree list | grep "<nome>"
 
 ### 4. Resumo final
 
-```
+```text
 ✅ Feature encerrada!
 
 Documentação:

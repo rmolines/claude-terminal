@@ -100,7 +100,7 @@ O plano deve especificar explicitamente:
 
 Após o usuário aprovar o plano, **escrever obrigatoriamente**:
 
-```
+```text
 .claude/feature-plans/claude-terminal/<milestone>/<feature>/plan.md
 ```
 
