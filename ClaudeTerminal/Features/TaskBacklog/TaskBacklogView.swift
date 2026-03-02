@@ -2,22 +2,86 @@ import SwiftUI
 import SwiftData
 import AppKit
 
-/// Persistent backlog of features, fixes, and projects.
+// MARK: - TaskGroup helper
+
+private struct TaskGroup: Identifiable {
+    static let othersID = "other"
+
+    let id: String         // project.id.uuidString or TaskGroup.othersID
+    let title: String
+    let projectPath: String?
+    var tasks: [ClaudeTask]
+
+    /// Path to display in section header — nil when last path component matches title (no redundancy).
+    var displayPath: String? {
+        guard let path = projectPath else { return nil }
+        return URL(fileURLWithPath: path).lastPathComponent == title ? nil : path
+    }
+}
+
+// MARK: - TaskBacklogView
+
+/// Persistent backlog of features, fixes, and projects — grouped by repo, sorted by priority.
 struct TaskBacklogView: View {
     @Environment(\.modelContext) private var context
+    @Query(sort: \ClaudeProject.sortOrder) private var projects: [ClaudeProject]
     @Query(sort: \ClaudeTask.sortOrder) private var tasks: [ClaudeTask]
 
     @State private var isAddingTask = false
     @State private var newTaskTitle = ""
     @State private var newTaskType = "feature"
+    @State private var newTaskPriority = "medium"
+    @State private var newTaskProject: ClaudeProject?
+
+    // MARK: Computed grouping
+
+    private var groupedTasks: [TaskGroup] {
+        // Single O(N) pass: bucket tasks by project UUID (nil = "other")
+        let byProject = Dictionary(grouping: tasks, by: { $0.project?.id })
+        let sortedByPriority = { (taskList: [ClaudeTask]) in
+            taskList.sorted { $0.prioritySortKey < $1.prioritySortKey }
+        }
+
+        var groups: [TaskGroup] = projects.compactMap { project in
+            guard let projectTasks = byProject[project.id], !projectTasks.isEmpty else { return nil }
+            return TaskGroup(
+                id: project.id.uuidString,
+                title: project.name,
+                projectPath: project.path,
+                tasks: sortedByPriority(projectTasks)
+            )
+        }
+
+        // "Other" section for tasks not assigned to any project
+        if let ungrouped = byProject[nil], !ungrouped.isEmpty {
+            groups.append(TaskGroup(
+                id: TaskGroup.othersID,
+                title: "Other",
+                projectPath: nil,
+                tasks: sortedByPriority(ungrouped)
+            ))
+        }
+
+        return groups
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             List {
-                ForEach(tasks) { task in
-                    TaskRow(task: task)
+                if groupedTasks.isEmpty {
+                    emptyPlaceholder
+                } else {
+                    ForEach(groupedTasks) { group in
+                        Section(header: sectionHeader(group)) {
+                            ForEach(group.tasks) { task in
+                                TaskRow(task: task)
+                            }
+                            .onDelete { offsets in
+                                deleteTasks(group.tasks, at: offsets)
+                            }
+                        }
+                    }
                 }
-                .onDelete(perform: deleteTasks)
             }
 
             if isAddingTask {
@@ -33,6 +97,8 @@ struct TaskBacklogView: View {
                     isAddingTask = true
                     newTaskTitle = ""
                     newTaskType = "feature"
+                    newTaskPriority = "medium"
+                    newTaskProject = nil
                 } label: {
                     Image(systemName: "plus")
                 }
@@ -41,12 +107,45 @@ struct TaskBacklogView: View {
         }
     }
 
+    // MARK: - Section header
+
+    @ViewBuilder
+    private func sectionHeader(_ group: TaskGroup) -> some View {
+        HStack(spacing: 4) {
+            if group.id != TaskGroup.othersID {
+                Image(systemName: "folder.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(group.title)
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+            if let path = group.displayPath {
+                Text(path)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+            }
+        }
+        .textCase(nil)
+    }
+
+    // MARK: - Empty placeholder
+
+    private var emptyPlaceholder: some View {
+        Text("No tasks yet — tap + to add one")
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 16)
+            .listRowBackground(Color.clear)
+    }
+
     // MARK: - New task form
 
     private var newTaskForm: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // AutoFocusTextField bypasses SwiftUI @FocusState limitations inside
-            // NavigationSplitView sidebar — calls makeFirstResponder at AppKit level.
             AutoFocusTextField(
                 text: $newTaskTitle,
                 placeholder: "Task title…",
@@ -62,6 +161,26 @@ struct TaskBacklogView: View {
                 }
                 .labelsHidden()
                 .frame(width: 72)
+
+                Picker("", selection: $newTaskPriority) {
+                    Text("P0").tag("urgent")
+                    Text("P1").tag("high")
+                    Text("P2").tag("medium")
+                    Text("P3").tag("low")
+                }
+                .labelsHidden()
+                .frame(width: 52)
+
+                if !projects.isEmpty {
+                    Picker("", selection: $newTaskProject) {
+                        Text("No project").tag(Optional<ClaudeProject>.none)
+                        ForEach(projects) { project in
+                            Text(project.name).tag(Optional(project))
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: 110)
+                }
 
                 Spacer()
 
@@ -86,9 +205,10 @@ struct TaskBacklogView: View {
         guard !title.isEmpty else { return }
 
         let nextOrder = (tasks.map(\.sortOrder).max() ?? -1) + 1
-        let task = ClaudeTask(title: title, taskType: newTaskType)
+        let task = ClaudeTask(title: title, taskType: newTaskType, priority: newTaskPriority)
         task.sortOrder = nextOrder
         task.status = "pending"
+        task.project = newTaskProject
         context.insert(task)
         try? context.save()
 
@@ -96,9 +216,9 @@ struct TaskBacklogView: View {
         newTaskTitle = ""
     }
 
-    private func deleteTasks(at offsets: IndexSet) {
+    private func deleteTasks(_ groupTasks: [ClaudeTask], at offsets: IndexSet) {
         for index in offsets {
-            context.delete(tasks[index])
+            context.delete(groupTasks[index])
         }
         try? context.save()
     }
@@ -109,19 +229,24 @@ struct TaskBacklogView: View {
 @MainActor
 private func previewContainer() -> ModelContainer {
     let container = try! ModelContainer(
-        for: ClaudeTask.self,
+        for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
-    let samples: [(String, String, String)] = [
-        ("Implement auth flow", "feature", "pending"),
-        ("Fix crash on app launch", "fix", "running"),
-        ("Migrate to SwiftData v2", "project", "completed"),
-        ("Add dark mode support", "feature", "pending"),
+    let proj = ClaudeProject(name: "claude-terminal", path: "/Users/dev/git/claude-terminal")
+    proj.sortOrder = 0
+    container.mainContext.insert(proj)
+
+    let samples: [(String, String, String, String, Bool)] = [
+        ("Implement auth flow", "feature", "pending", "urgent", true),
+        ("Fix crash on app launch", "fix", "running", "high", true),
+        ("Migrate to SwiftData v2", "project", "completed", "medium", false),
+        ("Add dark mode support", "feature", "pending", "low", false),
     ]
-    for (i, (title, type, status)) in samples.enumerated() {
-        let task = ClaudeTask(title: title, taskType: type)
+    for (i, (title, type, status, priority, inProject)) in samples.enumerated() {
+        let task = ClaudeTask(title: title, taskType: type, priority: priority)
         task.sortOrder = i
         task.status = status
+        task.project = inProject ? proj : nil
         container.mainContext.insert(task)
     }
     return container
@@ -132,7 +257,7 @@ private func previewContainer() -> ModelContainer {
         TaskBacklogView()
     }
     .modelContainer(previewContainer())
-    .frame(width: 280, height: 400)
+    .frame(width: 280, height: 500)
 }
 
 #Preview("Backlog — empty") {
@@ -141,7 +266,7 @@ private func previewContainer() -> ModelContainer {
     }
     .modelContainer(
         try! ModelContainer(
-            for: ClaudeTask.self,
+            for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
     )
@@ -215,6 +340,7 @@ private struct TaskRow: View {
             Text(task.title)
                 .lineLimit(1)
             Spacer()
+            priorityBadge
             taskTypeBadge
         }
         .padding(.vertical, 2)
@@ -234,6 +360,17 @@ private struct TaskRow: View {
         default: // "pending"
             Image(systemName: "circle").foregroundStyle(.secondary)
         }
+    }
+
+    private var priorityBadge: some View {
+        let (label, color) = task.priorityDisplay
+        return Text(label)
+            .font(.caption.bold())
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(color.opacity(0.15))
+            .foregroundStyle(color)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
     private var taskTypeBadge: some View {

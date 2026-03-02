@@ -6,7 +6,7 @@ import AppKit
 ///
 /// Flow:
 /// 1. Pick a pending task from the backlog.
-/// 2. Choose a git repo path.
+/// 2. Choose a git repo path (auto-filled from task's project if available).
 /// 3. Tap "Spawn Agent" — creates a worktree, saves ClaudeAgent to SwiftData, opens terminal window.
 struct NewAgentSheet: View {
     @Environment(\.modelContext) private var context
@@ -47,10 +47,19 @@ struct NewAgentSheet: View {
                     Picker("Task", selection: $selectedTask) {
                         Text("Select a task…").tag(Optional<ClaudeTask>.none)
                         ForEach(pendingTasks) { task in
-                            Text(task.title).tag(Optional(task))
+                            HStack {
+                                priorityLabel(task)
+                                Text(task.title)
+                            }.tag(Optional(task))
                         }
                     }
                     .labelsHidden()
+                    .onChange(of: selectedTask) { _, newTask in
+                        // Auto-fill repo path from the task's project
+                        if let path = newTask?.project?.path, !path.isEmpty {
+                            repoPath = path
+                        }
+                    }
                 }
             }
 
@@ -121,10 +130,18 @@ struct NewAgentSheet: View {
             }
         }
         .padding(24)
-        .frame(width: 480, height: 340)
+        .frame(width: 480, height: 360)
     }
 
-    // MARK: - Actions
+    // MARK: - Helpers
+
+    @ViewBuilder
+    private func priorityLabel(_ task: ClaudeTask) -> some View {
+        let (label, color) = task.priorityDisplay
+        Text(label)
+            .font(.caption.bold())
+            .foregroundStyle(color)
+    }
 
     private func skillCommand(for task: ClaudeTask) -> String? {
         let slug = task.title
@@ -190,18 +207,22 @@ struct NewAgentSheet: View {
 
 #Preview("With pending tasks") {
     let container = try! ModelContainer(
-        for: ClaudeTask.self, ClaudeAgent.self,
+        for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
-    let tasks: [(String, String)] = [
-        ("Implement dark mode", "feature"),
-        ("Fix token badge overflow", "fix"),
-        ("Migrate to Observation", "project"),
+    let proj = ClaudeProject(name: "my-app", path: "/Users/dev/git/my-app")
+    container.mainContext.insert(proj)
+
+    let tasks: [(String, String, String, ClaudeProject?)] = [
+        ("Implement dark mode", "feature", "urgent", proj),
+        ("Fix token badge overflow", "fix", "high", nil),
+        ("Migrate to Observation", "project", "medium", proj),
     ]
-    for (i, (title, type)) in tasks.enumerated() {
-        let task = ClaudeTask(title: title, taskType: type)
+    for (i, (title, type, priority, project)) in tasks.enumerated() {
+        let task = ClaudeTask(title: title, taskType: type, priority: priority)
         task.sortOrder = i
         task.status = "pending"
+        task.project = project
         container.mainContext.insert(task)
     }
     return NewAgentSheet()
@@ -212,7 +233,7 @@ struct NewAgentSheet: View {
     NewAgentSheet()
         .modelContainer(
             try! ModelContainer(
-                for: ClaudeTask.self, ClaudeAgent.self,
+                for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self,
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
             )
         )
