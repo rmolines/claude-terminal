@@ -185,3 +185,35 @@ struct NewAgentSheet: View {
         dismiss()
     }
 }
+
+// MARK: - Previews
+
+#Preview("With pending tasks") {
+    let container = try! ModelContainer(
+        for: ClaudeTask.self, ClaudeAgent.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let tasks: [(String, String)] = [
+        ("Implement dark mode", "feature"),
+        ("Fix token badge overflow", "fix"),
+        ("Migrate to Observation", "project"),
+    ]
+    for (i, (title, type)) in tasks.enumerated() {
+        let task = ClaudeTask(title: title, taskType: type)
+        task.sortOrder = i
+        task.status = "pending"
+        container.mainContext.insert(task)
+    }
+    return NewAgentSheet()
+        .modelContainer(container)
+}
+
+#Preview("Empty backlog") {
+    NewAgentSheet()
+        .modelContainer(
+            try! ModelContainer(
+                for: ClaudeTask.self, ClaudeAgent.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            )
+        )
+}

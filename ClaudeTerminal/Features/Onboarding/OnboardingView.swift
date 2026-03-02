@@ -163,3 +163,18 @@ struct OnboardingView: View {
         }
     }
 }
+
+#Preview("Not installed") {
+    @Previewable @State var status: HookInstallStatus = .notInstalled
+    OnboardingView(hookStatus: $status, onDismiss: {})
+}
+
+#Preview("Installed") {
+    @Previewable @State var status: HookInstallStatus = .installed
+    OnboardingView(hookStatus: $status, onDismiss: {})
+}
+
+#Preview("Outdated") {
+    @Previewable @State var status: HookInstallStatus = .outdated(reason: "missing PreToolUse hook")
+    OnboardingView(hookStatus: $status, onDismiss: {})
+}

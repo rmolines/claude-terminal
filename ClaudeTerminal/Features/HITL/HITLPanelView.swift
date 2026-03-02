@@ -29,3 +29,17 @@ struct HITLPanelView: View {
         .frame(width: 400)
     }
 }
+
+#Preview("Approval required") {
+    HITLPanelView(
+        sessionID: "preview-session-1",
+        description: "Agent wants to run: rm -rf .build && swift build -c release"
+    )
+}
+
+#Preview("Bash command guard") {
+    HITLPanelView(
+        sessionID: "preview-session-2",
+        description: "Agent wants to execute: gh pr merge 42 --squash"
+    )
+}

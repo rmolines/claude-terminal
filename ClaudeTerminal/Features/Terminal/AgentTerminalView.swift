@@ -98,3 +98,21 @@ struct AgentTerminalView: View {
         return "\(m / 60)h \(m % 60)m"
     }
 }
+
+#Preview("Running — with tokens") {
+    var session = AgentSession(sessionID: "preview-abc123", cwd: "/Users/dev/git/claude-terminal")
+    session.status = .running
+    session.currentActivity = "$ swift build -c release"
+    session.totalInputTokens = 48_200
+    session.totalOutputTokens = 12_400
+    return AgentTerminalView(session: session)
+        .frame(width: 900, height: 500)
+}
+
+#Preview("Awaiting HITL") {
+    var session = AgentSession(sessionID: "preview-hitl", cwd: "/Users/dev/git/my-app")
+    session.status = .awaitingInput
+    session.currentActivity = "Awaiting approval"
+    return AgentTerminalView(session: session)
+        .frame(width: 900, height: 500)
+}
