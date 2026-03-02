@@ -72,13 +72,8 @@ private func firstMeaningfulLine(lines: [String]) -> String {
     for line in lines {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty { continue }
-        if trimmed.hasPrefix("#") {
-            // Strip leading # and whitespace — use heading text as description
-            let stripped = trimmed.drop(while: { $0 == "#" || $0 == " " })
-            let text = String(stripped).trimmingCharacters(in: .whitespaces)
-            if !text.isEmpty { return text }
-            continue
-        }
+        if trimmed.hasPrefix("#") { continue }   // skip headings
+        if trimmed.hasPrefix("---") { continue } // skip hr / frontmatter fence
         return trimmed
     }
     return ""
