@@ -74,6 +74,8 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | Code signing | Ordem errada causa falha no Gatekeeper | Helper PRIMEIRO, frameworks, app por último — nunca `--deep` |
 | SwiftUI @main + SPM | Conflito com `main.swift` no mesmo target | Usar `@main` OU `main.swift`, nunca ambos |
 | bootstrap.yml | Só dispara no primeiro push (`run_number == 1`) | Não re-rodar manualmente |
+| MCP servers no Claude Code | `settings.json` não aceita `mcpServers` (schema rejeita). Servers ficam em `~/.claude.json` | Usar `claude mcp add --scope user` para registro global; checar `~/.claude.json` no `mcpServers` key |
+| `make xcode-mcp` sem `--scope user` | Sem `--scope user`, o MCP fica em scope local do projeto — não aparece em outras sessões/worktrees | Sempre passar `--scope user` ao registrar servidores MCP globais |
 | gh pr merge | `--delete-branch` falha em worktree (`main` já checked out no repo pai) | Usar `--squash` sem `--delete-branch`; deletar remote via `gh api -X DELETE repos/.../git/refs/heads/<branch>` |
 | SPM executável | `@testable import` não funciona em `.executableTarget` | Mover lógica testável para `.target` (library); ou usar actor mirror local no test file |
 | SPM binário (sem .app bundle) | Keyboard input não funciona — janelas não recebem events do OS | `NSApp.setActivationPolicy(.regular)` + `NSApp.activate(ignoringOtherApps: true)` em `applicationDidFinishLaunching` |

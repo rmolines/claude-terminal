@@ -4,6 +4,21 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-02 — Claude Code MCP servers ficam em `~/.claude.json`, não em `settings.json`
+
+`~/.claude/settings.json` **não aceita** o campo `mcpServers` — o schema valida e rejeita a edição.
+Os servidores MCP são guardados em `~/.claude.json` com a chave `mcpServers`.
+
+O scope do `claude mcp add` controla onde fica:
+- `--scope user` → `~/.claude.json` (global, disponível em todos os projetos e sessões)
+- sem `--scope` (padrão: `local`) → `~/.claude.json` com chave de projeto (só naquele diretório)
+
+**Fix no Makefile:** sempre passar `--scope user` no `xcode-mcp` para o servidor ser global.
+
+**Check no skill:** buscar em `~/.claude.json` (campo `mcpServers`), não em `settings.json`.
+
+---
+
 ## 2026-03-02 — Curly quotes quebram string interpolation Swift
 
 Usar aspas tipográficas (`"` / `"`) dentro de string interpolation (`"\(var)"`) gera erro críptico do compilador: `'any WritableKeyPath<_, _> & Sendable' cannot conform to FormatStyle`. O parser do Swift interpreta a aspa tipográfica como delimitador de string aninhada.

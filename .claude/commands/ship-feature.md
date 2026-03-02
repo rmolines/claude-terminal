@@ -16,7 +16,19 @@ O argumento é o nome da feature (mesmo nome usado no `/start-feature`).
 ## Passo 0 — Verificar Xcode MCP
 
 ```bash
-python3 -c "import json,sys; d=json.load(open('$HOME/.claude/settings.json')); sys.exit(0 if 'xcode' in d.get('mcpServers',{}) else 1)" 2>/dev/null
+# Claude Code stores MCP servers in ~/.claude.json (user scope) or project .mcp.json
+python3 -c "
+import json, sys, os
+home = os.path.expanduser('~')
+for path in [os.path.join(home, '.claude.json'), os.path.join(home, '.claude', 'settings.json')]:
+    try:
+        d = json.load(open(path))
+        if 'xcode' in d.get('mcpServers', {}):
+            sys.exit(0)
+    except Exception:
+        pass
+sys.exit(1)
+" 2>/dev/null
 ```
 
 Se retornar erro (exit ≠ 0): **parar imediatamente** e instruir o usuário:
