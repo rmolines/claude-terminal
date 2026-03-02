@@ -26,6 +26,35 @@ AD-HOC (feature sem roadmap)
 
 ---
 
+## Diagrama de fluxo
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> refine_idea
+    refine_idea --> start_project
+    start_project --> plan_roadmap
+    plan_roadmap --> start_milestone : roadmap.md
+
+    start_milestone --> start_feature : sprint.md
+
+    start_feature --> implement : worktree + plan.md
+    implement --> validate
+    validate --> implement : drift detectado
+    validate --> ship_feature : alinhado ✓
+    ship_feature --> close_feature : PR merged
+
+    close_feature --> start_feature : próxima feature
+    close_feature --> start_milestone : milestone completo
+    close_feature --> [*] : projeto done
+
+    implement --> project_compass : perdido?
+    project_compass --> implement : orientado
+```
+
+---
+
 ## Tabela de skills
 
 | Skill | Quando usar | Input | Output | Próxima skill |
