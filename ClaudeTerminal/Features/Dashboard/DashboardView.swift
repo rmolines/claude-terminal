@@ -246,7 +246,7 @@ private func populateSampleSessions() {
     DashboardView()
         .modelContainer(
             try! ModelContainer(
-                for: ClaudeTask.self, ClaudeAgent.self,
+                for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self,
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
             )
         )
@@ -258,7 +258,7 @@ private func populateSampleSessions() {
     DashboardView()
         .modelContainer(
             try! ModelContainer(
-                for: ClaudeTask.self, ClaudeAgent.self,
+                for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self,
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
             )
         )
