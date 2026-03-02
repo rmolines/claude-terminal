@@ -136,7 +136,6 @@ Bloqueios abertos: <PRs abertos em review, ou "nenhum">
 ```
 
 <Contexto adicional em 1-2 frases, se relevante.>
-```
 
 ---
 

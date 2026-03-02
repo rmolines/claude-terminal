@@ -57,7 +57,7 @@ Leia a seção do milestone especificado no roadmap.md. Para cada item (`- [ ]`)
 
 Apresente a decomposição ao usuário **antes de escrever qualquer arquivo**:
 
-```text
+~~~text
 ## Decomposição — <Milestone>: <nome>
 
 **Critério de done do milestone:** <critério do roadmap.md>
@@ -78,7 +78,7 @@ Apresente a decomposição ao usuário **antes de escrever qualquer arquivo**:
 **Primeira feature a executar:** `/start-feature <slug-1>`
 
 Confirma essa decomposição? (ou me diga o que ajustar — posso fundir, dividir ou reordenar features)
-```
+~~~
 
 Aguarde confirmação antes de continuar. Se o usuário pedir ajustes, incorpore e apresente novamente antes de escrever.
 
@@ -88,7 +88,7 @@ Aguarde confirmação antes de continuar. Se o usuário pedir ajustes, incorpore
 
 Após confirmação, crie o diretório `.claude/feature-plans/<projeto>/<milestone>/` se não existir, e salve o `sprint.md`:
 
-```markdown
+~~~markdown
 # Sprint <Milestone> — <nome do milestone>
 _Gerado em: <data>_
 
@@ -124,7 +124,7 @@ Uma feature está bem-scoped quando:
 ## Próximo passo
 
 /start-feature <slug-da-feature-1>
-```
+~~~
 
 ---
 
