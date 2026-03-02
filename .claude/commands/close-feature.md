@@ -1,12 +1,24 @@
 # /close-feature
 
-Fecha uma feature após PR merged: cleanup do worktree e atualiza LEARNINGS.md.
+Você é um assistente de desenvolvimento executando o skill `/close-feature`.
 
-O argumento é o nome da feature (mesmo nome usado no `/start-feature`).
+Este skill fecha uma feature após ela já ter sido validada em produção via `/ship-feature`.
+Cuida apenas de **documentação e cleanup** — não faz commit, push, PR nem deploy.
+
+Se a feature ainda não foi validada em produção, rode `/ship-feature` primeiro.
 
 ---
 
-## Passo 1 — Verificar que PR foi merged
+## Passos
+
+### 0. Ler o plano da feature (se existir)
+
+Perguntar o nome da feature se não foi informado.
+
+Verificar se `.claude/feature-plans/<nome>/plan.md` existe.
+Se sim: ler integralmente para entender o que foi feito (contexto para a documentação).
+
+### 0.5 — Verificar que PR foi merged
 
 ```bash
 gh pr view feature/<nome> --json state --jq '.state'
@@ -15,9 +27,7 @@ gh pr view feature/<nome> --json state --jq '.state'
 
 Se não retornar "MERGED": não continuar. PR ainda está aberto ou foi fechado sem merge.
 
----
-
-## Passo 1.5 — Marcar feature como done no sprint.md
+### 0.6 — Marcar feature como done no sprint.md
 
 Após confirmar que PR foi merged, localizar o sprint.md que contém o slug da feature e atualizar o status:
 
@@ -32,89 +42,174 @@ No arquivo encontrado, atualizar a linha da feature:
 
 Se o sprint.md usa a tabela com coluna `Status`, mudar o valor para `✅ done`.
 
-Fazer commit junto com as atualizações de docs no Passo 4.
+### 1. Atualizar documentação
+
+Execute cada item em sequência:
+
+#### 1a. HANDOVER.md
+
+Gerar entrada com:
+- Data atual (`YYYY-MM-DD`)
+- O que foi feito, decisões tomadas, armadilhas encontradas, próximos passos, arquivos-chave
+
+Fazer append em `HANDOVER.md` na raiz do projeto (criar se não existir).
+
+#### 1b. CHANGELOG.md — prepend no topo
+
+Gerar entrada no `CHANGELOG.md` (raiz do repo). Criar o arquivo se não existir.
+
+**Coletar dados necessários:**
+- Ler `.claude/feature-plans/<nome>/plan.md` (se existir) para contexto
+- Número do PR mergeado: `git log --oneline -5` ou perguntar ao usuário se não estiver claro
+- URL do repo: `git remote get-url origin` (converter SSH → HTTPS se necessário)
+- Tipo: `feat` / `fix` / `improvement` / `breaking` (inferir do contexto)
+
+**Formato para feature (feat/improvement/breaking):**
+
+```markdown
+## [<type>] <Título conciso> — YYYY-MM-DD
+
+**Tipo:** <type>
+**Tags:** <tag1>, <tag2>
+**PR:** [#N](<repo-url>/pull/N) · **Complexidade:** <simples|média|alta>
+
+### O que mudou
+<1-2 frases em linguagem simples: o que o usuário/dev vê de diferente>
+
+### Detalhes técnicos
+- <bullet com arquivo ou mudança principal>
+- <bullet 2>
+
+### Impacto
+- **Breaking:** <Não | Sim — descrição>
+
+### Arquivos-chave
+- `path/to/file` — descrição
 
 ---
+```
 
-## Passo 2 — Cleanup do worktree
+**Formato para fix:**
+
+```markdown
+## [fix] <Título conciso> — YYYY-MM-DD
+
+**Tipo:** fix
+**Tags:** <tag1>, <tag2>
+**PR:** [#N](<repo-url>/pull/N) · **Complexidade:** simples
+
+### Problema
+<1-2 frases descrevendo o bug>
+
+### Fix aplicado
+<o que foi feito para corrigir>
+
+### Arquivos-chave
+- `path/to/file` — descrição
+
+---
+```
+
+**Inserir:** logo após a linha `# Changelog` (antes da primeira entrada `## `).
+Usar Edit tool com `old_string` = primeira linha após o cabeçalho e `new_string` = nova entrada + essa mesma linha.
+
+#### 1c. MEMORY.md coordinator — commit direto em main (se existir)
+
+Verificar se `.claude/agent-memory/coordinator/MEMORY.md` existe.
+
+**Se existir:**
 
 ```bash
-FEATURE="<nome>"
-WORKTREE_PATH=".claude/worktrees/${FEATURE}"
-BRANCH="feature/${FEATURE}"
+REPO_ROOT=$(git worktree list | head -1 | awk '{print $1}')
+MEMORY_FILE="$REPO_ROOT/.claude/agent-memory/coordinator/MEMORY.md"
 
-# Remover worktree
-git worktree remove "$WORKTREE_PATH" --force
-
-# Deletar branch local
-git branch -d "$BRANCH" 2>/dev/null || true
-
-# Atualizar main
-git checkout main
-git pull origin main
-
-# Prune worktrees residuais (limpeza preventiva)
-git worktree prune
+git -C "$REPO_ROOT" pull --rebase origin main
 ```
 
----
-
-## Passo 3 — Documentação
-
-### LEARNINGS.md
-
-Adicionar entry com:
-- Data e nome da feature
-- O que foi aprendido sobre o stack (SwiftData gotchas, IPC, concurrency, etc.)
-- O que funcionou bem
-- O que teria feito diferente
-- Armadilhas novas encontradas (se houver, adicionar também em `CLAUDE.md`)
-
-### CLAUDE.md
-
-Se descobriu novo hot file, nova armadilha, ou a armadilha é diferente do que estava documentado:
-atualizar a tabela de armadilhas.
-
-### memory/MEMORY.md
-
-Se o aprendizado é relevante para futuras features (padrão arquitetural, decisão permanente):
-adicionar em `memory/MEMORY.md`.
-
----
-
-## Passo 4 — Commit (se houve mudança em docs)
+Editar MEMORY_FILE com Edit tool (path absoluto):
+- Remover a linha da tabela `## Worktrees ativas` onde Worktree = `<nome>`
+- Remover TODAS as linhas da tabela `## Hot file claims (ativo)` onde Worktree = `<nome>`
 
 ```bash
-git add LEARNINGS.md CLAUDE.md memory/MEMORY.md .claude/feature-plans/claude-terminal/M*/sprint.md
-git commit -m "docs: add learnings from feature/<nome>
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-git push origin main
+git -C "$REPO_ROOT" add .claude/agent-memory/coordinator/MEMORY.md
+git -C "$REPO_ROOT" commit -m "chore(coordinator): unregister worktree <nome>"
+git -C "$REPO_ROOT" push origin main
 ```
 
----
+**Se não existir:** pular este passo.
 
-## Passo 5 — Verificação final
+#### 1d. LEARNINGS.md (se houver novidades)
+
+Verificar se `LEARNINGS.md` existe no projeto.
+
+**Você** decide se algo desta sessão vale registrar — não pergunte ao usuário.
+Critério: algo não documentado que causou surpresa, ou que seria útil em situações futuras.
+
+Se sim: propor o aprendizado ao usuário e, com aprovação, adicionar:
+```markdown
+## <data> — <título curto>
+<aprendizado>
+```
+
+Se não houver nada novo: pular sem perguntar.
+
+#### 1e. CLAUDE.md — armadilhas (se houver novidades)
+
+**Você** decide se houve armadilha nova — não pergunte ao usuário.
+Critério: problema não-óbvio que outro agente cometeria no mesmo contexto.
+
+Se sim: propor ao usuário e, com aprovação, adicionar à tabela de armadilhas no CLAUDE.md.
+Se não houver nada novo: pular sem perguntar.
+
+### 2. Remover worktree e branch local
 
 ```bash
-# Confirmar que não há worktrees residuais
-git worktree list
+REPO_ROOT=$(git worktree list | head -1 | awk '{print $1}')
+WORKTREE_PATH="$REPO_ROOT/.claude/worktrees/<nome>"
+```
 
-# Confirmar que o branch foi removido
-git branch --list "feature/<nome>"
+Verificar se a worktree existe:
+```bash
+git -C "$REPO_ROOT" worktree list | grep "<nome>"
+```
 
-# Build deve continuar passando no main
-swift build --configuration debug
+- Se existir e o agente atual estiver **dentro** dela: avisar que precisa sair primeiro (a worktree não pode remover a si mesma)
+- Se existir e o agente estiver **fora** dela:
+  ```bash
+  git -C "$REPO_ROOT" worktree remove --force "$WORKTREE_PATH"
+  git -C "$REPO_ROOT" branch -D "feature/<nome>" 2>/dev/null || true
+  git -C "$REPO_ROOT" worktree prune
+  ```
+- Se não existir: pular sem mensagem
+
+### 3. Limpar feature-plans
+
+- Verificar se existe `.claude/feature-plans/<nome>/`
+- **Sempre arquivar automaticamente** → mover para `.claude/feature-plans/archived/<nome>/` sem perguntar
+
+### 4. Resumo final
+
+```
+✅ Feature encerrada!
+
+Documentação:
+- HANDOVER.md ✅
+- CHANGELOG.md ✅
+- sprint.md ✅ (status → done)
+- MEMORY.md coordinator <✅ ou ⏭️ sem coordinator>
+- LEARNINGS.md <✅ ou ⏭️ pulado>
+- CLAUDE.md armadilhas <✅ ou ⏭️ pulado>
+
+Worktree: <removida | já não existia | aguardando saída manual>
+feature-plans: arquivado
+
+Próximos passos:
+- /project-compass para ver o estado atualizado do milestone
 ```
 
 ---
 
-## Passo 5.5 — Orientação
+## Regras
 
-Após o cleanup, rode `/project-compass` para ver o estado atualizado do milestone:
-- Se ainda há features `pending` no sprint.md, o compass mostrará a próxima feature e o comando exato para iniciar
-- Se o milestone ficou 100% concluído, o compass apontará para o próximo milestone
-
-```
-/project-compass
-```
+- Nunca fazer commit, push ou PR — responsabilidade do `/ship-feature`
+- Se chamado sem feature validada em produção: lembrar de rodar `/ship-feature` primeiro
