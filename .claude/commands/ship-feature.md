@@ -1,85 +1,259 @@
 # /ship-feature
 
-Entrega uma feature do claude-terminal: build, tests, PR.
+Você é um assistente de desenvolvimento executando o skill `/ship-feature`.
 
-O argumento é o nome da feature (mesmo nome usado no `/start-feature`).
+Este skill entrega a feature em produção e valida que está funcionando.
+Pode ser rodado múltiplas vezes durante o ciclo de uma feature — uma por iteração.
 
----
-
-## Pré-condições
-
-- Worktree ativo em `.claude/worktrees/<nome>`
-- Todos os arquivos commitados no branch `feature/<nome>`
+Após validação bem-sucedida, use `/close-feature` para documentação e cleanup.
 
 ---
 
-## Passo 1 — Build de todos os targets
+## Configuração do projeto
+
+Antes de qualquer passo, leia o `CLAUDE.md` do projeto e extraia:
+- **Comando de build** (ex: `npm run build`, `go build`, `make build`) → `{{BUILD_CMD}}`
+- **Comando de teste** (ex: `npm test`, `pytest`, `make test`) → `{{TEST_CMD}}`
+- **Comando de smoke test** (ex: `make test MSG="..."`, `curl`, script de validação) → `{{SMOKE_TEST}}`
+- **Hot files do projeto** (arquivos modificados por quase toda feature)
+
+Se o CLAUDE.md não listar hot files explicitamente: inferir pelos arquivos de CI e configuração presentes no repo (ex: `.github/workflows/`, `docker-compose.yml`, `Makefile`, arquivos de config principal).
+Se o CLAUDE.md não especificar comandos de build/teste/smoke test: usar `plan.md` como fonte secundária.
+Se nenhum dos dois tiver: perguntar ao usuário antes de prosseguir.
+
+---
+
+## Detecção de modo
+
+1. Perguntar o nome da feature se não foi informado
+2. Obter branch atual: `git branch --show-current`
+3. Verificar se a branch existe no remote:
+   ```bash
+   git ls-remote --heads origin <branch>
+   ```
+   - **Retornou output** → **Modo PR** (primeira execução ou iteração antes do merge)
+   - **Retornou vazio** → **Modo direto** (branch já foi mergeada; esta é uma iteração)
+
+4. Verificar se há algo para entregar:
+   ```bash
+   git status --short
+   git log origin/main..HEAD --oneline
+   ```
+   - Se limpo e sem commits à frente → perguntar se quer rodar o smoke test mesmo assim ou encerrar
+
+---
+
+## Modo PR — primeira execução
+
+### 0. Ler o plano da feature
+
+Se `.claude/feature-plans/<nome>/plan.md` existe: ler integralmente e extrair:
+- Checklist de infraestrutura (secrets, configurações, scripts de setup)
+- Smoke test recomendado
+
+### 1. Commit (se houver mudanças pendentes)
+
+1. Identificar todos os arquivos modificados/novos
+2. **Não adicionar arquivos com secrets** (`.env`, tokens hardcoded)
+3. Compor mensagem de commit no formato:
+   ```
+   feat|fix|chore: <descrição concisa>
+
+   - <detalhe 1>
+   - <detalhe 2>
+
+   Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+   ```
+4. Executar `git add <arquivos específicos>` + `git commit` **sem pedir confirmação da mensagem**
+
+### 1.5. Preflight de hot files
+
+Detectar sobreposição com `origin/main` antes do rebase:
 
 ```bash
-cd .claude/worktrees/<nome>
-
-swift build --configuration debug 2>&1
+git fetch origin
+MERGE_BASE=$(git merge-base HEAD origin/main)
+git diff --name-only $MERGE_BASE origin/main > /tmp/main_changed
+git diff --name-only $MERGE_BASE HEAD       > /tmp/branch_changed
+OVERLAP=$(comm -12 <(sort /tmp/main_changed) <(sort /tmp/branch_changed))
 ```
 
-Se falhar: parar, reportar o erro completo, não continuar.
+Para cada arquivo em `OVERLAP`:
+- Se é hot file do projeto → **⛔ ALERTA**: "origin/main alterou `<arquivo>` desde que você branchou. O rebase vai colidir. Verifique o diff antes de continuar."
+  - Perguntar: "Deseja prosseguir com o rebase mesmo assim?"
+  - Sim → prosseguir (haverá conflito manual)
+  - Não → encerrar
+- Se não é hot file → **⚠️ aviso leve**: "origin/main também modificou `<arquivo>`. Rebase pode ter conflito."
 
----
+Se `OVERLAP` vazio → prosseguir sem mensagem.
 
-## Passo 2 — Testes
+### 2. Rebase em cima do main
 
 ```bash
-swift test --configuration debug 2>&1
+git rebase origin/main
 ```
 
-Se falhar: parar, reportar, não criar PR.
+Se houver conflitos: listar e pedir orientação ao usuário antes de tentar resolver.
 
----
-
-## Passo 3 — Checklist manual antes do PR
-
-- [ ] Schema SwiftData mudou? → `VersionedSchema` foi atualizado com `MigrationStage`?
-- [ ] `IPCProtocol.swift` mudou? → ClaudeTerminal E ClaudeTerminalHelper compilam com a mesma versão?
-- [ ] Entitlements mudaram? → `app.entitlements` e `helper.entitlements` estão corretos?
-- [ ] Novo código processa input de hook? → allowlist aplicada?
-- [ ] Novo código executa processo filho? → env vars filtrados?
-- [ ] Nova dependência SPM adicionada? → `Package.resolved` foi atualizado (committed)?
-
----
-
-## Passo 4 — Commit final e PR
+### 3. Push
 
 ```bash
-cd .claude/worktrees/<nome>
+git push -u origin <branch-atual>
+```
 
-# Push do branch
-git push origin feature/<nome>
+### 4. Criar Pull Request
 
-# Criar PR
-gh pr create \
-  --title "<título conciso em inglês>" \
-  --body "$(cat <<'EOF'
-## Summary
-- <o que muda e por quê>
-- <targets afetados: ClaudeTerminal / ClaudeTerminalHelper / Shared>
+```bash
+gh pr create --title "<título>" --body "$(cat <<'EOF'
+## O que foi feito
+- <bullet list das mudanças>
 
-## Test plan
-- [ ] `swift build` passa sem warnings novos
-- [ ] `swift test` passa
-- [ ] Testado manualmente: <descrever o fluxo testado>
+## Como testar
+- <passos para verificar que funciona>
 
-## Schema / Protocol changes
-<"None" ou descrever a MigrationStage adicionada / mudança no IPCProtocol>
+## Impacto em produção
+- Restart/redeploy necessário: sim/não
+- Novo secret de ambiente: <nome> ou nenhum
+- Script de setup necessário: <descrição> ou nenhum
+- Mudança em configuração crítica: sim/não
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+## Arquivos modificados
+- `path/to/file` — <descrição>
 EOF
 )"
 ```
 
+Criar diretamente **sem pedir confirmação** — exibir a URL do PR após criar.
+
+### 5. Checklist pré-merge
+
+Com base no `plan.md` (passo 0), verificar cada item antes de mergear:
+
+**Novos secrets de ambiente?**
+- Se sim: ⚠️ lembrar o usuário de configurá-los no ambiente (GitHub Secrets, Vercel, Railway, etc.) ANTES do merge
+- O deploy vai falhar silenciosamente se o secret não existir no CI
+- 🔴 Aguardar confirmação antes de continuar
+
+**Script de setup/migração necessário?**
+- Se sim: anotar — será executado no passo 6b
+
+**Mudança em arquivo de configuração que requer restart?**
+- Se sim: anotar — restart será necessário após o deploy
+
+**Commits inesperados na branch?**
+- `git log origin/main..HEAD --oneline` — garantir que só os commits desta feature estão
+- Se aparecer algo inesperado, investigar antes de mergear
+
+### 6. Merge e acompanhamento do CI
+
+Mergear diretamente **sem pedir confirmação**:
+```bash
+gh pr merge --squash --delete-branch
+```
+
+Monitorar o run de CI disparado pelo merge:
+```bash
+gh run list --limit 3
+# identificar o run de deploy
+gh run watch <id>
+```
+
+- Se o run **falhar**: exibir erro com `gh run view <id> --log-failed` e **parar** — não avançar sem CI verde
+
+> **Nota:** em projetos com tempo de startup longo, o CI pode expirar mesmo com o deploy funcionando (false positive). Antes de declarar falha: verificar se os serviços estão rodando conforme descrito no CLAUDE.md do projeto.
+
+### 6a. Verificar que o deploy chegou ao ambiente
+
+Usar o comando de verificação descrito no CLAUDE.md ou `plan.md`.
+
+Se o CLAUDE.md não especificar: perguntar ao usuário como verificar que o deploy foi aplicado.
+
+**Não declarar deploy OK sem confirmar esta etapa.**
+
+### 6b. Executar script de setup (se necessário)
+
+Se o plano indicou setup necessário: executar agora e verificar que concluiu sem erro.
+
+### 7. Smoke test
+
+Usar `{{SMOKE_TEST}}` (substituído pelo comando concreto do projeto; se ainda é placeholder, extrair do CLAUDE.md ou `plan.md`).
+
+Se falhar: investigar logs antes de escalar o problema.
+**Não declarar sucesso com smoke test vermelho.**
+
+### 8. Resultado
+
+Se tudo passou:
+```
+✅ Feature em produção e validada!
+
+PR: <url>
+CI: ✅ passou em <duração>
+Smoke test: ✅
+
+Se encontrar problemas, corrija na worktree e rode /ship-feature novamente.
+Quando estiver satisfeito, rode /close-feature para documentação e cleanup.
+```
+
+Se algo falhou: reportar o erro e aguardar orientação — não encerrar.
+
 ---
 
-## Critério de "done"
+## Modo direto — iteração pós-merge
 
-- `swift build` e `swift test` passam sem erros
-- CI verde no PR (lint + build + test)
-- PR criado com descrição adequada
-- Nenhum item do checklist manual em aberto
+Execute quando a branch remota não existe mais (foi deletada após merge anterior).
+
+### 1. Commit (se houver mudanças pendentes)
+
+Mesmo fluxo do Modo PR passo 1 — sem pedir confirmação.
+
+### 1.5. Preflight de hot files
+
+Mesmo procedimento do Modo PR passo 1.5.
+
+### 2. Push direto para main
+
+```bash
+git fetch origin
+git rebase origin/main
+git push origin HEAD:main
+```
+
+Se houver conflitos no rebase: listar e pedir orientação. Nunca usar `--force`.
+
+### 3. Acompanhar CI
+
+```bash
+gh run list --limit 3
+gh run watch <id>
+```
+
+Se falhar: exibir erro e parar.
+
+### 4. Verificar deploy e smoke test
+
+Mesmo fluxo do Modo PR passos 6a, 6b e 7.
+
+### 5. Resultado
+
+```
+✅ Iteração entregue e validada!
+
+Commit: <sha curto>
+CI: ✅ passou em <duração>
+Smoke test: ✅
+
+Se precisar de mais iterações, corrija e rode /ship-feature novamente.
+Quando estiver satisfeito, rode /close-feature para documentação e cleanup.
+```
+
+---
+
+## Regras
+
+- Nunca `git push --force` sem aprovação explícita do usuário
+- Nunca commitar arquivos com secrets (`.env`, tokens hardcoded)
+- Commit e PR criados autonomamente — sem aguardar confirmação da mensagem
+- Se qualquer passo falhar: parar e reportar antes de continuar
+- **Nunca declarar "em produção" sem ter verificado deploy (passo 6a) e smoke test (passo 7)**
+- **O smoke test usa o comando do CLAUDE.md ou plan.md — não inventar um genérico**
