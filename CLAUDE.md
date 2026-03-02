@@ -81,6 +81,8 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | NavigationSplitView sidebar | `@FocusState` + `TextField` mostra anel mas não recebe keyboard | Usar `NSViewRepresentable` com `NSTextField` que chama `window.makeFirstResponder(field)` diretamente |
 | PTY environment | PATH hardcoded não inclui `~/.local/bin`, nvm, etc. | Usar `zsh -l -i -c "..."` para herdar PATH completo do usuário |
 | Worktree + plan.md | Escrever `plan.md` no working tree do `main` antes de criar worktree → arquivo fica não-rastreado, bloqueia `git pull` após merge | Sempre escrever `plan.md` no path do worktree: `/worktrees/<feature>/...` |
+| Implementação no main em vez do worktree | Agente implementa arquivos diretamente no `main` (sem worktree) → arquivos ficam como unstaged em `main`, precisam ser copiados manualmente para o worktree antes do commit | Sempre confirmar o CWD antes de criar arquivos: `git branch --show-current` deve retornar `feature/<nome>` |
+| Curly quotes em string interpolation Swift | `"texto \(var)"` com aspas tipográficas (`"..."`) dentro do literal quebra o parser do Swift com erro críptico de `FormatStyle` | Usar aspas retas escapadas: `\"` dentro de string interpolation |
 
 ## Worktree convention
 

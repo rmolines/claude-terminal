@@ -125,3 +125,23 @@ Conectou os 6 fios desconectados do scaffold para que eventos fluam:
 - Demo GIF/video for README (identified as high-risk if not done before launch)
 - CONTRIBUTING.md for community contributors
 - Mark repo as Template in GitHub Settings (done via API in bootstrap sequence)
+
+---
+
+## 2026-03-02 — skill-frontmatter-registry (PR #15)
+
+**O que foi feito:** Adicionada Skills Registry — sheet acessível via botão sparkles na toolbar do Dashboard. Lista auto-trigger skills (`~/.claude/skills/`), global commands (`~/.claude/commands/`) e project commands (`.claude/commands/` de cada sessão ativa), com busca em tempo real e badges coloridos por tipo.
+
+**Decisões técnicas:**
+- Parsing de frontmatter YAML em Swift puro (sem dependência externa) — string splitting simples
+- `loadSkills` como função `async` livre (não actor) — leitura one-shot ao abrir o sheet, sem estado persistente
+- `SkillKind.allCases` garante ordem fixa das seções independente da ordem dos entries
+- Description fallback: pula headings e fences `---`, usa primeira linha de prosa
+
+**Arquivos-chave:**
+- `ClaudeTerminal/Features/SkillRegistry/SkillEntry.swift` — model + enum
+- `ClaudeTerminal/Features/SkillRegistry/SkillRegistryService.swift` — scan + parse
+- `ClaudeTerminal/Features/SkillRegistry/SkillRegistryView.swift` — UI
+- `ClaudeTerminal/Features/Dashboard/DashboardView.swift` — botão + sheet
+
+**Próximos passos possíveis:** mostrar o trigger condition de skills auto-trigger; abrir o arquivo da skill no Finder ao clicar.

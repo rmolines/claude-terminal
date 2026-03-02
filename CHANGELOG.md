@@ -2,6 +2,29 @@
 
 ---
 
+## [feat] Skills Registry — 2026-03-02
+
+**Tipo:** feat
+**Tags:** dashboard, skills, ux
+**PR:** [#15](https://github.com/rmolines/claude-terminal/pull/15) · **Complexidade:** simples
+
+### O que mudou
+Botão sparkles na toolbar do Dashboard abre um sheet com todas as skills e slash commands instalados — auto-trigger, globais e do projeto ativo — com busca em tempo real.
+
+### Detalhes técnicos
+- `SkillRegistryService`: escaneia `~/.claude/skills/`, `~/.claude/commands/` e `.claude/commands/` de cada sessão ativa; faz parse de frontmatter YAML ou fallback para humanize + primeira linha de prosa
+- `SkillRegistryView`: `List` com seções por `SkillKind`, `TextField` de busca, badges coloridos (purple/blue/green)
+- Zero mudanças em schema SwiftData, IPCProtocol ou dependências SPM
+
+### Impacto
+- **Breaking:** Não
+
+### Arquivos-chave
+- `ClaudeTerminal/Features/SkillRegistry/` — novos (3 arquivos)
+- `ClaudeTerminal/Features/Dashboard/DashboardView.swift` — botão + sheet
+
+---
+
 ## [feat] README de produto do Claude Terminal — 2026-03-02
 
 **Tipo:** feat
