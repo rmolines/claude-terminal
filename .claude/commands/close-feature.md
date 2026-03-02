@@ -17,6 +17,25 @@ Se não retornar "MERGED": não continuar. PR ainda está aberto ou foi fechado 
 
 ---
 
+## Passo 1.5 — Marcar feature como done no sprint.md
+
+Após confirmar que PR foi merged, localizar o sprint.md que contém o slug da feature e atualizar o status:
+
+```bash
+# Identificar qual sprint.md contém o slug
+grep -rl "<slug>" .claude/feature-plans/claude-terminal/M*/sprint.md
+```
+
+No arquivo encontrado, atualizar a linha da feature:
+- Mudar `pending` → `✅ done`
+- Ou marcar o checkbox: `- [ ]` → `- [x]`
+
+Se o sprint.md usa a tabela com coluna `Status`, mudar o valor para `✅ done`.
+
+Fazer commit junto com as atualizações de docs no Passo 4.
+
+---
+
 ## Passo 2 — Cleanup do worktree
 
 ```bash
@@ -66,7 +85,7 @@ adicionar em `memory/MEMORY.md`.
 ## Passo 4 — Commit (se houve mudança em docs)
 
 ```bash
-git add LEARNINGS.md CLAUDE.md memory/MEMORY.md
+git add LEARNINGS.md CLAUDE.md memory/MEMORY.md .claude/feature-plans/claude-terminal/M*/sprint.md
 git commit -m "docs: add learnings from feature/<nome>
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -86,4 +105,16 @@ git branch --list "feature/<nome>"
 
 # Build deve continuar passando no main
 swift build --configuration debug
+```
+
+---
+
+## Passo 5.5 — Orientação
+
+Após o cleanup, rode `/project-compass` para ver o estado atualizado do milestone:
+- Se ainda há features `pending` no sprint.md, o compass mostrará a próxima feature e o comando exato para iniciar
+- Se o milestone ficou 100% concluído, o compass apontará para o próximo milestone
+
+```
+/project-compass
 ```

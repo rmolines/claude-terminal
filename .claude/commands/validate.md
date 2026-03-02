@@ -25,9 +25,24 @@ essa responsabilidade é do /ship-feature. -->
 
 **2. Verificar existência do `plan.md`:**
 
-- Procurar em `.claude/feature-plans/<nome>/plan.md`
-- Se não existir: exibir este erro e parar:
-  > "Nenhum `plan.md` encontrado em `.claude/feature-plans/<nome>/`. O `/validate` requer uma feature iniciada com `/start-feature`. Se a feature existe, especifique o nome manualmente: `/validate <nome>`"
+Buscar em múltiplos paths (na ordem):
+
+1. `.claude/feature-plans/claude-terminal/*/<nome>/plan.md` (glob por milestone — features do roadmap)
+2. `.claude/feature-plans/claude-terminal/adhoc/<nome>/plan.md` (features ad-hoc)
+
+Para executar a busca:
+
+```bash
+# Busca por milestone
+ls .claude/feature-plans/claude-terminal/*/nome/plan.md 2>/dev/null | head -1
+
+# Fallback adhoc
+ls .claude/feature-plans/claude-terminal/adhoc/nome/plan.md 2>/dev/null
+```
+
+Se nenhum path retornar resultado: exibir este erro e parar:
+
+> "Nenhum `plan.md` encontrado para a feature `<nome>`. O `/validate` requer uma feature iniciada com `/start-feature` (que salva o plan.md automaticamente). Se o plan.md existe em outro path, especifique: `/validate <nome>` ou informe o path completo."
 
 ---
 
@@ -35,8 +50,8 @@ essa responsabilidade é do /ship-feature. -->
 
 ### Passo 1 — Carregar contexto (em paralelo)
 
-- Ler `.claude/feature-plans/<nome>/plan.md` integralmente
-- Ler `.claude/feature-plans/<nome>/research.md` integralmente (se existir — o problema original pode estar aqui)
+- Ler o `plan.md` encontrado na etapa anterior integralmente
+- Ler o `research.md` no mesmo diretório do `plan.md` integralmente (se existir — o problema original pode estar aqui)
 - Executar `git diff origin/main...HEAD` para capturar todos os commits da branch
 - Executar `git diff HEAD` para capturar mudanças não comitadas (trabalho em andamento)
 

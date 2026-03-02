@@ -6,16 +6,16 @@ O argumento é o nome da feature (kebab-case). Ex: `/start-feature hitl-notifica
 
 ---
 
-## Fase 0 — Detectar a feature a iniciar
+## Fase 0 — Detectar a feature e o milestone
 
-**Se `$ARGUMENTS` foi fornecido**, use esse valor como nome da feature e pule para a Fase A.
+**Se `$ARGUMENTS` foi fornecido**, use esse valor como slug da feature e pule para a Fase 0b.
 
 **Se `$ARGUMENTS` está vazio:**
 
-1. Verifique se existe `sprint.md` em `.claude/feature-plans/claude-terminal/<milestone>/sprint.md` (gerado pelo `/start-milestone`)
-   - Se existir: leia e identifique o primeiro item `- [ ]` sem branch `feature/` correspondente em `git branch -a`
+1. Verifique se existe `sprint.md` em `.claude/feature-plans/claude-terminal/<milestone>/sprint.md`
+   - Se existir: leia e identifique o primeiro item com status `pending` sem branch `feature/` correspondente em `git branch -a`
 2. Se não houver `sprint.md`, leia `.claude/feature-plans/claude-terminal/roadmap.md` e encontre o primeiro item `- [ ]` em `### M1` sem branch `feature/` correspondente
-3. Derive o nome kebab-case a partir do texto do item (ex: "Dashboard de status dos agentes" → `agent-status-dashboard`)
+3. Derive o nome kebab-case a partir do texto do item (ex: "Dispatch da skill correta" → `task-orchestration`)
 4. Apresente ao usuário:
 
 ```text
@@ -29,18 +29,28 @@ Confirma? (ou informe outro nome)
 
 Aguarde confirmação antes de continuar.
 
+### Fase 0b — Detectar o milestone da feature
+
+Para determinar onde salvar o `plan.md`:
+
+1. Varrer todos os arquivos `sprint.md` em `.claude/feature-plans/claude-terminal/M*/sprint.md`
+2. Identificar qual sprint.md contém o slug da feature
+3. Extrair o milestone do path (ex: `M2/sprint.md` → milestone = `M2`)
+4. Se o slug não aparecer em nenhum sprint.md: é uma feature ad-hoc → milestone = `adhoc`
+
 ---
 
 ## Fase A — Contexto obrigatório (ler ANTES de qualquer planejamento)
 
-Leia estes arquivos na ordem — sem exceção:
+Leia estes arquivos em paralelo — sem exceção:
 
 1. `CLAUDE.md` — visão geral, stack, armadilhas do projeto
-2. `Shared/IPCProtocol.swift` — contrato IPC app ↔ helper
-3. `ClaudeTerminal/Services/SessionManager.swift` — actor central de estado
-4. `ClaudeTerminal/Models/ClaudeTask.swift` + `ClaudeAgent.swift` — schema SwiftData
-5. `ClaudeTerminalHelper/main.swift` — entry point do helper
-6. `Package.swift` — targets e dependências
+2. `.claude/feature-plans/claude-terminal/workflow.md` — mapa de skills e hierarquia de diretórios
+3. `Shared/IPCProtocol.swift` — contrato IPC app ↔ helper
+4. `ClaudeTerminal/Services/SessionManager.swift` — actor central de estado
+5. `ClaudeTerminal/Models/ClaudeTask.swift` + `ClaudeAgent.swift` — schema SwiftData
+6. `ClaudeTerminalHelper/main.swift` — entry point do helper
+7. `Package.swift` — targets e dependências
 
 Se a feature tocar em release/signing/entitlements, leia também:
 - `.github/workflows/release.yml`
@@ -78,13 +88,32 @@ cd "$WORKTREE_PATH"
 
 ## Fase D — Plano
 
-Com o contexto lido e o checklist verificado, use o modo `/plan` para propor a implementação.
+Com o contexto lido e o checklist verificado, use o modo plan (`/plan`) para propor a implementação.
 
 O plano deve especificar explicitamente:
 - Arquivos a criar ou modificar
 - Targets afetados (ClaudeTerminal / ClaudeTerminalHelper / Shared)
 - Se há mudança de schema SwiftData (e a migration stage correspondente)
 - Se há mudança no IPCProtocol (e os dois targets que precisam ser atualizados)
+
+### Após aprovação do plano — salvar plan.md
+
+Após o usuário aprovar o plano, **escrever obrigatoriamente**:
+
+```
+.claude/feature-plans/claude-terminal/<milestone>/<feature>/plan.md
+```
+
+Exemplos:
+- Feature `task-orchestration` do `M2` → `.claude/feature-plans/claude-terminal/M2/task-orchestration/plan.md`
+- Feature ad-hoc `minha-feature` → `.claude/feature-plans/claude-terminal/adhoc/minha-feature/plan.md`
+
+O `plan.md` deve conter:
+- `## Problema` — o problema original que a feature resolve (1-3 frases)
+- `## Solução` — a abordagem aprovada
+- `## Passos de execução` — lista ordenada dos itens do plano
+
+Esse arquivo é lido pelo `/validate` para verificar alinhamento durante a implementação.
 
 ---
 
