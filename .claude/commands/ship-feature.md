@@ -15,23 +15,36 @@ O argumento é o nome da feature (mesmo nome usado no `/start-feature`).
 
 ## Passo 1 — Build de todos os targets
 
+Detectar se o Xcode MCP está disponível:
+
+```bash
+claude mcp list 2>/dev/null | grep -q "^xcode" && echo "xcode-mcp" || echo "cli"
+```
+
+**Se `xcode-mcp`:** usar a ferramenta `BuildProject` do MCP — retorna erros estruturados por arquivo/linha, sem precisar parsear stdout.
+
+**Se `cli` (fallback):**
+
 ```bash
 cd .claude/worktrees/<nome>
-
 swift build --configuration debug 2>&1
 ```
 
-Se falhar: parar, reportar o erro completo, não continuar.
+Se falhar (qualquer caminho): parar, reportar o erro completo, não continuar.
 
 ---
 
 ## Passo 2 — Testes
 
+**Se `xcode-mcp`:** usar `RunAllTests` — retorna resultado por teste (passed/failed/skipped) com mensagem de falha inline.
+
+**Se `cli` (fallback):**
+
 ```bash
 swift test --configuration debug 2>&1
 ```
 
-Se falhar: parar, reportar, não criar PR.
+Se falhar (qualquer caminho): parar, reportar, não criar PR.
 
 ---
 
@@ -63,8 +76,8 @@ gh pr create \
 - <targets afetados: ClaudeTerminal / ClaudeTerminalHelper / Shared>
 
 ## Test plan
-- [ ] `swift build` passa sem warnings novos
-- [ ] `swift test` passa
+- [ ] Build passa sem warnings novos (`BuildProject` ou `swift build`)
+- [ ] Testes passam (`RunAllTests` ou `swift test`)
 - [ ] Testado manualmente: <descrever o fluxo testado>
 
 ## Schema / Protocol changes
@@ -79,7 +92,7 @@ EOF
 
 ## Critério de "done"
 
-- `swift build` e `swift test` passam sem erros
+- Build e testes passam sem erros (`BuildProject`/`RunAllTests` se Xcode MCP disponível, `swift build`/`swift test` como fallback)
 - CI verde no PR (lint + build + test)
 - PR criado com descrição adequada
 - Nenhum item do checklist manual em aberto
