@@ -3,7 +3,7 @@
 Deriva o estado atual do projeto a partir de git e sprint.md — sem armazenar estado em nenhum arquivo.
 Use a qualquer momento que você quiser saber: "onde estamos?", "o que falta?", "qual a próxima feature?".
 
-**Argumento opcional:** `$ARGUMENTS` — nome do projeto (ex: `claude-terminal`). Se omitido, detecta automaticamente.
+**Argumento opcional:** `$ARGUMENTS` — nome do projeto. Se omitido, detecta automaticamente.
 
 ---
 
@@ -14,11 +14,11 @@ Se `$ARGUMENTS` foi fornecido, use como nome do projeto.
 Senão, detectar automaticamente:
 
 ```bash
-# Listar projetos disponíveis
-ls .claude/feature-plans/
+# Listar projetos disponíveis (excluindo 'archived')
+ls .claude/feature-plans/ | grep -v archived
 ```
 
-Se houver exatamente um diretório (excluindo `archived/`), usar esse.
+Se houver exatamente um diretório, usar esse.
 Se houver mais de um, listar e pedir ao usuário que especifique:
 
 > "Encontrei múltiplos projetos: [lista]. Qual devo analisar?"
@@ -32,7 +32,7 @@ Execute todas as leituras simultaneamente:
 ### 1a. Documentos do projeto
 
 ```bash
-cat .claude/feature-plans/<projeto>/roadmap.md
+cat .claude/feature-plans/<projeto>/roadmap.md 2>/dev/null || echo "(sem roadmap)"
 ```
 
 Extrair: nome dos milestones, objetivos, critérios de done.
@@ -40,13 +40,13 @@ Extrair: nome dos milestones, objetivos, critérios de done.
 ### 1b. Sprint files de todos os milestones
 
 ```bash
-cat .claude/feature-plans/<projeto>/M*/sprint.md
+cat .claude/feature-plans/<projeto>/M*/sprint.md 2>/dev/null || echo "(sem sprint files)"
 ```
 
-Para cada sprint.md, extrair:
-- Nome do milestone (ex: `M2 — Mission Control`)
+Para cada sprint.md encontrado, extrair:
+- Nome do milestone (ex: `M1 — MVP`)
 - Objetivo e critério de done
-- Tabela de features: nome, slug, status (`✅ done`, `pending`, `in_progress`)
+- Features e respectivos status (`✅ done`, `pending`, `in_progress` ou checkboxes `- [ ]` / `- [x]`)
 
 ### 1c. PRs merged (features entregues)
 
@@ -55,6 +55,7 @@ gh pr list --state merged --json number,title,headRefName,mergedAt --limit 50
 ```
 
 Filtrar onde `headRefName` começa com `feature/`. Extrair slugs e datas.
+Se `gh` não estiver autenticado, pular e anotar no relatório: "(PRs merged não verificados — `gh` não autenticado)"
 
 ### 1d. Branches de feature ativos (em andamento)
 
@@ -70,9 +71,9 @@ Extrair slugs das branches locais e remotas.
 
 Construir visão por milestone:
 
-Para cada milestone M (M1, M2, M3, ...):
+Para cada milestone (M1, M2, M3, ...):
 1. Listar features do sprint.md
-2. Marcar como **done** se: status `✅ done` no sprint.md OU PR merged com slug correspondente
+2. Marcar como **done** se: status `✅ done` ou `- [x]` no sprint.md, OU PR merged com slug correspondente
 3. Marcar como **em andamento** se: branch `feature/<slug>` existe (local ou remota) E não merged
 4. Marcar como **pendente** se: nenhuma das condições acima
 
@@ -84,9 +85,7 @@ Se todos os milestones estão 100% done: reportar conclusão do projeto.
 
 ## Fase 3 — Gerar relatório
 
-Produzir o relatório no formato abaixo.
-
-```text
+```
 ## 🧭 Project Compass — <projeto>
 _<data e hora atual>_
 
@@ -131,11 +130,10 @@ Bloqueios abertos: <PRs abertos em review, ou "nenhum">
 
 ### ▶ Próxima ação
 
-```bash
 /start-feature <slug>
-```
 
 <Contexto adicional em 1-2 frases, se relevante.>
+```
 
 ---
 
@@ -159,4 +157,3 @@ Rode `/project-compass` quando:
 - Se um sprint.md não tiver coluna `Status`, inferir pelo cruzamento com PRs merged e branches ativas
 - Se não houver sprint.md para um milestone, reportar como "sem sprint planejado"
 - Datas de PRs merged devem ser exibidas no formato `YYYY-MM-DD`
-- Se `gh` não estiver autenticado, pular a Fase 1c e anotar no relatório: "(PRs merged não verificados — `gh` não autenticado)"
