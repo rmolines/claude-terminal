@@ -26,5 +26,11 @@ struct ClaudeTerminalApp: App {
             }
         }
         .modelContainer(for: [ClaudeTask.self, ClaudeAgent.self])
+
+        WindowGroup("Terminal", id: "quick-terminal", for: QuickTerminalConfig.self) { $config in
+            if let c = config {
+                QuickTerminalView(config: c)
+            }
+        }
     }
 }

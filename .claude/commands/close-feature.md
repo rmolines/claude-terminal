@@ -18,30 +18,6 @@ Perguntar o nome da feature se não foi informado.
 Verificar se `.claude/feature-plans/<nome>/plan.md` existe.
 Se sim: ler integralmente para entender o que foi feito (contexto para a documentação).
 
-### 0.5 — Verificar que PR foi merged
-
-```bash
-gh pr view feature/<nome> --json state --jq '.state'
-# Deve retornar "MERGED"
-```
-
-Se não retornar "MERGED": não continuar. PR ainda está aberto ou foi fechado sem merge.
-
-### 0.6 — Marcar feature como done no sprint.md
-
-Após confirmar que PR foi merged, localizar o sprint.md que contém o slug da feature e atualizar o status:
-
-```bash
-# Identificar qual sprint.md contém o slug
-grep -rl "<slug>" .claude/feature-plans/claude-terminal/M*/sprint.md
-```
-
-No arquivo encontrado, atualizar a linha da feature:
-- Mudar `pending` → `✅ done`
-- Ou marcar o checkbox: `- [ ]` → `- [x]`
-
-Se o sprint.md usa a tabela com coluna `Status`, mudar o valor para `✅ done`.
-
 ### 1. Atualizar documentação
 
 Execute cada item em sequência:
@@ -110,7 +86,7 @@ Gerar entrada no `CHANGELOG.md` (raiz do repo). Criar o arquivo se não existir.
 ---
 ```
 
-**Inserir:** logo após a linha `# Changelog` (antes da primeira entrada `##`).
+**Inserir:** logo após a linha `# Changelog` (antes da primeira entrada `## `).
 Usar Edit tool com `old_string` = primeira linha após o cabeçalho e `new_string` = nova entrada + essa mesma linha.
 
 #### 1c. MEMORY.md coordinator — commit direto em main (se existir)
@@ -140,7 +116,7 @@ git -C "$REPO_ROOT" push origin main
 
 #### 1d. LEARNINGS.md (se houver novidades)
 
-Verificar se `LEARNINGS.md` existe no projeto.
+Verificar se `{{LEARNINGS_PATH}}` existe no projeto.
 
 **Você** decide se algo desta sessão vale registrar — não pergunte ao usuário.
 Critério: algo não documentado que causou surpresa, ou que seria útil em situações futuras.
@@ -177,8 +153,7 @@ git -C "$REPO_ROOT" worktree list | grep "<nome>"
 - Se existir e o agente estiver **fora** dela:
   ```bash
   git -C "$REPO_ROOT" worktree remove --force "$WORKTREE_PATH"
-  git -C "$REPO_ROOT" branch -D "feature/<nome>" 2>/dev/null || true
-  git -C "$REPO_ROOT" worktree prune
+  git -C "$REPO_ROOT" branch -D claude/<nome> 2>/dev/null || true
   ```
 - Se não existir: pular sem mensagem
 
@@ -189,13 +164,12 @@ git -C "$REPO_ROOT" worktree list | grep "<nome>"
 
 ### 4. Resumo final
 
-```text
+```
 ✅ Feature encerrada!
 
 Documentação:
 - HANDOVER.md ✅
 - CHANGELOG.md ✅
-- sprint.md ✅ (status → done)
 - MEMORY.md coordinator <✅ ou ⏭️ sem coordinator>
 - LEARNINGS.md <✅ ou ⏭️ pulado>
 - CLAUDE.md armadilhas <✅ ou ⏭️ pulado>
@@ -204,7 +178,7 @@ Worktree: <removida | já não existia | aguardando saída manual>
 feature-plans: arquivado
 
 Próximos passos:
-- /project-compass para ver o estado atualizado do milestone
+- <qualquer item pendente, ou "nenhum">
 ```
 
 ---

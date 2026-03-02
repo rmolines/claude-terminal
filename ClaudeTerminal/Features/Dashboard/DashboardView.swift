@@ -10,6 +10,7 @@ struct DashboardView: View {
     @State private var showOnboarding = false
     @State private var hookStatus: HookInstallStatus = .notInstalled
     @State private var showSkillRegistry = false
+    @Environment(\.openWindow) private var openWindow
 
     private var sortedSessions: [AgentSession] {
         store.sessions.values.sorted { $0.lastEventAt > $1.lastEventAt }
@@ -53,6 +54,12 @@ struct DashboardView: View {
                 .help("Browse installed skills and commands")
             }
             ToolbarItem(placement: .primaryAction) {
+                Button { openQuickTerminal() } label: {
+                    Label("Terminal", systemImage: "terminal")
+                }
+                .help("Open a shell in any directory without creating a task")
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button { showNewAgent = true } label: {
                     Label("New Agent", systemImage: "plus")
                 }
@@ -75,6 +82,18 @@ struct DashboardView: View {
                 showOnboarding = true
             }
         }
+    }
+
+    // MARK: - Quick terminal
+
+    private func openQuickTerminal() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.title = "Select Directory"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        openWindow(id: "quick-terminal", value: QuickTerminalConfig(directoryPath: url.path))
     }
 
     // MARK: - Empty state
