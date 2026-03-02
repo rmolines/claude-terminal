@@ -35,20 +35,21 @@ para verificar status ou aprovar HITL.
 
 ### M2 — Mission Control (objetivo: substituir as abas de terminal empilhadas no workflow diário)
 
-- [ ] Backlog de tasks funcional (SwiftData) — impacto alto, esforço baixo — diferenciador vs. claude-squad; scaffold já existe
-- [ ] Terminal embedded (SwiftTerm) por agente — impacto médio, esforço médio — prioridade alta no M2; isolamento de queue por instância obrigatório
-- [ ] Múltiplos agentes simultâneos com worktree isolation — impacto alto, esforço alto — base para o workflow paralelo real
-- [ ] Criação de nova task via app (dispara `start-feature`/`fix` via Claude Code) — impacto médio, esforço médio — fluxo completo de orquestração
+- [x] Backlog de tasks funcional (SwiftData) — `task-backlog-persistence` ✅ done
+- [x] Terminal embedded (SwiftTerm) por agente — `terminal-per-agent-ui` ✅ done
+- [x] Múltiplos agentes simultâneos com worktree isolation — `agent-spawn-ui` ✅ done
+- [x] Criação de nova task via app (dispara `start-feature`/`fix` via Claude Code) — `task-orchestration` ✅ done (PR #8)
 
 **Critério de done:** O criador não abre Warp/iTerm para gerenciar a squad — só para sessões
 fora do app.
 
 ### M3 — DMG público (objetivo: 10 usuários externos instalaram e usaram sem ajuda)
 
-- [ ] Setup automático de hooks via app em `~/.claude/settings.json` (zero config manual) — impacto alto, esforço médio — bloqueador de UX para novos usuários
-- [ ] DMG notarizado + Sparkle auto-update — impacto alto, esforço alto — instalar no M3, não deixar para véspera; stapling + EdDSA keys
-- [ ] README com GIF de demo do HITL flow (o momento mais impressionante para o demo) — impacto alto, esforço baixo
-- [ ] PR no `awesome-claude-code` (hesreallyhim/awesome-claude-code) + Show HN — impacto alto, esforço baixo — 100 stars atingíveis no dia do Show HN
+- [x] Setup automático de hooks via app em `~/.claude/settings.json` — `hook-installer-service` ✅ done
+- [x] DMG notarizado + Sparkle auto-update — `release-pipeline` ✅ (PR #11) + `sparkle-autoupdate` ✅ done
+- [x] OnboardingView com 1-click hook setup — `hook-setup-onboarding` ✅ (PR #10)
+- [ ] README com GIF de demo do HITL flow — `readme-demo` ⏸ **deferred** (pós-M3, produto ainda em construção)
+- [ ] PR no `awesome-claude-code` + Show HN — `launch-distribution` ⏳ **blocked** (depende de `readme-demo`)
 
 **Critério de done:** 10 instalações em Macs que não são os seus, sem você ajudar a instalar.
 Pelo menos 2 delas reportaram um bug espontaneamente.
@@ -79,6 +80,8 @@ Pelo menos 2 delas reportaram um bug espontaneamente.
 
 ## Próximo passo
 
+M2 completo. Retomar M3:
+
 ```
-/start-milestone M2
+/start-feature readme-demo
 ```
