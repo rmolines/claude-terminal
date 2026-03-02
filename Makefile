@@ -64,7 +64,7 @@ setup: ## One-time setup: install local dev tools (markdownlint)
 
 xcode-mcp: ## One-time: register Xcode MCP server with Claude Code (requires Xcode 26.3+)
 	@command -v xcrun > /dev/null || (echo "❌ Xcode not found — install Xcode 26.3 or later" && exit 1)
-	@xcrun mcpbridge --version > /dev/null 2>&1 || (echo "❌ mcpbridge not found — install Xcode 26.3 or later" && exit 1)
-	claude mcp add --transport stdio xcode -- xcrun mcpbridge
+	@xcrun -find mcpbridge > /dev/null 2>&1 || (echo "❌ mcpbridge not found — install Xcode 26.3 or later" && exit 1)
+	@claude mcp add --transport stdio xcode -- xcrun mcpbridge
 	@echo "✅ Xcode MCP registered. Keep Package.swift open in Xcode during dev sessions."
 	@echo "   Key tools: BuildProject, RunAllTests, RenderPreview, XcodeListNavigatorIssues"
