@@ -16,7 +16,7 @@ _Gerado em: 2026-03-01_
 | 3 | OnboardingView (first launch) com botão "Set up hooks" que chama o service + badge de status instalado/não instalado | `hook-setup-onboarding` | `hook-installer-service` | baixo | ✅ done |
 | 4 | README.md com GIF do HITL flow + instruções de instalação (download DMG + 1-click hook setup) + badge macOS 14+ | `readme-demo` | — | baixo | ✅ done |
 | 5 | Integrar Sparkle 2.x: dependência SPM, EdDSA key gen, `appcast.xml`, auto-check no launch | `sparkle-autoupdate` | `release-pipeline` | médio | ✅ done |
-| 6 | PR para `hesreallyhim/awesome-claude-code` + rascunho do Show HN post | `launch-distribution` | `hook-setup-onboarding`, `release-pipeline`, `readme-demo` | baixo | ⏳ blocked |
+| 6 | PR para `hesreallyhim/awesome-claude-code` + rascunho do Show HN post | `launch-distribution` | `hook-setup-onboarding`, `release-pipeline`, `readme-demo` | baixo | ✅ done |
 
 ## Grafo de dependências
 
@@ -43,12 +43,8 @@ Uma feature está bem-scoped quando:
 - `hook-setup-onboarding` ✅ done (PR #10)
 - `sparkle-autoupdate` ✅ done
 - `readme-demo` ✅ done
-- `launch-distribution` ⏳ blocked — depende de `readme-demo`
+- `launch-distribution` ✅ done
 
 ## Próximo passo
 
-M2 completo. Retomar M3 em `readme-demo`:
-
-```
-/start-feature readme-demo
-```
+M3 completo. Todas as features entregues.
