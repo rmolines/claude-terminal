@@ -104,6 +104,50 @@ struct TaskBacklogView: View {
     }
 }
 
+// MARK: - Previews
+
+@MainActor
+private func previewContainer() -> ModelContainer {
+    let container = try! ModelContainer(
+        for: ClaudeTask.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let samples: [(String, String, String)] = [
+        ("Implement auth flow", "feature", "pending"),
+        ("Fix crash on app launch", "fix", "running"),
+        ("Migrate to SwiftData v2", "project", "completed"),
+        ("Add dark mode support", "feature", "pending"),
+    ]
+    for (i, (title, type, status)) in samples.enumerated() {
+        let task = ClaudeTask(title: title, taskType: type)
+        task.sortOrder = i
+        task.status = status
+        container.mainContext.insert(task)
+    }
+    return container
+}
+
+#Preview("Backlog — with tasks") {
+    NavigationStack {
+        TaskBacklogView()
+    }
+    .modelContainer(previewContainer())
+    .frame(width: 280, height: 400)
+}
+
+#Preview("Backlog — empty") {
+    NavigationStack {
+        TaskBacklogView()
+    }
+    .modelContainer(
+        try! ModelContainer(
+            for: ClaudeTask.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+    )
+    .frame(width: 280, height: 400)
+}
+
 // MARK: - AutoFocusTextField
 
 /// NSTextField wrapper that grabs AppKit first responder on appear.

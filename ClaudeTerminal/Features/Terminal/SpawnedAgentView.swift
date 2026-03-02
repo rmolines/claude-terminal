@@ -68,3 +68,21 @@ struct SpawnedAgentView: View {
         )
     }
 }
+
+#Preview("Feature — with skill dispatch") {
+    SpawnedAgentView(config: AgentTerminalConfig(
+        sessionID: "preview-spawn-1",
+        worktreePath: "/Users/dev/git/my-app/.claude/worktrees/auth-flow",
+        taskTitle: "Implement auth flow",
+        skillCommand: "/start-feature auth-flow"
+    ))
+}
+
+#Preview("Fix — no skill") {
+    SpawnedAgentView(config: AgentTerminalConfig(
+        sessionID: "preview-spawn-2",
+        worktreePath: "/Users/dev/git/my-app/.claude/worktrees/fix-crash",
+        taskTitle: "Fix crash on launch",
+        skillCommand: nil
+    ))
+}

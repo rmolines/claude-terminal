@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import Shared
 
 /// Main dashboard — shows all active/paused/completed agent sessions.
@@ -192,4 +193,59 @@ private struct SessionRow: View {
         if m < 60 { return "\(m)m \(sec)s" }
         return "\(m / 60)h \(m % 60)m"
     }
+}
+
+// MARK: - Previews
+
+@MainActor
+private func populateSampleSessions() {
+    let store = SessionStore.shared
+    var s1 = AgentSession(sessionID: "prev-1", cwd: "/Users/dev/git/claude-terminal/.claude/worktrees/auth-flow")
+    s1.status = .running
+    s1.currentActivity = "$ swift build -c release"
+    s1.totalInputTokens = 48_200
+    s1.totalOutputTokens = 12_400
+    s1.subAgentCount = 2
+    store.update(s1)
+
+    var s2 = AgentSession(sessionID: "prev-2", cwd: "/Users/dev/git/my-app/.claude/worktrees/fix-crash")
+    s2.status = .awaitingInput
+    s2.currentActivity = "Awaiting approval"
+    s2.totalInputTokens = 9_800
+    s2.totalOutputTokens = 3_100
+    store.update(s2)
+
+    var s3 = AgentSession(sessionID: "prev-3", cwd: "/Users/dev/git/api-service")
+    s3.status = .completed
+    s3.currentActivity = "Completed"
+    s3.totalInputTokens = 120_500
+    s3.totalOutputTokens = 41_200
+    store.update(s3)
+}
+
+#Preview("Dashboard — 3 sessions") {
+    DashboardView()
+        .modelContainer(
+            try! ModelContainer(
+                for: ClaudeTask.self, ClaudeAgent.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            )
+        )
+        .frame(width: 1200, height: 700)
+        .task { populateSampleSessions() }
+}
+
+#Preview("Dashboard — empty") {
+    DashboardView()
+        .modelContainer(
+            try! ModelContainer(
+                for: ClaudeTask.self, ClaudeAgent.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            )
+        )
+        .frame(width: 1200, height: 700)
+        .task {
+            // Clear any sessions that may have leaked from other previews
+            SessionStore.shared.sessions.keys.forEach { SessionStore.shared.remove(sessionID: $0) }
+        }
 }

@@ -112,3 +112,40 @@ make check           # Lint + validate
 swift build          # Build local de todos os targets
 swift test           # Rodar testes
 ```
+
+## Desenvolvimento com Xcode MCP
+
+Xcode 26.3 expõe `xcrun mcpbridge` como MCP server, dando ao Claude acesso a ferramentas
+de build, testes e SwiftUI previews sem sair da sessão.
+
+### Setup (uma vez por máquina)
+
+```bash
+make xcode-mcp
+```
+
+### Pré-requisito por sessão
+
+Abra o projeto no Xcode antes de iniciar uma sessão de desenvolvimento:
+
+```bash
+open Package.swift   # Xcode abre o SPM package — mcpbridge conecta a esse processo
+```
+
+### Ferramentas disponíveis
+
+| Ferramenta | O que faz |
+|---|---|
+| `BuildProject` | Compila o projeto e retorna erros estruturados |
+| `GetBuildLog` | Lê o log de build completo após um `BuildProject` |
+| `RunAllTests` / `RunSomeTests` | Roda a suite de testes e retorna resultado por teste |
+| `RenderPreview` | Renderiza um `#Preview` block e retorna como imagem — ver UI sem rodar o app |
+| `XcodeListNavigatorIssues` | Lista warnings e erros em tempo real do Issue Navigator |
+| `XcodeRefreshCodeIssuesInFile` | Força re-análise de um arquivo específico |
+| `DocumentationSearch` | Busca na documentação da Apple (SwiftUI, AppKit, SwiftData, etc.) |
+
+### Armadilha: previews com PTY
+
+`TerminalViewRepresentable` detecta o canvas via `XCODE_RUNNING_FOR_PREVIEWS=1` e exibe
+um placeholder em vez de spawnar `/bin/zsh`. Views que embedam `AgentTerminalView` ou
+`SpawnedAgentView` são seguras para `RenderPreview`.

@@ -1,4 +1,4 @@
-.PHONY: help check lint validate sync-skills clean setup
+.PHONY: help check lint validate sync-skills clean setup xcode-mcp
 
 # Default target
 help: ## Show this help
@@ -61,3 +61,10 @@ setup: ## One-time setup: install local dev tools (markdownlint)
 	@npx --yes markdownlint-cli2 --version > /dev/null && echo "✅ markdownlint-cli2 available via npx"
 	@command -v python3 > /dev/null && echo "✅ python3 available" || echo "⚠️  python3 not found — JSON validation will fail"
 	@echo "✅ Setup complete. Run 'make check' to validate."
+
+xcode-mcp: ## One-time: register Xcode MCP server with Claude Code (requires Xcode 26.3+)
+	@command -v xcrun > /dev/null || (echo "❌ Xcode not found — install Xcode 26.3 or later" && exit 1)
+	@xcrun mcpbridge --version > /dev/null 2>&1 || (echo "❌ mcpbridge not found — install Xcode 26.3 or later" && exit 1)
+	claude mcp add --transport stdio xcode -- xcrun mcpbridge
+	@echo "✅ Xcode MCP registered. Keep Package.swift open in Xcode during dev sessions."
+	@echo "   Key tools: BuildProject, RunAllTests, RenderPreview, XcodeListNavigatorIssues"
