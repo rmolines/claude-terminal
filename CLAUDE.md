@@ -80,6 +80,7 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | SPM binário (sem .app bundle) | `Bundle.main.bundleIdentifier` é nil → erros de window tabs, SwiftData, notificações | Embedar `Info.plist` via linker flag: `.unsafeFlags(["-Xlinker", "-sectcreate", "-Xlinker", "__TEXT", "-Xlinker", "__info_plist", "-Xlinker", "ClaudeTerminal/App/Info.plist"])` em `Package.swift` |
 | NavigationSplitView sidebar | `@FocusState` + `TextField` mostra anel mas não recebe keyboard | Usar `NSViewRepresentable` com `NSTextField` que chama `window.makeFirstResponder(field)` diretamente |
 | PTY environment | PATH hardcoded não inclui `~/.local/bin`, nvm, etc. | Usar `zsh -l -i -c "..."` para herdar PATH completo do usuário |
+| Worktree + plan.md | Escrever `plan.md` no working tree do `main` antes de criar worktree → arquivo fica não-rastreado, bloqueia `git pull` após merge | Sempre escrever `plan.md` no path do worktree: `/worktrees/<feature>/...` |
 
 ## Worktree convention
 

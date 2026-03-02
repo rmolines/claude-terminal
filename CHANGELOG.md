@@ -2,6 +2,31 @@
 
 ---
 
+## [improvement] Diagrama Mermaid no workflow.md — 2026-03-02
+
+**Tipo:** improvement
+**Tags:** docs, workflow, skills
+**PR:** [#12](https://github.com/rmolines/claude-terminal/pull/12) · **Complexidade:** simples
+
+### O que mudou
+
+`workflow.md` agora tem um diagrama `stateDiagram-v2` que renderiza no GitHub, mostrando o fluxo completo de skills com transições, loop tático por feature e caminho de orientação via `project-compass`.
+
+### Detalhes técnicos
+
+- `.claude/feature-plans/claude-terminal/workflow.md` — seção `## Diagrama de fluxo` adicionada
+- `~/git/claude-kickstart/.claude/rules/workflow.md` — mesmo diagrama propagado
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/feature-plans/claude-terminal/workflow.md`
+
+---
+
 ## [feat] Hook pipeline end-to-end — 2026-03-01
 
 **Tipo:** feat
