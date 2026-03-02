@@ -6,7 +6,9 @@
 
 **Mission Control for your Claude Code agent squad.**
 
-Instead of juggling N stacked terminal windows, you get a native macOS dashboard that shows every agent's status in real time, badges pending HITL requests in the menu bar, and lets you approve or reject without breaking focus.
+Instead of juggling N stacked terminal windows, you get a native macOS dashboard that shows every
+agent's status in real time, badges pending HITL requests in the menu bar, and lets you approve
+or reject without breaking focus.
 
 ---
 
@@ -38,7 +40,7 @@ Claude Code will now report every agent event to the dashboard automatically.
 
 ## How it works
 
-```
+```text
 Claude Code hooks
       │  JSON on stdin
       ▼
