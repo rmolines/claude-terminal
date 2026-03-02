@@ -14,7 +14,7 @@ _Gerado em: 2026-03-01_
 | 1 | Service que lê/valida/escreve `~/.claude/settings.json` atomicamente com allowlist (zero config manual para hooks) | `hook-installer-service` | — | baixo | ✅ done |
 | 2 | GitHub Actions: `xcodebuild archive` → sign Developer ID → `xcrun notarytool` → staple → create-dmg → GitHub Release | `release-pipeline` | — | alto | ✅ done |
 | 3 | OnboardingView (first launch) com botão "Set up hooks" que chama o service + badge de status instalado/não instalado | `hook-setup-onboarding` | `hook-installer-service` | baixo | ✅ done |
-| 4 | README.md com GIF do HITL flow + instruções de instalação (download DMG + 1-click hook setup) + badge macOS 14+ | `readme-demo` | — | baixo | ⏸ deferred |
+| 4 | README.md com GIF do HITL flow + instruções de instalação (download DMG + 1-click hook setup) + badge macOS 14+ | `readme-demo` | — | baixo | ✅ done |
 | 5 | Integrar Sparkle 2.x: dependência SPM, EdDSA key gen, `appcast.xml`, auto-check no launch | `sparkle-autoupdate` | `release-pipeline` | médio | ✅ done |
 | 6 | PR para `hesreallyhim/awesome-claude-code` + rascunho do Show HN post | `launch-distribution` | `hook-setup-onboarding`, `release-pipeline`, `readme-demo` | baixo | ⏳ blocked |
 
@@ -42,7 +42,7 @@ Uma feature está bem-scoped quando:
 - `release-pipeline` ✅ done (PR #11)
 - `hook-setup-onboarding` ✅ done (PR #10)
 - `sparkle-autoupdate` ✅ done
-- `readme-demo` ⏸ deferred — adiado para pós-M3; produto ainda em construção ativa
+- `readme-demo` ✅ done
 - `launch-distribution` ⏳ blocked — depende de `readme-demo`
 
 ## Próximo passo
