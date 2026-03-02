@@ -15,22 +15,22 @@ O argumento é o nome da feature (mesmo nome usado no `/start-feature`).
 
 ## Passo 1 — Build de todos os targets
 
-Detectar se o Xcode MCP está disponível:
+Detectar se o Xcode MCP está disponível (ler settings.json diretamente — `claude mcp list` não funciona dentro do Claude Code):
 
 ```bash
-claude mcp list 2>/dev/null | grep -q "^xcode" && echo "xcode-mcp" || echo "cli"
+python3 -c "import json,sys; d=json.load(open('$HOME/.claude/settings.json')); print('xcode-mcp' if 'xcode' in d.get('mcpServers',{}) else 'cli')" 2>/dev/null || echo "cli"
 ```
 
 **Se `xcode-mcp`:** usar a ferramenta `BuildProject` do MCP — retorna erros estruturados por arquivo/linha, sem precisar parsear stdout.
 
-**Se `cli` (fallback):**
+**Se `cli`:** isso é o caminho normal quando o Xcode MCP não está registrado — NÃO é erro. Continuar sem mensagem de aviso:
 
 ```bash
 cd .claude/worktrees/<nome>
 swift build --configuration debug 2>&1
 ```
 
-Se falhar (qualquer caminho): parar, reportar o erro completo, não continuar.
+Se o **build falhar** (qualquer caminho): parar, reportar o erro completo, não continuar.
 
 ---
 
@@ -38,13 +38,13 @@ Se falhar (qualquer caminho): parar, reportar o erro completo, não continuar.
 
 **Se `xcode-mcp`:** usar `RunAllTests` — retorna resultado por teste (passed/failed/skipped) com mensagem de falha inline.
 
-**Se `cli` (fallback):**
+**Se `cli`:** caminho normal:
 
 ```bash
 swift test --configuration debug 2>&1
 ```
 
-Se falhar (qualquer caminho): parar, reportar, não criar PR.
+Se os **testes falharem** (qualquer caminho): parar, reportar, não criar PR.
 
 ---
 
