@@ -42,7 +42,8 @@ ls .claude/feature-plans/claude-terminal/adhoc/nome/plan.md 2>/dev/null
 
 Se nenhum path retornar resultado: exibir este erro e parar:
 
-> "Nenhum `plan.md` encontrado para a feature `<nome>`. O `/validate` requer uma feature iniciada com `/start-feature` (que salva o plan.md automaticamente). Se o plan.md existe em outro path, especifique: `/validate <nome>` ou informe o path completo."
+> "Nenhum `plan.md` encontrado para a feature `<nome>`. O `/validate` requer uma feature iniciada com `/start-feature`
+> (que salva o plan.md automaticamente). Se o plan.md existe em outro path, especifique: `/validate <nome>` ou informe o path completo."
 
 ---
 
@@ -92,7 +93,7 @@ Produzir o relatório completo no formato abaixo. Ser específico: citar arquivo
 
 ## Formato de saída
 
-```
+```text
 ## 🧭 Relatório de Validação — <nome-da-feature>
 
 ---

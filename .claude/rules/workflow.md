@@ -6,7 +6,7 @@ Mapa completo das skills, quando usar cada uma, e como se relacionam.
 
 ## Fluxo visual
 
-```
+```text
 ESTRATÉGICO (uma vez por projeto/milestone)
 ──────────────────────────────────────────
   /refine-idea → /start-project → /plan-roadmap → /start-milestone

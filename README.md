@@ -1,124 +1,78 @@
-# claude-kickstart
+# Claude Terminal
 
-**The professional Claude Code setup you'd spend 3 months discovering on your own — working in 30 minutes.**
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)
+![Swift 6.2](https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white)
+![License MIT](https://img.shields.io/badge/license-MIT-blue)
 
-Fork → open Claude Code → run `/start-project "your idea"` → 30 minutes later you have:
+**Mission Control for your Claude Code agent squad.**
 
-- A structured project with multi-agent running in parallel
-- Complete feature lifecycle (start → ship → close → repeat)
-- Opinionated CLAUDE.md with best practices baked in
-- CI/CD on GitHub Actions (lint + validation + branch protection)
-- Institutional memory system (HANDOVER + LEARNINGS + MEMORY)
+Instead of juggling N stacked terminal windows, you get a native macOS dashboard that shows every
+agent's status in real time, badges pending HITL requests in the menu bar, and lets you approve
+or reject without breaking focus.
 
-The `/start-project` research phase with 4 parallel agents is itself a demo of the multi-agent power — you see it work on the first interaction, without configuring anything.
+---
+
+<!-- GIF: gravar e salvar como docs/hitl-demo.gif -->
+<!-- TODO: Record a screen capture of the HITL approval flow and save it to docs/hitl-demo.gif -->
+<!-- Sugestão de roteiro: abrir o app → iniciar um agente → aguardar pedido HITL aparecer no menu bar → clicar badge → aprovar na janela → agente continua -->
 
 ---
 
 ## Quickstart
 
-```bash
-# 1. Fork this repo on GitHub ("Use this template" button)
-# 2. Clone your fork
-git clone https://github.com/YOUR_USERNAME/YOUR_PROJECT.git
-cd YOUR_PROJECT
+1. **Download** the latest `ClaudeTerminal.dmg` from [Releases](https://github.com/rmolines/claude-terminal/releases)
+2. **Open** the DMG and drag Claude Terminal to Applications
+3. **Launch** Claude Terminal and click **"Set up Hooks"** — done
 
-# 3. Open Claude Code and kick off your project
-claude
-```
+Claude Code will now report every agent event to the dashboard automatically.
 
-Then in Claude Code:
+---
+
+## What you see
+
+- **Dashboard** — one row per active Claude Code session: current skill phase, token spend, sub-agents running in background
+- **Menu bar badge** — shows count of pending HITL requests; click to open the approval panel
+- **HITL panel** — approve or reject agent permission requests without switching windows
+- **Token spend** — running cost per session (input / output / cache read), updated live
+- **Task backlog** — persistent list of tasks across sessions (SwiftData)
+
+---
+
+## How it works
 
 ```text
-/start-project "your idea here"
+Claude Code hooks
+      │  JSON on stdin
+      ▼
+ClaudeTerminalHelper   (thin notarized CLI)
+      │  Unix domain socket  ~2-5µs latency
+      ▼
+HookIPCServer          (Swift actor)
+      │
+      ▼
+SessionManager         (Swift actor — all mutable state)
+      │  @MainActor publish
+      ▼
+SwiftUI dashboard
 ```
 
-That's it. Claude will research your market, validate assumptions, plan the architecture, and bootstrap the project — asking only what it can't infer.
+Hooks write a JSON payload to the helper's stdin. The helper forwards it over a Unix domain socket to the app. No network, no polling — latency is ~2–5µs.
 
 ---
 
-## What's included
+## Requirements
 
-### Skills (`/commands`)
-
-| Skill | What it does |
-|---|---|
-| `/start-project` | Discovery → research → plan → bootstrap (this skill) |
-| `/start-feature` | Intake + research → plan → worktree + execution |
-| `/ship-feature` | Commit + rebase + PR + CI + smoke test |
-| `/close-feature` | Documentation (HANDOVER, MEMORY, LEARNINGS) + cleanup |
-| `/handover` | Summarize session and prepend to HANDOVER.md |
-| `/sync-skills` | Pull latest skills from upstream template |
-
-### Infrastructure
-
-- **`.claude/settings.json`** — Hooks: lint Markdown before every write
-- **`.claude/rules/`** — Modular rules imported by CLAUDE.md (git, coding style, security)
-- **`.github/workflows/ci.yml`** — Lint + JSON validation + structure check on every PR
-- **`.github/workflows/bootstrap.yml`** — Auto-applies branch protection on first push (fork only)
-- **`.github/workflows/template-sync.yml`** — Weekly PRs with upstream skill updates
-- **`Makefile`** — `make check`, `make lint`, `make validate`, `make sync-skills`, `make clean`
-
-### Memory system
-
-- **`memory/MEMORY.md`** — Persistent context loaded each session (architectural decisions, key files)
-- **`HANDOVER.md`** — Session history (newest at top)
-- **`LEARNINGS.md`** — Technical gotchas and non-obvious behaviors
-
----
-
-## After forking
-
-1. **Fill in `CLAUDE.md`** — replace the `<!-- TODO -->` sections with your project specifics
-2. **Update `CODEOWNERS`** — replace `@rmolines` with your GitHub username
-3. **Set GitHub secrets** — add any secrets your project needs (document in `.env.example`)
-4. **Run `make check`** — validate that everything is wired up correctly
-
----
-
-## Feature workflow
-
-```text
-/start-feature "feature name"     # Research + plan
-  → /clear                        # Clean context
-  → /start-feature "feature name" # Execute in worktree
-
-/ship-feature                     # PR + CI + merge
-/close-feature                    # Docs + cleanup
-```
-
-Each `/clear` between phases prevents hallucination — outputs are saved to
-`.claude/feature-plans/<name>/` so phases can read them without conversation memory.
-
----
-
-## Keeping skills up to date
-
-Your fork gets weekly PRs from this template via `template-sync.yml`.
-Review and merge to stay current. Or run manually:
-
-```bash
-make sync-skills
-```
-
----
-
-## Philosophy
-
-- **Zero deps in core** — no CLI to install, no runtime to maintain
-- **Fork-native** — "Use this template" is the install command
-- **The skills are the product** — everything else is scaffolding
-- **Opinionated but not prescriptive** — the template suggests, your CLAUDE.md decides
+- macOS 14 Sonoma or later
+- [Claude Code](https://claude.ai/code) installed (`claude` in PATH)
 
 ---
 
 ## Contributing
 
-Found a better pattern? Discovered a pitfall we should document? PRs welcome.
-
-See `LEARNINGS.md` for the kind of content that belongs in this project.
+Found a bug or have a feature request? [Open an issue](https://github.com/rmolines/claude-terminal/issues).
 
 ---
 
 ## License
 
-MIT — fork freely, ship fast.
+MIT
