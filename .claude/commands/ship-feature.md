@@ -13,28 +13,37 @@ O argumento é o nome da feature (mesmo nome usado no `/start-feature`).
 
 ---
 
-## Passo 1 — Build de todos os targets
+## Passo 0 — Verificar Xcode MCP
 
 ```bash
-cd .claude/worktrees/<nome>
-swift build --configuration debug 2>&1
+python3 -c "import json,sys; d=json.load(open('$HOME/.claude/settings.json')); sys.exit(0 if 'xcode' in d.get('mcpServers',{}) else 1)" 2>/dev/null
 ```
 
-Se falhar: parar, reportar o erro completo, não continuar.
+Se retornar erro (exit ≠ 0): **parar imediatamente** e instruir o usuário:
 
-> **Xcode MCP (opcional):** se `python3 -c "import json; d=json.load(open('$HOME/.claude/settings.json')); print('xcode' in d.get('mcpServers',{}))" 2>/dev/null` retornar `True`, substituir o comando acima pela ferramenta `BuildProject`. Caso contrário, ignorar e usar `swift build` normalmente — não mencionar Xcode MCP ao usuário.
+```
+❌ Xcode MCP não está registrado. Execute primeiro:
+
+    make xcode-mcp
+
+Depois reabra o Package.swift no Xcode e rode /ship-feature novamente.
+```
+
+---
+
+## Passo 1 — Build
+
+Usar a ferramenta **`BuildProject`** do Xcode MCP.
+
+Se falhar: parar, reportar os erros estruturados, não continuar.
 
 ---
 
 ## Passo 2 — Testes
 
-```bash
-swift test --configuration debug 2>&1
-```
+Usar a ferramenta **`RunAllTests`** do Xcode MCP.
 
-Se falhar: parar, reportar, não criar PR.
-
-> **Xcode MCP (opcional):** se disponível (mesmo critério do Passo 1), usar `RunAllTests` em vez de `swift test`.
+Se falhar: parar, reportar os testes com falha, não criar PR.
 
 ---
 
