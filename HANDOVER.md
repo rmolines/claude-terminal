@@ -4,6 +4,28 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-02 — readme-demo
+
+**O que foi feito:** Substituiu o README.md herdado do template `claude-kickstart` por um README de produto do Claude Terminal.
+Inclui badges (macOS 14+, Swift 6.2, MIT), hero title, placeholder de GIF do fluxo HITL, quickstart de 3 passos
+(Download DMG → Open → Install Hooks), lista de features, diagrama ASCII da arquitetura de hooks, e seção de requisitos.
+Também corrigiu 21 erros de markdownlint pré-existentes em `.claude/commands/` e docs (MD013, MD038, MD040, MD048).
+
+**Decisões:**
+- GIF ainda não gravado → placeholder com comentário `<!-- GIF: gravar e salvar como docs/hitl-demo.gif -->`
+- Blocos de exemplo com fences aninhadas (em `start-milestone.md`) precisam de outer fence com 4 backticks para
+  evitar que markdownlint (MD040) confunda a fence interna com o fechamento do bloco externo
+- Stray ` ``` ` em `project-compass.md:139` removida (bloco aberto sem fechamento)
+
+**Arquivos-chave:**
+- `README.md` — substituído integralmente
+- `.claude/commands/start-milestone.md` — outer fences migradas para 4 backticks
+- `.claude/commands/project-compass.md` — stray fence removida
+
+**Próximos passos:** `launch-distribution` — agora desbloqueada (dependia de readme-demo)
+
+---
+
 ## 2026-03-02 — mermaid-skill-flow
 
 **O que foi feito:** Adicionou diagrama `stateDiagram-v2` Mermaid ao `workflow.md` do claude-terminal e ao `workflow.md` do kickstart.

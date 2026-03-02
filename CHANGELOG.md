@@ -2,6 +2,36 @@
 
 ---
 
+## [feat] README de produto do Claude Terminal — 2026-03-02
+
+**Tipo:** feat
+**Tags:** docs, readme, onboarding
+**PR:** [#14](https://github.com/rmolines/claude-terminal/pull/14) · **Complexidade:** simples
+
+### O que mudou
+
+README.md agora descreve o Claude Terminal como produto: badges de versão, quickstart de 3 passos
+(Download DMG → Open → Install Hooks), lista de features visíveis, diagrama da arquitetura de hooks,
+e placeholder para GIF do fluxo HITL. Quem chega no repositório entende o produto imediatamente.
+
+### Detalhes técnicos
+
+- `README.md` — substituído integralmente (template kickstart → produto Claude Terminal)
+- `.claude/commands/start-milestone.md` — outer fences migradas para 4 backticks (MD040/MD048)
+- `.claude/commands/project-compass.md` — stray fence sem fechamento removida
+- 21 erros de markdownlint pré-existentes corrigidos em commands/ e docs
+
+### Impacto
+
+- **Breaking:** Não
+- Desbloqueia `launch-distribution` (dependia de readme-demo)
+
+### Arquivos-chave
+
+- `README.md` — novo README de produto
+
+---
+
 ## [improvement] Diagrama Mermaid no workflow.md — 2026-03-02
 
 **Tipo:** improvement

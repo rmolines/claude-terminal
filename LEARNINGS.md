@@ -4,6 +4,27 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-02 — markdownlint: fences aninhadas exigem outer fence com 4 backticks
+
+Arquivos de skill (`.claude/commands/`) frequentemente mostram blocos de exemplo com fences dentro de fences.
+markdownlint-cli2 v0.6.0 trata ` ```lang ` dentro de um bloco ` ``` ` como fechamento do bloco externo,
+mesmo que CommonMark diga o contrário — isso gera erros MD040 e MD048 inesperados.
+
+**Fix:** usar 4 backticks para o outer fence quando o conteúdo contém ` ``` ` internos:
+
+````text
+````markdown
+# Exemplo com fence interna
+```bash
+echo "isso é literal"
+```
+````
+````
+
+Tildes (`~~~`) resolvem o nesting mas violam MD048 (project exige backtick-only). Sempre usar 4 backticks.
+
+---
+
 ## 2026-03-02 — Worktrees: escrever plan.md no worktree, não no main
 
 Ao usar `/start-feature`, o `plan.md` deve ser escrito no path do worktree (`/worktrees/<feature>/...`), não no working tree do `main`.
