@@ -38,6 +38,8 @@ final class HookHandler: @unchecked Sendable {
             detail = payload.toolInput?["command"].map { String($0.prefix(80)) }
         } else if eventType == .permissionRequest {
             detail = payload.toolInput?["description"].map { String($0.prefix(80)) }
+        } else if eventType == .notification {
+            detail = payload.toolInput?["message"].map { String($0.prefix(200)) }
         } else {
             detail = nil
         }

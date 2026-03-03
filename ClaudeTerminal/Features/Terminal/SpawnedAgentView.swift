@@ -64,7 +64,8 @@ struct SpawnedAgentView: View {
                 "HOME=\(NSHomeDirectory())",
                 "TERM=xterm-256color"
             ],
-            initialInput: config.skillCommand
+            initialInput: config.skillCommand,
+            replyRoutingCwd: config.worktreePath
         )
     }
 }

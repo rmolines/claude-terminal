@@ -14,6 +14,7 @@ struct TerminalViewRepresentable: NSViewRepresentable {
     let args: [String]
     let environment: [String]?
     var initialInput: String? = nil
+    var replyRoutingCwd: String? = nil
 
     /// True when running inside the Xcode canvas (set automatically by Xcode 26.3+).
     static var isPreview: Bool {
@@ -63,6 +64,24 @@ struct TerminalViewRepresentable: NSViewRepresentable {
             }
         }
 
+        if let cwd = replyRoutingCwd {
+            let obs = NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("ClaudeTerminal.SessionReply"),
+                object: nil,
+                queue: .main
+            ) { [weak tv] notification in
+                guard let userInfo = notification.userInfo,
+                      let notifCwd = userInfo["cwd"] as? String,
+                      notifCwd == cwd,
+                      let text = userInfo["text"] as? String else { return }
+                let bytes = Array((text + "\n").utf8)
+                MainActor.assumeIsolated {
+                    tv?.send(data: bytes[...])
+                }
+            }
+            context.coordinator.inputObserver = obs
+        }
+
         return tv
     }
 
@@ -76,6 +95,14 @@ struct TerminalViewRepresentable: NSViewRepresentable {
     }
 
     final class Coordinator: LocalProcessTerminalViewDelegate {
+        var inputObserver: NSObjectProtocol?
+
+        deinit {
+            if let obs = inputObserver {
+                NotificationCenter.default.removeObserver(obs)
+            }
+        }
+
         func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
         func setTerminalTitle(source: LocalProcessTerminalView, title: String) {}
         func processTerminated(source: TerminalView, exitCode: Int32?) {}
