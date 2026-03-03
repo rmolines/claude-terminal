@@ -101,7 +101,7 @@ Se todos os milestones estão 100% done: reportar conclusão do projeto.
 
 ## Fase 3 — Gerar relatório
 
-```
+```text
 ## 🧭 Project Compass — <projeto>
 _<data e hora atual>_
 

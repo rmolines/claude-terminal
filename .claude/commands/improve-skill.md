@@ -43,7 +43,7 @@ ls ~/git/claude-kickstart/.claude/commands/<nome>.md 2>/dev/null || echo "NOT_FO
 
 **Se a skill NÃO existir no kickstart:**
 
-```
+```text
 Skill '<nome>' não existe em ~/git/claude-kickstart/.claude/commands/.
 
 Use `/create-skill` para criar skills novas direto no kickstart.
@@ -75,7 +75,7 @@ Apresentar o diff ao usuário de forma legível (não raw `diff` output — sint
 Se a descrição foi passada em `$ARGUMENTS`: confirmá-la com o usuário.
 Se não foi passada: perguntar:
 
-```
+```text
 Qual melhoria você quer fazer no skill '<nome>'?
 (Descreva o comportamento atual que está errado/ausente e o comportamento esperado após a melhoria.)
 ```
@@ -115,7 +115,7 @@ git diff .claude/commands/<nome>.md
 
 Apresentar o diff de forma legível e perguntar:
 
-```
+```text
 Diff acima reflete a melhoria. Deseja commitar?
 - Sim → prosseguir para Passo 3
 - Ajustar → descreva o ajuste e voltarei ao 2.2
@@ -143,11 +143,13 @@ git commit -m "improve(<nome>): <descrição-curta>"
 ```bash
 cd ~/git/claude-kickstart
 git push origin improve/<nome>-<data>
-gh pr create \
-  --repo rmolines/claude-kickstart \
-  --title "improve(<nome>): <descrição-curta>" \
-  --body "$(cat <<'EOF'
-## O que muda
+# gh pr create pode detectar repo errado em worktrees — usar gh api diretamente:
+gh api repos/rmolines/claude-kickstart/pulls \
+  --method POST \
+  -f title="improve(<nome>): <descrição-curta>" \
+  -f head="improve/<nome>-<data>" \
+  -f base="main" \
+  -f body="## O que muda
 
 <descrição completa da melhoria — comportamento antes vs. depois>
 
@@ -159,9 +161,8 @@ gh pr create \
 
 <low/medium/high — e o que muda para o usuário da skill>
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
+🤖 Generated with [Claude Code](https://claude.com/claude-code)" \
+  --jq '.html_url'
 ```
 
 Exibir a URL do PR ao usuário.
@@ -172,7 +173,7 @@ Exibir a URL do PR ao usuário.
 
 ### 4.1 — Aguardar confirmação de merge
 
-```
+```text
 PR aberto: <URL>
 
 Aguardando merge. Avise quando o PR for merged para sincronizar ao projeto atual.
@@ -203,7 +204,7 @@ Se não baterem: avisar e sugerir rodar `make sync-skills` novamente.
 
 Ao final, exibir:
 
-```
+```text
 ✅ Sincronização concluída.
 
 Skill '<nome>' atualizada:

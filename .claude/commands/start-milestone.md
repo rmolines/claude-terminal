@@ -1,6 +1,7 @@
 # /start-milestone
 
-Decompõe um milestone do roadmap em features implementáveis com escopo fechado, gera um `sprint.md` ordenado por dependências, e prepara o terreno para o `/start-feature` saber exatamente o que executar em seguida.
+Decompõe um milestone do roadmap em features implementáveis com escopo fechado, gera um `sprint.md` ordenado por dependências,
+e prepara o terreno para o `/start-feature` saber exatamente o que executar em seguida.
 
 **Argumento:** `$ARGUMENTS` — nome do milestone (ex: `M1`, `M2`) e opcionalmente o slug do projeto (ex: `M2 claude-terminal`). Se não fornecido, será detectado automaticamente.
 
@@ -61,7 +62,7 @@ Leia a seção do milestone especificado no roadmap.md. Para cada item (`- [ ]`)
 
 Apresente a decomposição ao usuário **antes de escrever qualquer arquivo**:
 
-```
+````text
 ## Decomposição — <Milestone>: <nome>
 
 **Critério de done do milestone:** <critério do roadmap.md>
@@ -82,7 +83,7 @@ Apresente a decomposição ao usuário **antes de escrever qualquer arquivo**:
 **Primeira feature a executar:** `/start-feature <slug-1>`
 
 Confirma essa decomposição? (ou me diga o que ajustar — posso fundir, dividir ou reordenar features)
-```
+````
 
 Aguarde confirmação antes de continuar. Se o usuário pedir ajustes, incorpore e apresente novamente antes de escrever.
 
@@ -92,7 +93,7 @@ Aguarde confirmação antes de continuar. Se o usuário pedir ajustes, incorpore
 
 Após confirmação, crie o diretório `.claude/feature-plans/<projeto>/<milestone>/` se não existir, e salve o `sprint.md`:
 
-```markdown
+````markdown
 # Sprint <Milestone> — <nome do milestone>
 _Gerado em: <data>_
 
@@ -128,7 +129,7 @@ Uma feature está bem-scoped quando:
 ## Próximo passo
 
 /start-feature <slug-da-feature-1>
-```
+````
 
 ### Atualizar backlog.json (se existir)
 
@@ -139,7 +140,8 @@ Se `.claude/backlog.json` existir:
    - Se sim: atualizar `"status": "active"` se ainda não estiver
 2. Para cada feature confirmada na decomposição:
    - Verificar se já existe no array `features` (por `id`)
-   - Se não: adicionar `{"id": "<slug>", "title": "<descrição>", "status": "pending", "milestone": "<m-id>", "path": null, "dependencies": [<deps>], "branch": null, "prNumber": null, "startedAt": null, "completedAt": null, "createdAt": "<ISO-8601>"}`
+   - Se não: adicionar `{"id": "<slug>", "title": "<descrição>", "status": "pending", "milestone": "<m-id>",`
+     `"path": null, "dependencies": [<deps>], "branch": null, "prNumber": null, "startedAt": null, "completedAt": null, "createdAt": "<ISO-8601>"}`
 3. Validar: `python3 -m json.tool .claude/backlog.json > /dev/null`
 
 Se backlog.json não existir: pular (não criar automaticamente).
@@ -150,7 +152,7 @@ Se backlog.json não existir: pular (não criar automaticamente).
 
 Após salvar, exiba:
 
-```
+```text
 sprint.md salvo em .claude/feature-plans/<projeto>/<milestone>/
 
 <Milestone> — <N> features mapeadas:

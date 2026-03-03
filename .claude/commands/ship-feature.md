@@ -56,7 +56,7 @@ Se `.claude/feature-plans/<nome>/plan.md` existe: ler integralmente e extrair:
 1. Identificar todos os arquivos modificados/novos
 2. **Não adicionar arquivos com secrets** (`.env`, tokens hardcoded)
 3. Compor mensagem de commit no formato:
-   ```
+   ```text
    feat|fix|chore: <descrição concisa>
 
    - <detalhe 1>
@@ -166,7 +166,8 @@ gh run watch <id>
 
 - Se o run **falhar**: exibir erro com `gh run view <id> --log-failed` e **parar** — não avançar sem CI verde
 
-> **Nota:** em projetos com tempo de startup longo, o CI pode expirar mesmo com o deploy funcionando (false positive). Antes de declarar falha: verificar se os serviços estão rodando conforme descrito no CLAUDE.md do projeto.
+> **Nota:** em projetos com tempo de startup longo, o CI pode expirar mesmo com o deploy funcionando (false positive).
+> Antes de declarar falha: verificar se os serviços estão rodando conforme descrito no CLAUDE.md do projeto.
 
 ### 6a. Verificar que o deploy chegou ao ambiente
 
@@ -190,7 +191,7 @@ Se falhar: investigar logs antes de escalar o problema.
 ### 8. Resultado
 
 Se tudo passou:
-```
+```text
 ✅ Feature em produção e validada!
 
 PR: <url>
@@ -242,7 +243,7 @@ Mesmo fluxo do Modo PR passos 6a, 6b e 7.
 
 ### 5. Resultado
 
-```
+```text
 ✅ Iteração entregue e validada!
 
 Commit: <sha curto>
