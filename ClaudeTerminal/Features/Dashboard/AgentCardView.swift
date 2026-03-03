@@ -10,6 +10,7 @@ import Shared
 struct AgentCardView: View {
     let session: AgentSession
     @State private var showTerminal = false
+    @State private var replyText = ""
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1.0)) { _ in
@@ -22,7 +23,22 @@ struct AgentCardView: View {
                 bottomRow
                     .padding(.horizontal, 12)
                     .padding(.top, 4)
-                    .padding(.bottom, 10)
+
+                if !session.recentMessages.isEmpty {
+                    Divider().padding(.top, 6)
+                    messagesPreview
+                        .padding(.horizontal, 12)
+                        .padding(.top, 6)
+                }
+
+                if session.status == .running || session.status == .awaitingInput {
+                    Divider().padding(.top, 6)
+                    replyBox
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                } else {
+                    Spacer().frame(height: 10)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardBackground)
@@ -99,6 +115,47 @@ struct AgentCardView: View {
             .controlSize(.small)
             .tint(.green)
         }
+    }
+
+    // MARK: - Messages preview + reply box
+
+    private var messagesPreview: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            ForEach(session.recentMessages.prefix(3), id: \.self) { msg in
+                Text(msg)
+                    .font(.system(.caption2, design: .default))
+                    .foregroundStyle(.primary.opacity(0.75))
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.bottom, 2)
+    }
+
+    private var replyBox: some View {
+        HStack(spacing: 6) {
+            TextField("Reply to Claude…", text: $replyText)
+                .font(.caption)
+                .textFieldStyle(.plain)
+                .onSubmit { sendReply() }
+            Button(action: sendReply) {
+                Image(systemName: "arrow.up.circle.fill")
+                    .foregroundStyle(replyText.isEmpty ? Color.secondary : Color.blue)
+            }
+            .buttonStyle(.plain)
+            .disabled(replyText.isEmpty)
+        }
+    }
+
+    private func sendReply() {
+        guard !replyText.isEmpty else { return }
+        let text = replyText
+        replyText = ""
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ClaudeTerminal.SessionReply"),
+            object: nil,
+            userInfo: ["cwd": session.cwd, "text": text]
+        )
     }
 
     // MARK: - Badges
@@ -185,6 +242,11 @@ struct AgentCardView: View {
     session.totalInputTokens = 48_200
     session.totalOutputTokens = 12_400
     session.subAgentCount = 2
+    session.recentMessages = [
+        "I've analyzed the codebase and found 3 files to modify.",
+        "Running build to verify changes compile correctly.",
+        "Build succeeded — ready to open a PR."
+    ]
     return AgentCardView(session: session)
         .padding()
         .frame(width: 360)

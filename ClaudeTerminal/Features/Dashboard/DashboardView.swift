@@ -62,6 +62,12 @@ struct DashboardView: View {
                 .help("Open a shell in any directory without creating a task")
             }
             ToolbarItem(placement: .primaryAction) {
+                Button { openQuickAgent() } label: {
+                    Label("New Session", systemImage: "brain.head.profile")
+                }
+                .help("Open a new Claude Code session in any directory")
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button { showNewAgent = true } label: {
                     Label("New Agent", systemImage: "plus")
                 }
@@ -86,7 +92,17 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Quick terminal
+    // MARK: - Quick agent / terminal
+
+    private func openQuickAgent() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.title = "Select Project Directory"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        openWindow(id: "quick-agent", value: QuickAgentConfig(directoryPath: url.path))
+    }
 
     private func openQuickTerminal() {
         let panel = NSOpenPanel()

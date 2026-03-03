@@ -42,5 +42,11 @@ struct ClaudeTerminalApp: App {
                 QuickTerminalView(config: c)
             }
         }
+
+        WindowGroup("Claude Agent", id: "quick-agent", for: QuickAgentConfig.self) { $config in
+            if let c = config {
+                QuickAgentView(config: c)
+            }
+        }
     }
 }

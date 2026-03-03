@@ -19,6 +19,12 @@ actor SessionManager {
         switch event.type {
         case .notification:
             updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
+            if let msg = event.detail, !msg.isEmpty {
+                var msgs = sessions[event.sessionID]?.recentMessages ?? []
+                msgs.insert(msg, at: 0)
+                if msgs.count > 3 { msgs = Array(msgs.prefix(3)) }
+                sessions[event.sessionID]?.recentMessages = msgs
+            }
 
         case .bashToolUse:
             updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
@@ -104,4 +110,5 @@ struct AgentSession: Sendable {
     var totalInputTokens: Int = 0
     var totalOutputTokens: Int = 0
     var totalCacheReadTokens: Int = 0
+    var recentMessages: [String] = []
 }
