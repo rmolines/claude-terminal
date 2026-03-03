@@ -2,10 +2,9 @@ import SwiftUI
 import SwiftData
 import Shared
 
-/// Main dashboard — shows all active/paused/completed agent sessions.
+/// Main dashboard — shows all active/paused/completed agent sessions as an adaptive card grid.
 struct DashboardView: View {
     private let store = SessionStore.shared
-    @State private var selectedSessionID: String?
     @State private var showNewAgent = false
     @State private var showOnboarding = false
     @State private var hookStatus: HookInstallStatus = .notInstalled
@@ -16,24 +15,27 @@ struct DashboardView: View {
         store.sessions.values.sorted { $0.lastEventAt > $1.lastEventAt }
     }
 
-    private var selectedSession: AgentSession? {
-        guard let id = selectedSessionID else { return nil }
-        return store.sessions[id]
-    }
-
     var body: some View {
         NavigationSplitView {
             TaskBacklogView()
                 .frame(minWidth: 240)
-        } content: {
-            List(sortedSessions, id: \.sessionID, selection: $selectedSessionID) { session in
-                SessionRow(session: session)
-            }
         } detail: {
-            if let session = selectedSession {
-                AgentTerminalView(session: session)
-            } else {
-                emptyState
+            Group {
+                if sortedSessions.isEmpty {
+                    emptyState
+                } else {
+                    ScrollView {
+                        LazyVGrid(
+                            columns: [GridItem(.adaptive(minimum: 280))],
+                            spacing: 12
+                        ) {
+                            ForEach(sortedSessions, id: \.sessionID) { session in
+                                AgentCardView(session: session)
+                            }
+                        }
+                        .padding(16)
+                    }
+                }
             }
         }
         .navigationTitle("Claude Terminal")
@@ -105,112 +107,10 @@ struct DashboardView: View {
                 .foregroundStyle(.secondary)
             Text("Claude Terminal")
                 .font(.title2.bold())
-            Text("Select an agent session to open a terminal")
+            Text("Start a Claude Code session in any terminal to see it here")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - SessionRow
-
-private struct SessionRow: View {
-    let session: AgentSession
-
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 1.0)) { _ in
-            HStack(spacing: 12) {
-                statusIcon
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(session.cwd)
-                            .font(.system(.body, design: .monospaced))
-                            .lineLimit(1)
-                        Spacer()
-                        Text(formatElapsed(session.startedAt))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                    HStack(spacing: 6) {
-                        if let activity = session.currentActivity {
-                            Text(activity)
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        } else {
-                            Text(session.sessionID)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        tokenBadge
-                        if session.subAgentCount > 0 {
-                            Text("×\(session.subAgentCount) sub")
-                                .font(.caption.bold())
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 1)
-                                .background(.gray.opacity(0.2))
-                                .foregroundStyle(.secondary)
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                        }
-                        if session.status == .awaitingInput {
-                            Text("HITL")
-                                .font(.caption.bold())
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(.orange)
-                                .foregroundStyle(.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                        }
-                    }
-                }
-            }
-            .padding(.vertical, 4)
-        }
-    }
-
-    @ViewBuilder
-    private var tokenBadge: some View {
-        let total = session.totalInputTokens + session.totalOutputTokens
-        if total > 0 {
-            let cost = Double(session.totalInputTokens) * 3.0 / 1_000_000
-                     + Double(session.totalOutputTokens) * 15.0 / 1_000_000
-                     + Double(session.totalCacheReadTokens) * 0.30 / 1_000_000
-            let tokLabel = total >= 1000
-                ? String(format: "%.1fk tok", Double(total) / 1000)
-                : "\(total) tok"
-            Text("\(tokLabel) · \(String(format: "$%.2f", cost))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-        }
-    }
-
-    @ViewBuilder
-    private var statusIcon: some View {
-        switch session.status {
-        case .running:
-            Image(systemName: "circle.fill")
-                .foregroundStyle(.green)
-        case .awaitingInput:
-            Image(systemName: "circle.fill")
-                .foregroundStyle(.orange)
-        case .completed:
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.secondary)
-        case .blocked:
-            Image(systemName: "xmark.circle.fill")
-                .foregroundStyle(.red)
-        }
-    }
-
-    private func formatElapsed(_ from: Date) -> String {
-        let s = Int(Date().timeIntervalSince(from))
-        if s < 60 { return "\(s)s" }
-        let m = s / 60; let sec = s % 60
-        if m < 60 { return "\(m)m \(sec)s" }
-        return "\(m / 60)h \(m % 60)m"
     }
 }
 
@@ -219,7 +119,7 @@ private struct SessionRow: View {
 @MainActor
 private func populateSampleSessions() {
     let store = SessionStore.shared
-    var s1 = AgentSession(sessionID: "prev-1", cwd: "/Users/dev/git/claude-terminal/.claude/worktrees/auth-flow")
+    var s1 = AgentSession(sessionID: "prev-1", cwd: "/Users/dev/git/claude-terminal/.claude/worktrees/agent-card-ui")
     s1.status = .running
     s1.currentActivity = "$ swift build -c release"
     s1.totalInputTokens = 48_200
@@ -229,7 +129,7 @@ private func populateSampleSessions() {
 
     var s2 = AgentSession(sessionID: "prev-2", cwd: "/Users/dev/git/my-app/.claude/worktrees/fix-crash")
     s2.status = .awaitingInput
-    s2.currentActivity = "Awaiting approval"
+    s2.currentActivity = "Agent wants to run: rm -rf .build && swift build"
     s2.totalInputTokens = 9_800
     s2.totalOutputTokens = 3_100
     store.update(s2)
@@ -240,9 +140,16 @@ private func populateSampleSessions() {
     s3.totalInputTokens = 120_500
     s3.totalOutputTokens = 41_200
     store.update(s3)
+
+    var s4 = AgentSession(sessionID: "prev-4", cwd: "/Users/dev/git/agent-os/.claude/worktrees/github-skill")
+    s4.status = .running
+    s4.currentActivity = "Editing SkillRegistryView.swift"
+    s4.totalInputTokens = 22_100
+    s4.totalOutputTokens = 8_300
+    store.update(s4)
 }
 
-#Preview("Dashboard — 3 sessions") {
+#Preview("Dashboard — 4 sessions") {
     DashboardView()
         .modelContainer(
             try! ModelContainer(
@@ -250,7 +157,7 @@ private func populateSampleSessions() {
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
             )
         )
-        .frame(width: 1200, height: 700)
+        .frame(width: 1000, height: 600)
         .task { populateSampleSessions() }
 }
 
@@ -262,9 +169,8 @@ private func populateSampleSessions() {
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
             )
         )
-        .frame(width: 1200, height: 700)
+        .frame(width: 1000, height: 600)
         .task {
-            // Clear any sessions that may have leaked from other previews
             SessionStore.shared.sessions.keys.forEach { SessionStore.shared.remove(sessionID: $0) }
         }
 }
