@@ -148,7 +148,13 @@ Com base no `plan.md` (passo 0), verificar cada item antes de mergear:
 
 Mergear diretamente **sem pedir confirmação**:
 ```bash
-gh pr merge --squash --delete-branch
+BRANCH=$(git branch --show-current)
+gh pr merge --squash
+# --delete-branch falha silenciosamente em worktree (main já checked out no repo pai)
+# Deletar remote branch explicitamente:
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" 2>/dev/null \
+  || echo "⚠️  Remote branch não deletada automaticamente — limpar com: gh api -X DELETE repos/$REPO/git/refs/heads/$BRANCH"
 ```
 
 Monitorar o run de CI disparado pelo merge:

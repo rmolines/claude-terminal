@@ -181,10 +181,18 @@ git -C "$REPO_ROOT" worktree list | grep "<nome>"
 - Se existir e o agente atual estiver **dentro** dela: avisar que precisa sair primeiro (a worktree não pode remover a si mesma)
 - Se existir e o agente estiver **fora** dela:
   ```bash
-  git -C "$REPO_ROOT" worktree remove --force "$WORKTREE_PATH"
-  git -C "$REPO_ROOT" branch -D claude/<nome> 2>/dev/null || true
+  git -C "$REPO_ROOT" worktree remove --force "$WORKTREE_PATH" 2>/dev/null || true
+  git -C "$REPO_ROOT" worktree prune
+  git -C "$REPO_ROOT" branch -D worktree-<nome> 2>/dev/null || true
+  # Limpar remote branch se ship-feature não deletou (falha silenciosa em worktree)
+  REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+  gh api -X DELETE "repos/$REPO/git/refs/heads/worktree-<nome>" 2>/dev/null || true
   ```
-- Se não existir: pular sem mensagem
+- Se não existir no `git worktree list` mas o diretório ainda estiver em disco:
+  ```bash
+  rm -rf "$WORKTREE_PATH"
+  ```
+- Se não existir em nenhum dos dois: pular sem mensagem
 
 ### 3. Limpar feature-plans
 
