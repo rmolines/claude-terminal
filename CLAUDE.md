@@ -58,6 +58,10 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | `.github/workflows/release.yml` | Pipeline de notarização — ler antes de mudar targets/entitlements |
 | `app.entitlements` + `helper.entitlements` | Entitlements — mudanças podem causar falha na notarização |
 | `Package.swift` | Dependências e targets — mudanças afetam CI |
+| `.claude/ux-identity.md` | Modelo mental + constraints de UX — ler antes de qualquer feature que toca UI |
+| `.claude/ux-patterns.md` | Decision table de interações — padrões a seguir em novas views |
+| `.claude/ux-screens.md` | Contrato de intenção por tela — job de cada screen |
+| `.claude/commands/design-review.md` | Skill head of design — usar antes de abrir PR com mudanças de UI |
 
 ## Armadilhas conhecidas
 
@@ -114,6 +118,14 @@ make check           # Lint + validate
 swift build          # Build local de todos os targets
 swift test           # Rodar testes
 ```
+
+## Design workflow
+
+Antes de qualquer feature que toca UI:
+
+1. Ler `.claude/ux-identity.md` + `.claude/ux-screens.md` da(s) tela(s) afetada(s)
+2. Verificar padrões aplicáveis em `.claude/ux-patterns.md`
+3. Após implementar: `/design-review <NomeDaView>` antes de abrir PR
 
 ## Desenvolvimento com Xcode MCP
 
