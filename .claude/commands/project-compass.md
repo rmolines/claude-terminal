@@ -48,7 +48,15 @@ Para cada sprint.md encontrado, extrair:
 - Objetivo e critério de done
 - Features e respectivos status (`✅ done`, `pending`, `in_progress` ou checkboxes `- [ ]` / `- [x]`)
 
-### 1c. PRs merged (features entregues)
+### 1c. Backlog JSON
+
+```bash
+cat .claude/backlog.json 2>/dev/null || echo "(sem backlog.json)"
+```
+
+Se existir: extrair milestones com status, features por milestone com status e path, pitches pendentes.
+
+### 1d. PRs merged (features entregues)
 
 ```bash
 gh pr list --state merged --json number,title,headRefName,mergedAt --limit 50
@@ -57,7 +65,7 @@ gh pr list --state merged --json number,title,headRefName,mergedAt --limit 50
 Filtrar onde `headRefName` começa com `feature/`. Extrair slugs e datas.
 Se `gh` não estiver autenticado, pular e anotar no relatório: "(PRs merged não verificados — `gh` não autenticado)"
 
-### 1d. Branches de feature ativos (em andamento)
+### 1e. Branches de feature ativos (em andamento)
 
 ```bash
 git branch -a | grep "feature/"
@@ -71,13 +79,21 @@ Extrair slugs das branches locais e remotas.
 
 Construir visão por milestone:
 
+**Fonte de status (prioridade):**
+1. Se `backlog.json` existe: usar como fonte primária de status das features
+   - `status=in-progress` → em andamento
+   - `status=done` → done
+   - `status=pending` → pendente
+   - sprint.md complementa com detalhes de decomposição
+2. Se não existe backlog.json: inferir pelo cruzamento de sprint.md + PRs merged + branches
+
 Para cada milestone (M1, M2, M3, ...):
-1. Listar features do sprint.md
-2. Marcar como **done** se: status `✅ done` ou `- [x]` no sprint.md, OU PR merged com slug correspondente
-3. Marcar como **em andamento** se: branch `feature/<slug>` existe (local ou remota) E não merged
+1. Listar features (de backlog.json ou sprint.md)
+2. Marcar como **done** se: `status=done` no backlog, OU `✅ done` / `- [x]` no sprint.md, OU PR merged com slug correspondente
+3. Marcar como **em andamento** se: `status=in-progress` no backlog, OU branch `feature/<slug>` existe E não merged
 4. Marcar como **pendente** se: nenhuma das condições acima
 
-**Milestone atual** = primeiro milestone que tem features `pendente` ou `em andamento`.
+**Milestone atual** = primeiro milestone com status `active` no backlog, ou primeiro com features pendentes/em andamento.
 
 Se todos os milestones estão 100% done: reportar conclusão do projeto.
 
@@ -125,6 +141,16 @@ Features entregues (todos os milestones):
 Dependências: <deps do sprint.md, ou "nenhuma">
 
 Bloqueios abertos: <PRs abertos em review, ou "nenhum">
+
+---
+
+### 💡 Pitches (se houver no backlog.json)
+
+| Pitch | Problema | Status |
+|-------|---------|--------|
+| <título> | <problema curto> | awaiting-bet |
+
+_(Omitir esta seção se não houver pitches no backlog.json)_
 
 ---
 
