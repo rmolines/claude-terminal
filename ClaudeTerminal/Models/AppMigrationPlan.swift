@@ -1,4 +1,4 @@
-import SwiftData
+@preconcurrency import SwiftData
 
 /// SwiftData migration plan: V1 → V2.
 ///
