@@ -46,14 +46,15 @@ mesmo que CommonMark diga o contrário — isso gera erros MD040 e MD048 inesper
 
 **Fix:** usar 4 backticks para o outer fence quando o conteúdo contém ` ``` ` internos:
 
-````text
-````markdown
-# Exemplo com fence interna
-```bash
-echo "isso é literal"
+```text
+Example: outer fence with 4 backticks wrapping inner 3-backtick fences
+  ````markdown
+  # Exemplo com fence interna
+  ```bash
+  echo "isso é literal"
+  ```
+  ````
 ```
-````
-````
 
 Tildes (`~~~`) resolvem o nesting mas violam MD048 (project exige backtick-only). Sempre usar 4 backticks.
 

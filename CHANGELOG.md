@@ -21,6 +21,7 @@ Dois bugs na migration plan V1→V2 introduzida em bc22d7f combinavam para imped
    Core Data lightweight migration exige `defaultValue` na NSAttributeDescription para popular linhas existentes ao adicionar coluna não-opcional.
 
 ### Arquivos-chave
+
 - `ClaudeTerminal/Models/SchemaV1.swift` — entity names corrigidos
 - `ClaudeTerminal/Models/ClaudeTask.swift` — default value adicionado
 

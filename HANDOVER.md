@@ -9,7 +9,8 @@ Newest entries at the top.
 **O que foi feito:** Corrigiu crash fatal no boot do app (`SwiftData.SwiftDataError`) causado por dois bugs na migration plan V1→V2 introduzida em bc22d7f (M4 Unit 2).
 
 **Causa raiz:**
-1. `SchemaV1` usava `ClaudeTaskV1`/`ClaudeAgentV1` como nomes de classe → Core Data gerava entity names "ClaudeTaskV1"/"ClaudeAgentV1", mas o store em disco tinha "ClaudeTask"/"ClaudeAgent". Sem match de source model → migration lançava exceção → `try!` crashava.
+1. `SchemaV1` usava `ClaudeTaskV1`/`ClaudeAgentV1` como nomes de classe → Core Data gerava entity names errados
+   vs. o store em disco ("ClaudeTask"/"ClaudeAgent"). Sem match de source model → migration lançava exceção → `try!` crashava.
 2. `var priority: String` sem default value → Core Data não conseguia popular linhas existentes com a nova coluna durante lightweight migration.
 
 **Fix:** Renomear inner classes para `ClaudeTask`/`ClaudeAgent` em `SchemaV1` (namespaceadas pelo enum, sem conflito); adicionar `= ""` em `var priority: String`.
@@ -147,7 +148,9 @@ Conectou os 6 fios desconectados do scaffold para que eventos fluam:
 
 ## 2026-03-02 — skill-frontmatter-registry (PR #15)
 
-**O que foi feito:** Adicionada Skills Registry — sheet acessível via botão sparkles na toolbar do Dashboard. Lista auto-trigger skills (`~/.claude/skills/`), global commands (`~/.claude/commands/`) e project commands (`.claude/commands/` de cada sessão ativa), com busca em tempo real e badges coloridos por tipo.
+**O que foi feito:** Adicionada Skills Registry — sheet acessível via botão sparkles na toolbar.
+Lista auto-trigger skills (`~/.claude/skills/`), global commands (`~/.claude/commands/`) e project commands
+(`.claude/commands/` de cada sessão ativa), com busca em tempo real e badges coloridos por tipo.
 
 **Decisões técnicas:**
 - Parsing de frontmatter YAML em Swift puro (sem dependência externa) — string splitting simples
