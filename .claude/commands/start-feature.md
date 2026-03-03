@@ -13,6 +13,7 @@ O argumento passado é o nome ou descrição da feature: $ARGUMENTS
 Parsear `$ARGUMENTS`:
 - `--discover [<nome>]` → flag discover
 - `--deep [<nome>]` → flag deep
+- `--novel [<nome>]` → flag novel (pode combinar: `--discover --novel`, `--deep --novel`)
 - `--fast [<nome>]` → alias silencioso de default (sem flag)
 - `<nome>` simples → sem flag
 - vazio → perguntar nome (ver abaixo)
@@ -38,6 +39,10 @@ Verificar `.claude/feature-plans/<nome>/`:
 | Nenhum arquivo existe + flag `--deep` | Fase A — Pesquisa (full workflow) |
 | Nenhum arquivo existe + sem flag (default) | Fase C fast — Execução direta |
 
+> **`--novel`** pode ser combinada com qualquer fase (`--discover --novel`, `--deep --novel`).
+> Quando ativa: substitui subagentes de web search por analogia por raciocínio de primeira ordem.
+> Sem ela: a skill detecta automaticamente se web search retorna pouco e avisa.
+
 ---
 
 ## FASE 0 — Discovery (pitch mode)
@@ -55,10 +60,38 @@ Lance os 3 subagentes simultaneamente com Task tool (`run_in_background=true`).
 > Identifique o módulo mais próximo ao problema descrito em: `<feature descrita>`.
 > Retorne: o que já existe no projeto que resolve parcialmente o problema, pontos de extensão naturais, dependências internas relevantes.
 
-**Subagente B — Web:**
+**Subagente B — Web / First-principles:**
+
+Se `--novel` está ativo **ou** se o web search anterior não encontrou precedentes relevantes:
+> Você é um raciocínador de primeira ordem. NÃO faça web search por produtos similares.
+> Execute este chain of thought para `<feature descrita>`:
+>
+> **Etapa 1 — Desconstrução em primitivos**
+> Reduza o objetivo a pré/pós-condições em linguagem não-técnica, sem mencionar soluções.
+> "Para que este problema esteja resolvido, o que precisa ser verdade?"
+>
+> **Etapa 2 — Suposições implícitas**
+> Liste 5+ suposições implícitas sobre como resolver isso.
+> Para cada uma: "Suposição: [X]. Precisa ser verdade? [Sim/Não/Talvez — porque...]"
+>
+> **Etapa 3 — Restrições reais vs. convencionais**
+> Separe: (a) restrições físicas/lógicas — impossível contornar; (b) restrições convencionais — candidatas a desafiar.
+>
+> **Etapa 4 — Construção ascendente**
+> A partir das pós-condições (Etapa 1) e restrições reais (Etapa 3), derive a solução de baixo para cima.
+> Sem citar produtos ou implementações existentes.
+>
+> **Etapa 5 — Análogos estruturais (domínios não-tech)**
+> Identifique problemas em física, biologia, design, economia com a mesma estrutura lógica.
+> Para cada análogo: "O que transfere para nossa solução?"
+>
+> Retorne: síntese das 5 etapas + 2-3 abordagens derivadas do raciocínio.
+
+Se `--novel` **não** está ativo:
 > Pesquise como produtos similares resolvem: `<feature descrita>`.
 > Foco: padrões de UX estabelecidos, alternativas, trade-offs documentados em 2025-2026.
 > Retorne: 2-3 abordagens com prós e contras.
+> **Se não encontrar nada relevante** (feature parece inédita): retorne `SEM_PRECEDENTES` + o que tentou buscar.
 
 **Subagente C — Tech estimate:**
 > Com base em `<feature descrita>` e no stack (leia CLAUDE.md):
@@ -68,7 +101,19 @@ Aguardar com `TaskOutput`. Sintetizar antes de continuar.
 
 ### Passo 0.2 — Síntese inicial
 
-Apresentar:
+Se o Subagente B retornou `SEM_PRECEDENTES` e `--novel` **não** estava ativo:
+
+```text
+⚠️  Web search não encontrou precedentes relevantes para "<feature>".
+Esta pode ser uma feature inédita. Sugestão: rode /start-feature --discover --novel <nome>
+para ativar raciocínio de primeira ordem em vez de busca por analogias.
+
+Continuar mesmo assim? (sim = prosseguir com o que foi encontrado; não = encerrar)
+```
+
+Aguardar resposta antes de continuar.
+
+Caso contrário, apresentar:
 
 ```text
 ## Entendimento atual
@@ -163,9 +208,35 @@ Lance os 3 subagentes simultaneamente com Task tool (`run_in_background=true`).
 > Se existir: identifique hot files com claim ativo, worktrees com sobreposição, ordem de merge recomendada.
 > Se não existir: retorne "Sem coordenador ativo — sem conflitos a reportar".
 
-**Subagente C — Web researcher** (somente se a feature usa libs/APIs externas):
+**Subagente C — Web researcher / First-principles** (somente se a feature usa libs/APIs externas ou `--novel` está ativo):
+
+Se `--novel` está ativo:
+> Você é um raciocínador de primeira ordem. Execute o chain of thought abaixo para `<feature descrita>`.
+> Foco: arquitetura técnica — não UX/produto. Parta dos primitivos do stack (leia CLAUDE.md).
+>
+> **Etapa 1 — Primitivos técnicos**
+> Quais operações fundamentais (I/O, transformação, sincronização, armazenamento) compõem o núcleo desta feature?
+> Liste em termos de primitivos do sistema, sem citar bibliotecas.
+>
+> **Etapa 2 — Suposições de implementação**
+> Liste 5+ suposições sobre como implementar isso.
+> "Suposição: [X]. Precisa ser verdade dado o stack? [Sim/Não — porque...]"
+>
+> **Etapa 3 — Restrições do stack**
+> Dado o stack declarado no CLAUDE.md: quais restrições são impostas pela plataforma/linguagem? Quais são apenas convenções?
+>
+> **Etapa 4 — Construção a partir do stack**
+> Derive a abordagem de implementação usando apenas os primitivos do stack identificados.
+>
+> **Etapa 5 — Onde libs externas ajudam vs. atrapalham**
+> Para cada componente da Etapa 4: "Há uma lib que resolve exatamente isso sem overfit? Ou a construção própria é mais limpa?"
+>
+> Retorne: arquitetura derivada + lista comentada de libs (usar / não usar / construir próprio).
+
+Se `--novel` **não** está ativo (comportamento padrão):
 > Pesquise boas práticas para `<tecnologia/API relevante>`.
 > Foco: padrões de integração 2025-2026, armadilhas, versões estáveis.
+> **Se não encontrar nada relevante** (feature parece inédita): retorne `SEM_PRECEDENTES_TECH` + o que tentou buscar.
 
 Aguardar com `TaskOutput`. Sintetizar resultados.
 
@@ -372,6 +443,7 @@ Resultado:
 | (nenhuma) | Fase C fast — execução direta | Feature clara, 1-3 arquivos, sem pesquisa |
 | `--deep` | Fase A → B → C — workflow completo | Feature complexa, múltiplos arquivos, incerteza técnica |
 | `--discover` | Fase 0 — pitch, para antes da worktree | Ainda explorando o problema, sem bet |
+| `--novel` | Ativa first-principles reasoning em vez de web search por analogias | Feature inédita, sem precedentes — combinar com `--discover` ou `--deep` |
 | `--fast` | Alias de (nenhuma) — depreciado | Substituído pelo default |
 
 ---
@@ -383,3 +455,5 @@ Resultado:
 - **Na Fase C: não parar entre passos pedindo confirmação — executar autonomamente**
 - **MEMORY.md coordinator vai sempre para main via commit imediato — nunca deixar pendente**
 - **`--fast` é depreciado** — comportamento agora é o default sem flag
+- **`--novel` não é exclusivo de `--discover`** — funciona em qualquer fase que envolva pesquisa externa
+- **Detecção automática de `SEM_PRECEDENTES`**: quando a skill detecta feature inédita sem `--novel`, sempre avisar e sugerir antes de prosseguir — nunca pular silenciosamente
