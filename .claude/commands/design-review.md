@@ -29,27 +29,189 @@ em `ux-screens.md` e os padrões aplicáveis em `ux-patterns.md`.
 
 ---
 
-## Modo de ativação
+## Detecção de modo
 
-O skill pode ser invocado de duas formas:
-
-### A) Com view específica
+Após o pré-flight, determinar o modo de execução:
 
 ```
-/design-review AgentCardView
+Se argumento for "--holistic":
+  → Revisão holística
+Se argumento fornecido (e não --holistic):
+  Buscar o nome em ux-screens.md
+  Se ENCONTRADO → Loop de revisão (por view) — fluxo padrão
+  Se NÃO ENCONTRADO → Intake mode
+Se sem argumento:
+  → Loop de revisão (feature em progresso)
 ```
 
-Revisar a view indicada: RenderPreview → checklist de padrões → drift check → veredito.
+**Sinal para intake:**
 
-### B) Sem argumento (revisão de feature em progresso)
-
+```text
+🆕 "<nome>" não existe em ux-screens.md.
+Entrando em modo intake — vou entrevistar você antes de qualquer revisão.
 ```
-/design-review
+
+**Sinal para holístico:**
+
+```text
+🔭 Iniciando revisão holística do app.
+Lendo spec completa e derivando mapa de navegação...
 ```
 
-1. Identificar a feature em desenvolvimento (branch atual, arquivos modificados)
-2. Listar as views tocadas pela feature
-3. Revisar cada view em sequência
+---
+
+## Intake mode
+
+Executar quando o argumento fornecido não existe em `ux-screens.md`. O objetivo é capturar
+o contrato de intenção da tela *antes* da implementação, via entrevista estruturada.
+
+### Round 1 — Contexto e persona (máx 3 perguntas)
+
+Fazer as três perguntas de uma vez, em bloco:
+
+```text
+Para entender o contrato desta tela, preciso de algumas informações:
+
+1. Quem usa essa tela? Em que momento do fluxo do app?
+2. O que o usuário está tentando fazer aqui — em uma frase?
+3. De onde o usuário chega nessa tela? Para onde vai depois?
+```
+
+### Round 2 — Restrições e escopo (máx 3 perguntas)
+
+Após receber as respostas do Round 1, fazer em bloco:
+
+```text
+Mais algumas perguntas para fechar o escopo:
+
+1. O que está explicitamente fora do escopo desta tela?
+2. Há alguma restrição técnica ou de design que já sabemos?
+3. Como sabemos que essa tela está funcionando bem? (critério de sucesso)
+```
+
+### Round 3 — Clarificação (condicional)
+
+Somente se alguma resposta dos rounds anteriores for ambígua ou incompleta.
+Máximo 2 perguntas de clarificação, em bloco.
+
+### Síntese — proposta de adições à spec
+
+Após as rodadas, sintetizar e apresentar:
+
+```text
+Com base nas suas respostas, proponho o seguinte contrato para ux-screens.md:
+
+---
+## <NomeDaTela>
+
+**Job:** <uma frase — o que o usuário faz aqui>
+
+**Data exibida:**
+- <item 1>
+- <item 2>
+
+**Entry:** <de onde o usuário chega>
+
+**Exit:**
+- <destino 1> — <trigger>
+- <destino 2> — <trigger>
+
+**Open items:**
+- [ ] <questão em aberto, se houver>
+---
+
+Novos padrões candidatos para ux-patterns.md:
+[listar apenas se identificados — caso contrário omitir]
+
+A identidade do app (ux-identity.md) precisa ser atualizada? [Sim/Não — razão]
+
+Salvar essas adições na spec agora? (sim = eu escrevo; não = você decide depois)
+```
+
+Aguardar confirmação explícita antes de escrever qualquer arquivo.
+
+---
+
+## Revisão holística
+
+Invocação: `/design-review --holistic`
+
+Execução em 4 etapas. Apenas leitura — não modifica nenhum arquivo automaticamente.
+
+### Etapa 1 — Leitura completa da spec
+
+Ler `ux-identity.md`, `ux-patterns.md` e `ux-screens.md` integralmente.
+(Já executado no pré-flight — confirmar que todos os três foram lidos antes de continuar.)
+
+### Etapa 2 — Mapa de navegação
+
+Derivar o grafo Entry/Exit de todas as telas em `ux-screens.md`.
+
+Verificar:
+- **Orphans:** telas sem Entry declarado (ninguém chega aqui?)
+- **Dead ends:** telas sem Exit declarado (sem saída definida)
+- **Loops:** sequências Entry/Exit que criam ciclos sem saída clara
+
+Output: tabela de navegação + lista de anomalias encontradas.
+
+### Etapa 3 — Consistência de padrões
+
+Para cada padrão em `ux-patterns.md`:
+- Verificar se todas as telas listadas em "Screens" do padrão realmente o declaram aplicado
+- Verificar o inverso: telas que *deveriam* aplicar um padrão pela natureza do seu job mas não o listam
+
+Output: matriz telas × padrões (OK / Ausente / Contradição).
+
+### Etapa 4 — Auditoria de constraints no nível do app
+
+Para cada constraint de `ux-identity.md` (C1-C5): avaliar se a constraint é respeitada
+como **regra do sistema** — não view por view, mas como padrão global.
+
+Exemplos de perguntas sistêmicas:
+- C1 "status passivo, ação deliberada" — existe tela onde ação pode acontecer por acidente?
+- C3 "uma tela, uma decisão" — alguma tela acumula jobs demais?
+- C4 "não esconder, não forçar" — alguma tela oculta estado ou força ação sem alternativa?
+
+### Relatório holístico
+
+```markdown
+## Design Review Holístico
+Data: <hoje>
+
+### Veredito geral
+[COERENTE | NECESSITA ALINHAMENTO | DRIFT SISTÊMICO]
+
+### Mapa de navegação
+| Tela | Entry | Exit | Anomalia |
+|---|---|---|---|
+| <nome> | <origem> | <destino(s)> | Nenhuma / Orphan / Dead end |
+
+**Anomalias encontradas:**
+- [lista — ou "Nenhuma"]
+
+### Consistência de padrões
+| Tela | <Padrão A> | <Padrão B> | <Padrão N> |
+|---|---|---|---|
+| <nome> | OK / Ausente / Contradição | ... | ... |
+
+### Auditoria de constraints
+| Constraint | Status global | Observação |
+|---|---|---|
+| C1 — Status passivo, ação deliberada | OK / VIOLAÇÃO | <detalhe> |
+| C2 — Terminal como inspeção | OK / VIOLAÇÃO | <detalhe> |
+| C3 — Uma tela, uma decisão | OK / VIOLAÇÃO | <detalhe> |
+| C4 — Não esconder, não forçar | OK / VIOLAÇÃO | <detalhe> |
+| C5 — Menu bar como sinaleiro | OK / VIOLAÇÃO | <detalhe> |
+
+### Registro de dívida de design
+| Tela | Open items | Prioridade |
+|---|---|---|
+| <tela com mais itens Open> | N itens abertos | Alta / Média / Baixa |
+
+### Próximas ações recomendadas
+1. <ação concreta — tela + problema + sugestão>
+2. <ação concreta — tela + problema + sugestão>
+```
 
 ---
 
@@ -197,3 +359,5 @@ corrigidos na próxima feature que tocar essa view:
 - **Nunca adicionar à spec** sem confirmação — a spec é fonte de verdade, não um log de features
 - **Nunca aprovar** uma view com drift Maior — drift Maior = job errado = feature errada
 - **Foco no job, não na estética** — "bonito" não é critério; "serve o job declarado" é o critério
+- **Intake nunca escreve** em `ux-screens.md` sem confirmação explícita do dev
+- **Holístico é somente leitura** — não modifica nenhum arquivo automaticamente
