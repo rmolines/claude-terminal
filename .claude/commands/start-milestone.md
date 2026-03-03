@@ -140,7 +140,8 @@ Se `.claude/backlog.json` existir:
    - Se sim: atualizar `"status": "active"` se ainda não estiver
 2. Para cada feature confirmada na decomposição:
    - Verificar se já existe no array `features` (por `id`)
-   - Se não: adicionar `{"id": "<slug>", "title": "<descrição>", "status": "pending", "milestone": "<m-id>", "path": null, "dependencies": [<deps>], "branch": null, "prNumber": null, "startedAt": null, "completedAt": null, "createdAt": "<ISO-8601>"}`
+   - Se não: adicionar entrada com campos: `id`, `title`, `status: "pending"`, `milestone`, `path: null`,
+     `dependencies`, `branch: null`, `prNumber: null`, `startedAt: null`, `completedAt: null`, `createdAt: "<ISO-8601>"`
 3. Validar: `python3 -m json.tool .claude/backlog.json > /dev/null`
 
 Se backlog.json não existir: pular (não criar automaticamente).

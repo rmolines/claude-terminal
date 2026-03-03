@@ -9,11 +9,16 @@
 **PR:** [#19](https://github.com/rmolines/claude-terminal/pull/19) · **Complexidade:** simples
 
 ### Problema
-App crashava imediatamente no boot com `Fatal error: 'try!' expression unexpectedly raised an error: SwiftData.SwiftDataError` na inicialização do `ModelContainer`. Dois bugs na migration plan V1→V2 introduzida em bc22d7f combinavam para impedir qualquer lançamento em devices com dados existentes.
+
+App crashava no boot com `Fatal error: SwiftData.SwiftDataError` na inicialização do `ModelContainer`.
+Dois bugs na migration plan V1→V2 introduzida em bc22d7f combinavam para impedir qualquer lançamento em devices com dados existentes.
 
 ### Fix aplicado
-1. **`SchemaV1.swift`**: renomeado `ClaudeTaskV1`/`ClaudeAgentV1` → `ClaudeTask`/`ClaudeAgent`. Os nomes de classe determinam os entity names Core Data — o sufixo V1 criava mismatch com o store em disco.
-2. **`ClaudeTask.swift`**: adicionado `= ""` em `var priority: String`. Core Data lightweight migration exige `defaultValue` na NSAttributeDescription para popular linhas existentes ao adicionar coluna não-opcional.
+
+1. **`SchemaV1.swift`**: renomeado `ClaudeTaskV1`/`ClaudeAgentV1` → `ClaudeTask`/`ClaudeAgent`.
+   Os nomes de classe determinam os entity names Core Data — o sufixo V1 criava mismatch com o store em disco.
+2. **`ClaudeTask.swift`**: adicionado `= ""` em `var priority: String`.
+   Core Data lightweight migration exige `defaultValue` na NSAttributeDescription para popular linhas existentes ao adicionar coluna não-opcional.
 
 ### Arquivos-chave
 - `ClaudeTerminal/Models/SchemaV1.swift` — entity names corrigidos
