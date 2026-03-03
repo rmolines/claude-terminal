@@ -39,7 +39,7 @@ Lance os subagentes simultaneamente com Task tool (`run_in_background=true`).
 
 **Subagente A — Xcode MCP:**
 
-```
+```text
 1. XcodeListNavigatorIssues — erros e warnings no Issue Navigator
 2. BuildProject — tentar build e capturar erros estruturados
 3. Se build falhou: GetBuildLog para detalhes completos
@@ -48,7 +48,7 @@ Lance os subagentes simultaneamente com Task tool (`run_in_background=true`).
 
 **Subagente B — Codebase:**
 
-```
+```text
 Ler o(s) arquivo(s) relevantes mencionados na descrição do problema.
 Ler CLAUDE.md para identificar armadilhas conhecidas que se aplicam ao erro.
 Se existir LEARNINGS.md: verificar se o erro já foi documentado.

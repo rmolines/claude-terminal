@@ -142,8 +142,6 @@ Se não houver nada novo: pular sem perguntar.
 
 #### 1e. CLAUDE.md — armadilhas (se houver novidades)
 
-
-
 **Você** decide se houve armadilha nova — não pergunte ao usuário.
 Critério: problema não-óbvio que outro agente cometeria no mesmo contexto.
 
