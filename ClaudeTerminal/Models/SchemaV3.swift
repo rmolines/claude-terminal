@@ -1,5 +1,5 @@
 import Foundation
-import SwiftData
+@preconcurrency import SwiftData
 
 /// V3 schema — adds the Bet entity for the Bet Bowl feature.
 ///
