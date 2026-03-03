@@ -6,7 +6,9 @@ Newest entries at the top.
 
 ## 2026-03-03 — bet-bowl
 
-**O que foi feito:** Implementou o Bet Bowl — seção de captura efêmera de ideias de features no `TaskBacklogView`. Dev pode anotar bets em um campo (título), sorteá-las aleatoriamente via sheet (`BetDrawSheet`) e converter a bet sorteada em `ClaudeTask` com um clique. Inclui migração SwiftData V2→V3 (nova entidade `Bet`).
+**O que foi feito:** Implementou o Bet Bowl — seção de captura efêmera de ideias de features no `TaskBacklogView`.
+Dev pode anotar bets em um campo (título), sorteá-las aleatoriamente via sheet (`BetDrawSheet`) e converter a bet
+sorteada em `ClaudeTask` com um clique. Inclui migração SwiftData V2→V3 (nova entidade `Bet`).
 
 **PR:** #27 — https://github.com/rmolines/claude-terminal/pull/27
 
@@ -24,7 +26,8 @@ Newest entries at the top.
 - `ClaudeTerminal/Features/TaskBacklog/TaskBacklogView.swift` — Bet Bowl section + inline form + sheet
 - `ClaudeTerminal/Features/TaskBacklog/BetDrawSheet.swift` — sheet de sorteio (Convert/Re-draw/Dismiss)
 
-**Armadilhas encontradas:** CI falhou no primeiro push — `@preconcurrency import SwiftData` faltando no `SchemaV3.swift` (mesmo padrão dos schemas V1 e V2, já documentado em CLAUDE.md). Fix em segundo commit.
+**Armadilhas encontradas:** CI falhou no primeiro push — `@preconcurrency import SwiftData` faltando no `SchemaV3.swift`
+(mesmo padrão dos schemas V1 e V2, já documentado em CLAUDE.md). Fix em segundo commit.
 
 **Próximos passos:** Próxima feature do M4 conforme `backlog.json` (status=pending).
 
