@@ -37,11 +37,11 @@ Badges, dots e contadores atualizam silenciosamente. Ações (criar sessão, can
 exigem intent explícito do usuário — nunca acontecem por hover ou acidente.
 
 **C2 — O terminal é para inspeção, não para trabalho.**
-O PTY existe para o usuário entender *o que o agente está fazendo*, não para interagir com o
+O PTY existe para o usuário entender _o que o agente está fazendo_, não para interagir com o
 agente diretamente. Se o usuário quer controlar o agente, ele usa Claude Code — não este app.
 
 **C3 — Uma tela, uma decisão.**
-Cada view tem um job primário. Se o usuário não sabe *o que fazer aqui*, o design falhou.
+Cada view tem um job primário. Se o usuário não sabe _o que fazer aqui_, o design falhou.
 Exceções precisam de aprovação explícita de design antes de serem implementadas.
 
 **C4 — Não esconder informação, mas não forçar atenção.**

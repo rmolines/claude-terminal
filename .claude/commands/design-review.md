@@ -33,7 +33,7 @@ em `ux-screens.md` e os padrões aplicáveis em `ux-patterns.md`.
 
 Após o pré-flight, determinar o modo de execução:
 
-```
+```text
 Se argumento for "--holistic":
   → Revisão holística
 Se argumento fornecido (e não --holistic):
@@ -240,7 +240,7 @@ Se **existir `#Preview` block:** executar `RenderPreview` via Xcode MCP e aguard
 
 Para cada padrão em `ux-patterns.md` marcado com as screens da view em revisão:
 
-```
+```text
 Pattern: <Nome>
 Aplicável? Sim
 Implementado corretamente? [Sim / Não / Parcialmente]
@@ -251,7 +251,7 @@ Evidência: [o que vi no render ou no código]
 
 Comparar a implementação contra o contrato de `ux-screens.md`:
 
-```
+```text
 Screen: <NomeDaTela>
 Job declarado: <job da spec>
 Job realizado: <o que a view realmente faz>
@@ -265,7 +265,7 @@ Drift **Maior**: a view faz um trabalho diferente do declarado, ou o job primár
 
 Checar cada constraint (C1 a C5) que se aplica à view:
 
-```
+```text
 C1 — Status passivo, ação deliberada: [OK / VIOLAÇÃO: ...]
 C2 — Terminal como inspeção:          [OK / N/A / VIOLAÇÃO: ...]
 C3 — Uma tela, uma decisão:           [OK / VIOLAÇÃO: ...]

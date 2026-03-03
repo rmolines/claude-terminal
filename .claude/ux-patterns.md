@@ -78,7 +78,8 @@ Status: `codified` = implementado e validado | `proposed` = aprovado mas não im
 ## Pattern: HITL como Interrupção Legítima
 
 **When:** Agente envia pedido de aprovação (tool use confirmation, permissão de arquivo, etc.).
-**Then:** NSPanel flutuante aparece sobre qualquer janela ativa. Badge no menu bar pisca. Notificação macOS enviada se app não estiver em foreground. O painel tem duas ações: Aprovar (ação primária) e Rejeitar. Contexto completo do pedido visível sem scroll.
+**Then:** NSPanel flutuante aparece sobre qualquer janela ativa. Badge no menu bar pisca. Notificação macOS enviada se app não estiver em foreground.
+O painel tem duas ações: Aprovar (ação primária) e Rejeitar. Contexto completo do pedido visível sem scroll.
 **Because:** HITL é o único estado que justifica quebrar o foco do usuário. O custo de não ver HITL a tempo (agente bloqueado, timeout) é maior do que o custo de interromper.
 **Screens:** HITLPanelView, NSStatusItem
 **Status:** codified
@@ -98,7 +99,8 @@ Status: `codified` = implementado e validado | `proposed` = aprovado mas não im
 ## Pattern: Onboarding como Setup, não Tutorial
 
 **When:** First-run: hooks não configurados.
-**Then:** OnboardingView guia o usuário por um checklist de setup (instalar helper, configurar hooks, testar conexão). Não mostra features do app — assume que o usuário já sabe o que quer. Desaparece após setup concluído e nunca mais aparece.
+**Then:** OnboardingView guia o usuário por um checklist de setup (instalar helper, configurar hooks, testar conexão).
+Não mostra features do app — assume que o usuário já sabe o que quer. Desaparece após setup concluído e nunca mais aparece.
 **Because:** O usuário chegou aqui com uma intenção específica (usar Claude Code com visibilidade). Tutorial de features é noise. O único blocker real é a infraestrutura (hooks, helper).
 **Screens:** OnboardingView
 **Status:** codified
