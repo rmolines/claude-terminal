@@ -22,16 +22,25 @@ private struct TaskGroup: Identifiable {
 // MARK: - TaskBacklogView
 
 /// Persistent backlog of features, fixes, and projects — grouped by repo, sorted by priority.
+/// Also hosts the Bet Bowl: a lightweight idea capture and random draw mechanism.
 struct TaskBacklogView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \ClaudeProject.sortOrder) private var projects: [ClaudeProject]
     @Query(sort: \ClaudeTask.sortOrder) private var tasks: [ClaudeTask]
+    @Query(sort: \Bet.sortOrder) private var bets: [Bet]
 
+    // Task form state
     @State private var isAddingTask = false
     @State private var newTaskTitle = ""
     @State private var newTaskType = "feature"
     @State private var newTaskPriority = "medium"
     @State private var newTaskProject: ClaudeProject?
+
+    // Bet Bowl state
+    @State private var isAddingBet = false
+    @State private var newBetTitle = ""
+    @State private var drawnBet: Bet? = nil
+    @State private var showingDrawSheet = false
 
     // MARK: Computed grouping
 
@@ -65,9 +74,12 @@ struct TaskBacklogView: View {
         return groups
     }
 
+    private var draftBets: [Bet] { bets.filter { $0.status == "draft" } }
+
     var body: some View {
         VStack(spacing: 0) {
             List {
+                // Task sections
                 if groupedTasks.isEmpty {
                     emptyPlaceholder
                 } else {
@@ -82,6 +94,25 @@ struct TaskBacklogView: View {
                         }
                     }
                 }
+
+                // Bet Bowl section — always visible below tasks
+                Section(header: betBowlHeader) {
+                    if draftBets.isEmpty {
+                        Text("No bets yet — tap + to capture an idea")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 8)
+                            .listRowBackground(Color.clear)
+                    } else {
+                        ForEach(draftBets) { bet in
+                            BetRow(bet: bet)
+                        }
+                        .onDelete { offsets in
+                            deleteBets(at: offsets)
+                        }
+                    }
+                }
             }
 
             if isAddingTask {
@@ -89,11 +120,17 @@ struct TaskBacklogView: View {
                 newTaskForm
                     .padding(12)
             }
+            if isAddingBet {
+                Divider()
+                newBetForm
+                    .padding(12)
+            }
         }
         .navigationTitle("Backlog")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
+                    isAddingBet = false
                     isAddingTask = true
                     newTaskTitle = ""
                     newTaskType = "feature"
@@ -105,9 +142,52 @@ struct TaskBacklogView: View {
                 .disabled(isAddingTask)
             }
         }
+        .sheet(isPresented: $showingDrawSheet) {
+            if let bet = drawnBet {
+                BetDrawSheet(bet: bet, onRedraw: {
+                    let pool = draftBets.filter { $0.id != bet.id && $0.status == "draft" }
+                    drawnBet = pool.isEmpty
+                        ? draftBets.first(where: { $0.status == "draft" && $0.id != bet.id })
+                        : pool.randomElement()
+                })
+            }
+        }
     }
 
-    // MARK: - Section header
+    // MARK: - Bet Bowl header
+
+    private var betBowlHeader: some View {
+        HStack(spacing: 8) {
+            Text("Bet Bowl")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button {
+                draw()
+            } label: {
+                Image(systemName: "dice")
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(draftBets.count >= 2 ? Color.accentColor : Color.secondary)
+            .disabled(draftBets.count < 2)
+
+            Button {
+                isAddingTask = false
+                isAddingBet = true
+                newBetTitle = ""
+            } label: {
+                Image(systemName: "plus")
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .disabled(isAddingBet)
+        }
+        .textCase(nil)
+    }
+
+    // MARK: - Task section header
 
     @ViewBuilder
     private func sectionHeader(_ group: TaskGroup) -> some View {
@@ -198,7 +278,35 @@ struct TaskBacklogView: View {
         .padding(.vertical, 4)
     }
 
-    // MARK: - Mutations
+    // MARK: - New bet form
+
+    private var newBetForm: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            AutoFocusTextField(
+                text: $newBetTitle,
+                placeholder: "Bet title…",
+                onSubmit: commitNewBet
+            )
+            .frame(height: 22)
+
+            HStack {
+                Spacer()
+
+                Button("Cancel") {
+                    isAddingBet = false
+                    newBetTitle = ""
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
+                Button("Add", action: commitNewBet)
+                    .disabled(newBetTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Task mutations
 
     private func commitNewTask() {
         let title = newTaskTitle.trimmingCharacters(in: .whitespaces)
@@ -222,6 +330,35 @@ struct TaskBacklogView: View {
         }
         try? context.save()
     }
+
+    // MARK: - Bet mutations
+
+    private func commitNewBet() {
+        let title = newBetTitle.trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty else { return }
+
+        let nextOrder = (bets.map(\.sortOrder).max() ?? -1) + 1
+        let bet = Bet(title: title)
+        bet.sortOrder = nextOrder
+        context.insert(bet)
+        try? context.save()
+
+        isAddingBet = false
+        newBetTitle = ""
+    }
+
+    private func deleteBets(at offsets: IndexSet) {
+        for index in offsets {
+            context.delete(draftBets[index])
+        }
+        try? context.save()
+    }
+
+    private func draw() {
+        guard let bet = draftBets.randomElement() else { return }
+        drawnBet = bet
+        showingDrawSheet = true
+    }
 }
 
 // MARK: - Previews
@@ -229,7 +366,7 @@ struct TaskBacklogView: View {
 @MainActor
 private func previewContainer() -> ModelContainer {
     let container = try! ModelContainer(
-        for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self,
+        for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self, Bet.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     let proj = ClaudeProject(name: "claude-terminal", path: "/Users/dev/git/claude-terminal")
@@ -249,15 +386,23 @@ private func previewContainer() -> ModelContainer {
         task.project = inProject ? proj : nil
         container.mainContext.insert(task)
     }
+
+    let betTitles = ["Ship dark mode", "Add keyboard shortcuts", "MCP server for Xcode"]
+    for (i, title) in betTitles.enumerated() {
+        let bet = Bet(title: title)
+        bet.sortOrder = i
+        container.mainContext.insert(bet)
+    }
+
     return container
 }
 
-#Preview("Backlog — with tasks") {
+#Preview("Backlog — with tasks and bets") {
     NavigationStack {
         TaskBacklogView()
     }
     .modelContainer(previewContainer())
-    .frame(width: 280, height: 500)
+    .frame(width: 280, height: 600)
 }
 
 #Preview("Backlog — empty") {
@@ -266,7 +411,7 @@ private func previewContainer() -> ModelContainer {
     }
     .modelContainer(
         try! ModelContainer(
-            for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self,
+            for: ClaudeTask.self, ClaudeAgent.self, ClaudeProject.self, Bet.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
     )
@@ -387,5 +532,23 @@ private struct TaskRow: View {
             .background(.gray.opacity(0.15))
             .foregroundStyle(.secondary)
             .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+}
+
+// MARK: - BetRow
+
+private struct BetRow: View {
+    let bet: Bet
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "circle.dotted")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            Text(bet.title)
+                .lineLimit(1)
+            Spacer()
+        }
+        .padding(.vertical, 2)
     }
 }
