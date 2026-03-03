@@ -1,5 +1,5 @@
 import Foundation
-import SwiftData
+@preconcurrency import SwiftData
 
 /// Frozen V1 schema — snapshot of the model graph before M4 additions.
 ///
