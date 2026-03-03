@@ -9,6 +9,7 @@ import UserNotifications
 final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     private var statusItem: NSStatusItem?
     var updaterController: SPUStandardUpdaterController!
+    private var hitlPanelController: HITLFloatingPanelController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Force regular activation policy so the app receives keyboard events properly
@@ -26,6 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         setupNotifications()
         Task { await HookIPCServer.shared.start() }
         observeSessionStore()
+        hitlPanelController = HITLFloatingPanelController()
+        hitlPanelController?.start()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
