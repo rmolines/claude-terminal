@@ -44,17 +44,9 @@ Arquivos de skill (`.claude/commands/`) frequentemente mostram blocos de exemplo
 markdownlint-cli2 v0.6.0 trata ` ```lang ` dentro de um bloco ` ``` ` como fechamento do bloco externo,
 mesmo que CommonMark diga o contrário — isso gera erros MD040 e MD048 inesperados.
 
-**Fix:** usar 4 backticks para o outer fence quando o conteúdo contém ` ``` ` internos:
+**Fix:** usar 4 backticks para o outer fence quando o conteúdo contém ` ``` ` internos.
 
-```text
-Example: outer fence with 4 backticks wrapping inner 3-backtick fences
-  ````markdown
-  # Exemplo com fence interna
-  ```bash
-  echo "isso é literal"
-  ```
-  ````
-```
+Sintaxe: `````\`\`\`\`lang ... \`\`\`\``````
 
 Tildes (`~~~`) resolvem o nesting mas violam MD048 (project exige backtick-only). Sempre usar 4 backticks.
 
