@@ -81,7 +81,7 @@ Ir para Passo 1.3.
 
 Apresentar:
 
-```
+```text
 Diagnóstico: <nome>
 
 Causa raiz: <hipótese>
@@ -128,7 +128,7 @@ Criar `.claude/fix-plans/<nome>/diagnosis.md`:
 ```
 
 Ao final:
-```
+```text
 diagnosis.md salvo em .claude/fix-plans/<nome>/
 
 Próximo passo: Fase 2 (Execução)
@@ -176,7 +176,7 @@ Quando o agente terminar:
 
 ### Passo 2.5 — Resultado
 
-```
+```text
 Fix concluído!
 
 Causa raiz: <resumo>

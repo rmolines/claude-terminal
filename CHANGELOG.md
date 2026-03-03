@@ -2,6 +2,25 @@
 
 ---
 
+## [fix] SwiftData migration crash no boot — 2026-03-02
+
+**Tipo:** fix
+**Tags:** swiftdata, migration, crash
+**PR:** [#19](https://github.com/rmolines/claude-terminal/pull/19) · **Complexidade:** simples
+
+### Problema
+App crashava imediatamente no boot com `Fatal error: 'try!' expression unexpectedly raised an error: SwiftData.SwiftDataError` na inicialização do `ModelContainer`. Dois bugs na migration plan V1→V2 introduzida em bc22d7f combinavam para impedir qualquer lançamento em devices com dados existentes.
+
+### Fix aplicado
+1. **`SchemaV1.swift`**: renomeado `ClaudeTaskV1`/`ClaudeAgentV1` → `ClaudeTask`/`ClaudeAgent`. Os nomes de classe determinam os entity names Core Data — o sufixo V1 criava mismatch com o store em disco.
+2. **`ClaudeTask.swift`**: adicionado `= ""` em `var priority: String`. Core Data lightweight migration exige `defaultValue` na NSAttributeDescription para popular linhas existentes ao adicionar coluna não-opcional.
+
+### Arquivos-chave
+- `ClaudeTerminal/Models/SchemaV1.swift` — entity names corrigidos
+- `ClaudeTerminal/Models/ClaudeTask.swift` — default value adicionado
+
+---
+
 ## [feat] Skills Registry — 2026-03-02
 
 **Tipo:** feat
@@ -9,17 +28,21 @@
 **PR:** [#15](https://github.com/rmolines/claude-terminal/pull/15) · **Complexidade:** simples
 
 ### O que mudou
+
 Botão sparkles na toolbar do Dashboard abre um sheet com todas as skills e slash commands instalados — auto-trigger, globais e do projeto ativo — com busca em tempo real.
 
 ### Detalhes técnicos
+
 - `SkillRegistryService`: escaneia `~/.claude/skills/`, `~/.claude/commands/` e `.claude/commands/` de cada sessão ativa; faz parse de frontmatter YAML ou fallback para humanize + primeira linha de prosa
 - `SkillRegistryView`: `List` com seções por `SkillKind`, `TextField` de busca, badges coloridos (purple/blue/green)
 - Zero mudanças em schema SwiftData, IPCProtocol ou dependências SPM
 
 ### Impacto
+
 - **Breaking:** Não
 
 ### Arquivos-chave
+
 - `ClaudeTerminal/Features/SkillRegistry/` — novos (3 arquivos)
 - `ClaudeTerminal/Features/Dashboard/DashboardView.swift` — botão + sheet
 

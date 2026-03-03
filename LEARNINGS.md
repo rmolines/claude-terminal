@@ -21,7 +21,9 @@ O scope do `claude mcp add` controla onde fica:
 
 ## 2026-03-02 — Curly quotes quebram string interpolation Swift
 
-Usar aspas tipográficas (`"` / `"`) dentro de string interpolation (`"\(var)"`) gera erro críptico do compilador: `'any WritableKeyPath<_, _> & Sendable' cannot conform to FormatStyle`. O parser do Swift interpreta a aspa tipográfica como delimitador de string aninhada.
+Usar aspas tipográficas (`"` / `"`) dentro de string interpolation (`"\(var)"`) gera erro críptico do compilador:
+`'any WritableKeyPath<_, _> & Sendable' cannot conform to FormatStyle`.
+O parser do Swift interpreta a aspa tipográfica como delimitador de string aninhada.
 
 **Fix:** usar aspas retas escapadas — `\"texto \(var)\"` — dentro de qualquer string interpolation.
 
@@ -29,7 +31,8 @@ Usar aspas tipográficas (`"` / `"`) dentro de string interpolation (`"\(var)"`)
 
 ## 2026-03-02 — Implementação fora do worktree: detectar CWD antes de criar arquivos
 
-Ao executar um plano, o agente pode criar arquivos diretamente no `main` em vez do worktree se o CWD não for verificado antes. Os arquivos ficam como unstaged em `main` e precisam ser copiados manualmente (`cp`) para o worktree antes do commit — o que funciona, mas é ruído desnecessário.
+Ao executar um plano, o agente pode criar arquivos diretamente no `main` em vez do worktree se o CWD não for verificado antes.
+Os arquivos ficam como unstaged em `main` e precisam ser copiados manualmente (`cp`) para o worktree antes do commit — o que funciona, mas é ruído desnecessário.
 
 **Fix:** sempre checar `git branch --show-current` antes de criar qualquer arquivo. Deve retornar `feature/<nome>`. Se retornar `main`, mudar para o worktree primeiro.
 

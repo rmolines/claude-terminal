@@ -77,7 +77,7 @@ Produzir o relatório completo no formato abaixo. Ser específico: citar arquivo
 
 ## Formato de saída
 
-```
+```text
 ## 🧭 Relatório de Validação — <nome-da-feature>
 
 ---

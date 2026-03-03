@@ -25,7 +25,7 @@ Primeiro, verifique os argumentos:
      - Se encontrar: leia e identifique o primeiro item `- [ ]` no M1 (ou milestone mais próximo)
        que ainda não tem worktree criada
   3. Derive o slug kebab-case do texto do item encontrado e apresente:
-     ```
+     ```text
      Nenhuma feature especificada. Encontrei no <sprint.md|roadmap.md>:
 
      Próxima feature: "<texto do item>"
@@ -84,7 +84,7 @@ Apresentar ao usuário:
 - 2-3 suposições mais arriscadas identificadas (o que pode estar errado neste entendimento)
 
 Formato:
-```
+```text
 ## Entendimento atual
 
 <síntese do que foi encontrado nos 3 subagentes>
@@ -160,7 +160,7 @@ _Gerado em: <data>_
 ```
 
 Ao final:
-```
+```text
 discovery.md salvo em .claude/feature-plans/<nome>/
 
 Próximo passo: Fase A (Pesquisa técnica)
@@ -243,7 +243,7 @@ Criar `.claude/feature-plans/<nome>/research.md`:
 ```
 
 Ao final:
-```
+```text
 research.md salvo em .claude/feature-plans/<nome>/
 
 Próximo passo: Fase B (Planejamento)
@@ -319,7 +319,7 @@ Este campo é usado pelo /validate para verificar alinhamento durante a implemen
 ```
 
 Exibir e aguardar resposta:
-```
+```text
 plan.md salvo em .claude/feature-plans/<nome>/
 
 Deseja executar agora ou prefere fazer /clear primeiro?

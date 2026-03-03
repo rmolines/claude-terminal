@@ -43,7 +43,7 @@ ls ~/git/claude-kickstart/.claude/commands/<nome>.md 2>/dev/null || echo "NOT_FO
 
 **Se a skill NÃO existir no kickstart:**
 
-```
+```text
 Skill '<nome>' não existe em ~/git/claude-kickstart/.claude/commands/.
 
 Use `/create-skill` para criar skills novas direto no kickstart.
@@ -75,7 +75,7 @@ Apresentar o diff ao usuário de forma legível (não raw `diff` output — sint
 Se a descrição foi passada em `$ARGUMENTS`: confirmá-la com o usuário.
 Se não foi passada: perguntar:
 
-```
+```text
 Qual melhoria você quer fazer no skill '<nome>'?
 (Descreva o comportamento atual que está errado/ausente e o comportamento esperado após a melhoria.)
 ```
@@ -115,7 +115,7 @@ git diff .claude/commands/<nome>.md
 
 Apresentar o diff de forma legível e perguntar:
 
-```
+```text
 Diff acima reflete a melhoria. Deseja commitar?
 - Sim → prosseguir para Passo 3
 - Ajustar → descreva o ajuste e voltarei ao 2.2
@@ -172,7 +172,7 @@ Exibir a URL do PR ao usuário.
 
 ### 4.1 — Aguardar confirmação de merge
 
-```
+```text
 PR aberto: <URL>
 
 Aguardando merge. Avise quando o PR for merged para sincronizar ao projeto atual.
@@ -203,7 +203,7 @@ Se não baterem: avisar e sugerir rodar `make sync-skills` novamente.
 
 Ao final, exibir:
 
-```
+```text
 ✅ Sincronização concluída.
 
 Skill '<nome>' atualizada:

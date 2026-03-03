@@ -4,6 +4,22 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-02 — fix-swiftdata-migration
+
+**O que foi feito:** Corrigiu crash fatal no boot do app (`SwiftData.SwiftDataError`) causado por dois bugs na migration plan V1→V2 introduzida em bc22d7f (M4 Unit 2).
+
+**Causa raiz:**
+1. `SchemaV1` usava `ClaudeTaskV1`/`ClaudeAgentV1` como nomes de classe → Core Data gerava entity names "ClaudeTaskV1"/"ClaudeAgentV1", mas o store em disco tinha "ClaudeTask"/"ClaudeAgent". Sem match de source model → migration lançava exceção → `try!` crashava.
+2. `var priority: String` sem default value → Core Data não conseguia popular linhas existentes com a nova coluna durante lightweight migration.
+
+**Fix:** Renomear inner classes para `ClaudeTask`/`ClaudeAgent` em `SchemaV1` (namespaceadas pelo enum, sem conflito); adicionar `= ""` em `var priority: String`.
+
+**Arquivos-chave:** `ClaudeTerminal/Models/SchemaV1.swift`, `ClaudeTerminal/Models/ClaudeTask.swift`
+
+**Armadilha:** Padrão correto do SwiftData é manter o MESMO nome de classe em todos os `VersionedSchema` (namespaceados pelo enum) — não usar sufixos V1/V2 no nome da classe.
+
+---
+
 ## 2026-03-02 — readme-demo
 
 **O que foi feito:** Substituiu o README.md herdado do template `claude-kickstart` por um README de produto do Claude Terminal.
@@ -114,7 +130,8 @@ Conectou os 6 fios desconectados do scaffold para que eventos fluam:
 - `.claude/hooks/pre-tool-use.sh`
 - `.claude/scripts/validate-structure.sh`
 - `.claude/rules/git-workflow.md`, `coding-style.md`, `security.md`
-- `.claude/commands/start-feature.md`, `ship-feature.md`, `close-feature.md`, `handover.md`, `sync-skills.md`
+- `.claude/commands/start-feature.md`, `ship-feature.md`, `close-feature.md`
+- `.claude/commands/handover.md`, `sync-skills.md`
 - `.claude/commands/SYNC_VERSION`
 - `.github/workflows/ci.yml`, `bootstrap.yml`, `template-sync.yml`
 - `.github/dependabot.yml`, `CODEOWNERS`, `SECURITY.md`
