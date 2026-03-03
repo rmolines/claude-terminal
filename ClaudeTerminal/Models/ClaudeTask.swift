@@ -10,7 +10,7 @@ final class ClaudeTask {
     var title: String
     var taskType: String  // "feature" | "fix" | "project"
     var status: String    // AgentStatus rawValue
-    var priority: String  // "urgent" | "high" | "medium" | "low"
+    var priority: String = ""  // "urgent" | "high" | "medium" | "low"; empty string treated as "medium" (see prioritySortKey/priorityDisplay)
     var createdAt: Date
     var sortOrder: Int    // SwiftData does not preserve array ordering — always sort manually
 

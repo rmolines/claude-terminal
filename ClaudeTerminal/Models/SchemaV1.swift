@@ -5,15 +5,20 @@ import SwiftData
 ///
 /// Required by SwiftData migration: the old schema must be captured before
 /// any model changes. Never edit this file after the V1→V2 migration is live.
+///
+/// IMPORTANT: inner class names MUST match the Core Data entity names in the
+/// existing on-disk store ("ClaudeTask" and "ClaudeAgent"). Using suffix names
+/// like "ClaudeTaskV1" generates mismatched entity names, so Core Data cannot
+/// find a source model that matches the store and the migration throws.
 enum SchemaV1: VersionedSchema {
     static let versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] {
-        [ClaudeTaskV1.self, ClaudeAgentV1.self]
+        [ClaudeTask.self, ClaudeAgent.self]
     }
 
     @Model
-    final class ClaudeTaskV1 {
+    final class ClaudeTask {
         var id: UUID
         var title: String
         var taskType: String
@@ -21,8 +26,8 @@ enum SchemaV1: VersionedSchema {
         var createdAt: Date
         var sortOrder: Int
 
-        @Relationship(deleteRule: .cascade, inverse: \ClaudeAgentV1.task)
-        var agents: [ClaudeAgentV1]?
+        @Relationship(deleteRule: .cascade, inverse: \ClaudeAgent.task)
+        var agents: [ClaudeAgent]?
 
         init(title: String, taskType: String) {
             self.id = UUID()
@@ -35,7 +40,7 @@ enum SchemaV1: VersionedSchema {
     }
 
     @Model
-    final class ClaudeAgentV1 {
+    final class ClaudeAgent {
         var id: UUID
         var sessionID: String
         var status: String
@@ -46,7 +51,7 @@ enum SchemaV1: VersionedSchema {
         var completedAt: Date?
         var sortOrder: Int
 
-        var task: ClaudeTaskV1?
+        var task: ClaudeTask?
 
         init(sessionID: String) {
             self.id = UUID()
