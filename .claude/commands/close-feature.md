@@ -18,6 +18,17 @@ Perguntar o nome da feature se não foi informado.
 Verificar se `.claude/feature-plans/<nome>/plan.md` existe.
 Se sim: ler integralmente para entender o que foi feito (contexto para a documentação).
 
+### 0.5 — Detectar PR mergeado
+
+```bash
+BRANCH=$(git branch --show-current 2>/dev/null || git -C "$WORKTREE_PATH" branch --show-current)
+PR_DATA=$(gh pr list --head "$BRANCH" --state merged --json number,mergedAt --limit 1 2>/dev/null || echo "[]")
+PR_NUMBER=$(echo "$PR_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data[0]['number'] if data else '')" 2>/dev/null)
+```
+
+Se `PR_NUMBER` encontrado: usar nos passos 1b (CHANGELOG) e 1f (backlog.json).
+Se não encontrado: perguntar ao usuário o número ou pular o update de backlog.json.
+
 ### 1. Atualizar documentação
 
 Execute cada item em sequência:
@@ -131,11 +142,31 @@ Se não houver nada novo: pular sem perguntar.
 
 #### 1e. CLAUDE.md — armadilhas (se houver novidades)
 
+
+
 **Você** decide se houve armadilha nova — não pergunte ao usuário.
 Critério: problema não-óbvio que outro agente cometeria no mesmo contexto.
 
 Se sim: propor ao usuário e, com aprovação, adicionar à tabela de armadilhas no CLAUDE.md.
 Se não houver nada novo: pular sem perguntar.
+
+#### 1f. backlog.json (se existir)
+
+```bash
+command -v jq >/dev/null || { echo "jq não encontrado — pular update de backlog.json (brew install jq para habilitar)"; }
+BACKLOG=".claude/backlog.json"
+if [ -f "$BACKLOG" ] && command -v jq >/dev/null; then
+  TODAY=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  jq --arg id "<nome>" \
+     --arg pr "<pr_number>" \
+     --arg date "$TODAY" \
+     '(.features[] | select(.id == $id)) |= . + {status: "done", completedAt: $date, prNumber: ($pr | tonumber? // null)}' \
+     "$BACKLOG" > "$BACKLOG.tmp" && mv "$BACKLOG.tmp" "$BACKLOG"
+  echo "backlog.json atualizado: <nome> → done"
+fi
+```
+
+Substituir `<nome>` pelo slug da feature e `<pr_number>` pelo PR detectado no Passo 0.5 (ou `""` se não encontrado).
 
 ### 2. Remover worktree e branch local
 

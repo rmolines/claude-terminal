@@ -23,10 +23,15 @@ e prepara o terreno para o `/start-feature` saber exatamente o que executar em s
 - **Se não existe** → execute o fluxo completo a partir da Fase 1.
 
 **4. Carregue o roadmap:**
-Leia `.claude/feature-plans/<projeto>/roadmap.md`. Se não existir, informe:
-```text
-roadmap.md não encontrado. Rode /plan-roadmap antes de /start-milestone.
-```
+Leia `.claude/feature-plans/<projeto>/roadmap.md`. Se não existir:
+
+- Verificar se `.claude/backlog.json` existe:
+  - Se sim: ler e listar milestones com `"status": "pending"` ou `"status": "active"` como alternativa ao roadmap
+  - Informar ao usuário e perguntar se quer prosseguir com backlog.json ou primeiro criar o roadmap
+- Se também não existir backlog.json: informar:
+  ```text
+  roadmap.md não encontrado. Rode /plan-roadmap antes de /start-milestone.
+  ```
 
 ---
 
@@ -125,6 +130,20 @@ Uma feature está bem-scoped quando:
 
 /start-feature <slug-da-feature-1>
 ````
+
+### Atualizar backlog.json (se existir)
+
+Se `.claude/backlog.json` existir:
+
+1. Verificar se o milestone já está no array `milestones`:
+   - Se não: adicionar `{"id": "<m-id>", "name": "<nome>", "objective": "<objetivo>", "status": "active", "completedAt": null}`
+   - Se sim: atualizar `"status": "active"` se ainda não estiver
+2. Para cada feature confirmada na decomposição:
+   - Verificar se já existe no array `features` (por `id`)
+   - Se não: adicionar `{"id": "<slug>", "title": "<descrição>", "status": "pending", "milestone": "<m-id>", "path": null, "dependencies": [<deps>], "branch": null, "prNumber": null, "startedAt": null, "completedAt": null, "createdAt": "<ISO-8601>"}`
+3. Validar: `python3 -m json.tool .claude/backlog.json > /dev/null`
+
+Se backlog.json não existir: pular (não criar automaticamente).
 
 ---
 
