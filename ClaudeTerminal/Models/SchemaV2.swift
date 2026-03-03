@@ -1,5 +1,5 @@
 import Foundation
-import SwiftData
+@preconcurrency import SwiftData
 
 /// V2 schema — adds ClaudeProject and priority to ClaudeTask.
 ///
