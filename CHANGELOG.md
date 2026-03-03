@@ -2,6 +2,37 @@
 
 ---
 
+## [feat] Bet Bowl — quick idea capture + random draw to task — 2026-03-03
+
+**Tipo:** feat
+**Tags:** swiftdata, task-backlog, ux
+**PR:** [#27](https://github.com/rmolines/claude-terminal/pull/27) · **Complexidade:** média
+
+### O que mudou
+
+Nova section "Bet Bowl" no sidebar de tasks: capture ideias rápidas em um campo, sorteie uma aleatoriamente com o botão [Draw] e converta a bet sorteada em `ClaudeTask` com um clique.
+
+### Detalhes técnicos
+
+- `Bet.swift` — `@Model` com campos `id`, `title`, `notes`, `status` (`draft`/`converted`), `sortOrder`, `convertedTaskID`
+- `SchemaV3.swift` — nova versão de schema SwiftData incluindo `Bet.self`; migração lightweight V2→V3 cria tabela do zero
+- `AppMigrationPlan.swift` — stage `migrateV2toV3` adicionado à chain V1→V2→V3
+- `BetDrawSheet.swift` — sheet de sorteio com ações Convert to Task / Re-draw / Dismiss
+- `TaskBacklogView.swift` — Bet Bowl section com `@Query`, inline form `AutoFocusTextField`, botões [+] e [Draw] (desabilitado com < 2 bets)
+
+### Impacto
+
+- **Breaking:** Não — migração automática transparente; stores V2 existentes sobem para V3 no primeiro launch
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Models/Bet.swift`
+- `ClaudeTerminal/Models/SchemaV3.swift`
+- `ClaudeTerminal/Features/TaskBacklog/BetDrawSheet.swift`
+- `ClaudeTerminal/Features/TaskBacklog/TaskBacklogView.swift`
+
+---
+
 ## [fix] SwiftData migration crash no boot — 2026-03-02
 
 **Tipo:** fix
