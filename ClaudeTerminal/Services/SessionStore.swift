@@ -20,8 +20,13 @@ final class SessionStore {
     private init() {}
 
     func update(_ session: AgentSession) {
-        // When a real hook session arrives, evict any synthetic placeholder for the same cwd.
-        if !session.isSynthetic, let synthetic = sessions.values.first(where: { $0.isSynthetic && $0.cwd == session.cwd }) {
+        if session.isSynthetic {
+            // Only one terminal exists at a time — evict stale synthetic sessions from previous cwds.
+            for key in sessions.values.filter({ $0.isSynthetic }).map(\.sessionID) {
+                sessions.removeValue(forKey: key)
+            }
+        } else if let synthetic = sessions.values.first(where: { $0.isSynthetic && $0.cwd == session.cwd }) {
+            // When a real hook session arrives, evict the synthetic placeholder for the same cwd.
             sessions.removeValue(forKey: synthetic.sessionID)
         }
         sessions[session.sessionID] = session
