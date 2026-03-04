@@ -317,27 +317,49 @@ Salvar em `.claude/feature-plans/<nome>/plan.md`:
 <Descrição do problema — usada pelo /validate para verificar alinhamento.>
 
 ## Assunções
-<!-- [assumed] = não verificada | [verified] = confirmada em uso real -->
-- [assumed] <assunção 1 — ex: "o endpoint X retorna o campo Y que precisamos">
-- [assumed] <assunção 2 — ex: "SwiftData suporta query por este tipo de predicado">
+<!-- status: [assumed] = não verificada | [verified] = confirmada | [invalidated] = refutada -->
+<!-- risco:   [blocking] = falsa bloqueia a implementação | [background] = emerge naturalmente -->
+- [assumed][blocking] <assunção crítica — ex: "o endpoint X retorna o campo Y que precisamos">
+- [assumed][background] <assunção menor — ex: "SwiftData suporta query por este tipo de predicado">
+
+<!-- opcional para features simples: remover se não houver assunções relevantes -->
+
+## Questões abertas
+<!-- Triple-bucket RFC-style. Remover buckets vazios. -->
+
+**Resolver antes de começar (human gate now):**
+- <questão que bloqueia o passo 1 se não respondida>
+
+**A implementação vai responder (monitorar):**
+- <questão que o código em si vai validar ou refutar>
+
+**Explicitamente fora do escopo (evitar scope creep):**
+- <o que não vai ser feito nesta feature>
+
+<!-- opcional para features simples: omitir esta seção inteira se não houver questões abertas -->
 
 ## Deliverables
 
 ### Deliverable 1 — Walking Skeleton
 **O que faz:** <integração ponta-a-ponta mínima — o menor pedaço que conecta todas as camadas>
 **Critério de done:** <comportamento observável concreto — o que o usuário/dev consegue ver/testar>
-**Valida as assunções:** <assunção 1>, <assunção 2>
+**Valida:** <assunção 1>, <assunção 2>
+**Resolve:** <questão aberta que este deliverable fecha>
+**Deixa aberto:** <questão que só o Deliverable 2 vai responder>
 
 **⚠️ Execute `/checkpoint` antes de continuar para o Deliverable 2.**
 
 ### Deliverable 2 — <nome>
 **O que faz:** <funcionalidade completa deste incremento>
 **Critério de done:** <comportamento observável>
-**Valida as assunções:** <assunção N>
+**Valida:** <assunção N>
+**Resolve:** <questão aberta que este deliverable fecha>
+**Deixa aberto:** <questão que só o próximo deliverable vai responder — ou "nada">
 
 **⚠️ Execute `/checkpoint` antes de continuar para o Deliverable 3.**
 
-<!-- Adicionar mais deliverables se necessário. Remover a linha ⚠️ do último deliverable. -->
+<!-- Adicionar mais deliverables se necessário. Remover a linha ⚠️ e "Deixa aberto" do último deliverable. -->
+<!-- opcional para features simples: usar apenas Deliverable 1 sem /checkpoint -->
 
 ## Arquivos a modificar
 - `path/to/file` — <o que fazer exatamente>
