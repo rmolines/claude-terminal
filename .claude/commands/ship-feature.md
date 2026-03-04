@@ -51,6 +51,14 @@ Se `.claude/feature-plans/<nome>/plan.md` existe: ler integralmente e extrair:
 - Checklist de infraestrutura (secrets, configurações, scripts de setup)
 - Smoke test recomendado
 
+Se `plan.md` não existir:
+
+```text
+⚠️ Nenhum plan.md encontrado para esta feature.
+O checklist de infra (secrets, scripts de setup) não será verificado.
+Continuando com base apenas no CLAUDE.md.
+```
+
 ### 1. Commit (se houver mudanças pendentes)
 
 1. Identificar todos os arquivos modificados/novos
