@@ -2,6 +2,25 @@
 
 ---
 
+## [fix] Sinalizar saltos invisíveis em plan-roadmap e ship-feature (Lei 3/4) — 2026-03-04
+
+**Tipo:** fix
+**Tags:** skills, audit, lei-4, kickstart
+**PR:** [#14](https://github.com/rmolines/claude-kickstart/pull/14) (kickstart) · **Complexidade:** simples
+
+### Problema
+`/plan-roadmap` lia artefatos de `/start-project` silenciosamente sem avisar o dev quais foram encontrados. `/ship-feature` pulava o checklist de infra sem nenhum sinal quando `plan.md` não existia — violações das Leis 3 e 4.
+
+### Fix aplicado
+- `plan-roadmap` Fase 1: bloco de sinalização explícita dos artefatos encontrados/ausentes antes de prosseguir
+- `ship-feature` Passo 0: aviso `⚠️` explícito quando `plan.md` não existe, antes de continuar sem checklist de infra
+
+### Arquivos-chave
+- `~/.claude/commands/plan-roadmap.md` — Fase 1
+- `.claude/commands/ship-feature.md` — Passo 0
+
+---
+
 ## [feat] Skills tab + Worktrees tab com orientação de workflow por agente — 2026-03-04
 
 **Tipo:** feat

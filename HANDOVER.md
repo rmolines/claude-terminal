@@ -4,6 +4,23 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-04 — fix audit-skills violations #2 e #3
+
+### O que foi feito
+- **Fix #2 `plan-roadmap` (Lei 3/4):** `~/.claude/commands/plan-roadmap.md` — Fase 1 agora sinaliza explicitamente quais artefatos de `/start-project` foram encontrados antes de lê-los; aborta se `project-brief.md` não existe
+- **Fix #3 `ship-feature` (Lei 4):** Passo 0 agora emite `⚠️` explícito quando `plan.md` não existe, em vez de prosseguir silenciosamente sem verificar o checklist de infra
+- Mudanças aplicadas em: `~/.claude/commands/plan-roadmap.md` (global), `claude-kickstart` (PR #14, mergeado), `claude-terminal` (commit direto em main + sync)
+
+### Decisões técnicas
+- `plan-roadmap` é global (`~/.claude/commands/`) — sem git, mudança só em disco
+- `ship-feature` propagou via kickstart PR #14 (junto com melhoria `start-feature` do mesmo branch) → sync para claude-terminal
+
+### Arquivos-chave
+- `~/.claude/commands/plan-roadmap.md` — Fase 1, bloco de sinalização de artefatos
+- `.claude/commands/ship-feature.md` — Passo 0, bloco else de plan.md ausente
+
+---
+
 ## 2026-03-04 — skills-navigator + worktrees-tab (PR #35)
 
 ### O que foi feito
