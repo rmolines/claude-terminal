@@ -422,17 +422,58 @@ Regras:
 - Se há outros agentes ativos: fazer push imediatamente após cada commit
 - **Não pedir confirmação entre passos — executar autonomamente**
 
-### Passo C.6 — Validação ao concluir
+### Passo C.6 — Build + testes automáticos
 
 Lançar em background (`run_in_background=true`):
-- Build (`swift build` ou comando do CLAUDE.md)
-- Testes se disponíveis
+
+- Build (comando definido no CLAUDE.md — ex: `swift build`, `make check`, `npm run build`)
+- Suite de testes automatizados se disponível (ex: `swift test`, `make test`, `npm test`)
 
 Enquanto aguarda: exibir resumo (arquivos criados/editados, decisões tomadas).
 
 Resultado:
-- ✅: confirmar e sugerir `/validate` antes de `/ship-feature`
-- ❌: exibir erro completo e aguardar orientação
+- ✅: prosseguir para C.7
+- ❌: exibir erro completo, corrigir, repetir C.6 — **nunca avançar para C.7 com build quebrado**
+
+### Passo C.7 — Checklist de testes para o usuário
+
+Classificar os comportamentos introduzidos ou modificados pela feature em duas categorias:
+
+**Claude Code pode testar automaticamente:**
+- Compilação e build
+- Suite de testes unitários/integração existente
+- Linters e checks estáticos (`make check`, etc.)
+- Saída de CLI/scripts verificável no terminal
+
+**Requer o usuário (Claude Code não consegue testar):**
+- UI e visual — aparência, layout, animações
+- Fluxos de interação — clicar, navegar, sequências encadeadas
+- Diálogos e permissões do OS — alerts, autorizações, notificações
+- Integrações com serviços externos ativos — APIs reais, sockets live
+- Edge cases visuais — dark mode, tamanhos de janela, estados de erro visíveis
+
+Gerar apenas os checks relevantes para **esta feature específica** — não uma lista genérica.
+
+Formato obrigatório:
+
+```text
+## Testes automáticos — OK ✅
+- Build: verde
+- <suite de testes>: X/X passed
+
+## Testes manuais — necessários antes do /ship-feature
+
+Como rodar o app: <comando concreto ou "abrir no Xcode → Run target X">
+
+- [ ] <ação concreta> → <resultado esperado>
+- [ ] <ação concreta> → <resultado esperado>
+- [ ] <ação concreta> → <resultado esperado>
+
+Quando todos os checks estiverem marcados: rode /ship-feature
+```
+
+Aguardar confirmação do usuário ("OK", "testei", ou similar) antes de encerrar a sessão.
+Não sugerir `/ship-feature` antes dessa confirmação.
 
 ---
 
