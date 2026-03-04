@@ -63,6 +63,11 @@ Aguardar resultado do subagente.
 
 ## Passo 5 — Exibir contexto e fazer a pergunta
 
+Ao extrair assunções do plan.md, separar por tag de risco:
+- Assunções com `[blocking]` → grupo "⚠️ Blocking" (exibir primeiro)
+- Assunções com `[background]` → grupo "Background" (exibir depois)
+- Assunções com `[assumed]` sem tag de risco (plan.md antigo) → exibir sem agrupamento, como antes
+
 Exibir para o usuário:
 
 ```text
@@ -74,7 +79,20 @@ Exibir para o usuário:
 <resumo do subagente — comportamento observável>
 
 ## Assunções que este deliverable deveria validar
-<lista das assunções marcadas [assumed] no plan.md que este deliverable toca>
+
+⚠️ Blocking
+- <assunções [blocking] do plan.md que este deliverable toca — omitir grupo se vazio>
+
+Background
+- <assunções [background] do plan.md que este deliverable toca — omitir grupo se vazio>
+
+## O que este deliverable deixa em aberto
+<conteúdo de "Deixa aberto:" do deliverable atual no plan.md — omitir seção se vazio>
+
+## Questões abertas (do plan.md)
+<!-- omitir esta seção inteira se ## Questões abertas não existir no plan.md -->
+Resolver antes de começar: <lista — ou "nenhuma pendente">
+A implementação vai responder: <lista — ou "nenhuma">
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 O que foi construído avança o outcome original?
@@ -97,6 +115,8 @@ Para cada assunção que o usuário confirmou como verificada: alterar `[assumed
 Para novas assunções mencionadas pelo usuário que não constavam no plan.md: adicionar na seção `## Assunções` com status `[assumed]`.
 
 Se o usuário identificou drift de escopo: adicionar nota na seção `## Problema` do plan.md com prefixo `<!-- checkpoint-N: ... -->`.
+
+Se o usuário mencionar que uma questão aberta foi resolvida ou refutada: mover o item do bucket "Resolver antes de começar" ou "A implementação vai responder" para um novo bucket `**Resolvidas neste checkpoint:**` na seção `## Questões abertas` do plan.md. Não inferir resolução — só mover se o usuário mencionar explicitamente.
 
 ### 6b — Registrar em checkpoints.md
 
