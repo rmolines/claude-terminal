@@ -25,6 +25,11 @@ struct MainView: View {
                 .tag(AppTab.skills)
         }
         .frame(minWidth: 700, minHeight: 400)
+        .task(id: sessionID) {
+            // Register the terminal session immediately so Skills tab works without waiting for a hook.
+            // Uses sessionID as stable key; replaced when folder changes (new sessionID).
+            SessionStore.shared.update(AgentSession(sessionID: sessionID.uuidString, cwd: workingDirectory))
+        }
     }
 
     private var terminalTab: some View {
