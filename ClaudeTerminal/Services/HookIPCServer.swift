@@ -134,12 +134,17 @@ extension HookIPCServer {
         }
 
         Task {
-            await SessionManager.shared.handleEvent(event)
+            // Store fd BEFORE handleEvent so that handleEvent can call respondHITL
+            // (e.g., auto-approve for external sessions) and find the fd immediately.
             if event.type == .permissionRequest {
                 await HookIPCServer.shared.storePendingHITL(sessionID: event.sessionID, fd: clientFD)
-            } else {
+            }
+            await SessionManager.shared.handleEvent(event)
+            if event.type != .permissionRequest {
                 close(clientFD)
             }
+            // For permissionRequest: fd is closed either by respondHITL (auto-approve or
+            // user decision) or remains open until the user responds via the HITL popup.
         }
     }
 }

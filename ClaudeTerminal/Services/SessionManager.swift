@@ -38,12 +38,20 @@ actor SessionManager {
             sessions[event.sessionID]?.currentActivity = "Sub-agent spawned"
 
         case .permissionRequest:
-            updateOrCreate(sessionID: event.sessionID, cwd: event.cwd, status: .awaitingInput)
-            sessions[event.sessionID]?.currentActivity = event.detail ?? "Awaiting approval"
-            await NotificationService.shared.requestHITLApproval(
-                sessionID: event.sessionID,
-                description: "Agent at \(event.cwd) awaiting approval"
-            )
+            if event.isManagedByApp == true {
+                updateOrCreate(sessionID: event.sessionID, cwd: event.cwd, status: .awaitingInput)
+                sessions[event.sessionID]?.currentActivity = event.detail ?? "Awaiting approval"
+                await NotificationService.shared.requestHITLApproval(
+                    sessionID: event.sessionID,
+                    description: "Agent at \(event.cwd) awaiting approval"
+                )
+            } else {
+                // External session (e.g. iTerm) — auto-approve so the Claude Code session
+                // isn't blocked. The user will handle permissions inline in their terminal.
+                updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
+                await HookIPCServer.shared.respondHITL(sessionID: event.sessionID, approved: true)
+                return
+            }
 
         case .stopped:
             sessions[event.sessionID]?.status = .completed
