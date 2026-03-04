@@ -7,14 +7,13 @@ enum WorkflowPhase: String {
     case readyToShip        // tem commits não publicados (heurística)
     case unknown            // não foi possível determinar
 
-    /// Infere a fase a partir do nome da branch.
+    /// Infere a fase a partir do nome da branch e do cwd.
     static func infer(branch: String, cwd: String) -> WorkflowPhase {
+        // cwd is reliable even before the branch query resolves.
+        if cwd.contains(".claude/worktrees/") { return .featureActive }
         if branch.isEmpty || branch == "—" { return .unknown }
         if branch == "main" || branch == "master" { return .strategic }
-        if branch.hasPrefix("feature/") || cwd.contains(".claude/worktrees/") {
-            return .featureActive
-        }
-        if branch.hasPrefix("fix/") || branch.hasPrefix("chore/") {
+        if branch.hasPrefix("feature/") || branch.hasPrefix("fix/") || branch.hasPrefix("chore/") || branch.hasPrefix("worktree-") {
             return .featureActive
         }
         return .unknown
