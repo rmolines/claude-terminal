@@ -4,6 +4,37 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-04 — docs cleanup (PR #34) — ship-feature + close-feature session
+
+**O que foi feito:** Limpeza do estado acumulado do repo — 13 arquivos modificados não commitados,
+worktree na branch errada, dois PRs duplicados para o mesmo fix. Entregou PR #34 com docs, lint
+config e feature plans arquivados. Adicionou modo `--audit` completo ao `design-review.md`.
+
+**Diagnóstico do estado inicial:**
+
+- Main repo em `fix/hitl-external-sessions-v2` (não em `main`) com 13 tracked files modificados
+- PRs #30 e #31 já mergeados, #32 e #33 abertos para o mesmo fix — #33 mergeado durante a sessão
+- Outro agente commitou direto em main (`06780f3`) durante a resolução, causando conflito no rebase
+- `design-review.md` com 541 linhas no working tree, 399 no commit — modo `--audit` no stash
+
+**Armadilhas encontradas:**
+
+- `.markdownlint-cli2.yaml` sem `config:` → markdownlint v0.6.0 ignora `.markdownlint.yaml`
+  → CI quebra com MD049 (asterisk vs underscore) e MD036 (bold-as-heading) em arquivos não tocados
+- Stash pop de worktree cruzada restaura mudanças silenciosamente no working tree sem criar commit
+- Commits paralelos em main por outros agentes causam conflitos no rebase da PR em andamento
+
+**Fixes aplicados:**
+
+- Adicionou `config: .markdownlint.yaml` ao `.markdownlint-cli2.yaml`
+- Corrigiu `*asterisk*` → `_underscore_` e `**bold-heading**` → `### heading` no `design-review.md`
+- Resolveu 3 conflitos (CHANGELOG, CLAUDE.md, HANDOVER.md) mantendo conteúdo mais detalhado
+- Limpou branch e worktrees stale
+
+**PR:** #34
+
+---
+
 ## 2026-03-04 — fix(hitl): suppress HITL popups para sessões externas
 
 **O que foi feito:** Corrigido bug onde o app mostrava popups HITL para sessões Claude Code

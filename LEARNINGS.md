@@ -4,6 +4,49 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-04 — `.markdownlint-cli2.yaml` sem `config:` quebra cascade no CI (v0.6.0)
+
+Criar `.markdownlint-cli2.yaml` no repo com apenas `ignores:` (sem `config:`) muda o
+comportamento do `markdownlint-cli2-action` v9 com markdownlint v0.27.0: o arquivo
+`.markdownlint.yaml` deixa de ser carregado automaticamente, e o linter usa regras default.
+
+**Sintoma:** CI que passava antes (sem `.markdownlint-cli2.yaml`) passa a falhar com
+MD049 (emphasis style inconsistente) e MD036 (bold usado como heading) em arquivos que não
+foram modificados na PR. A versão local mais recente (v0.21.0) não reproduz o erro porque
+o comportamento de cascade mudou entre versões.
+
+**Fix:** sempre incluir `config: .markdownlint.yaml` em `.markdownlint-cli2.yaml`:
+
+```yaml
+config: .markdownlint.yaml
+ignores:
+  - ".build/**"
+  - ".swiftpm/**"
+```
+
+**Regra:** toda instância de `.markdownlint-cli2.yaml` precisa de `config:` explícito
+para garantir comportamento idêntico entre versões do CLI e ambientes CI/local.
+
+---
+
+## 2026-03-04 — Working tree pode ter mais conteúdo do que HEAD após stash pop de worktree cruzado
+
+Quando um `git stash` foi feito dentro de uma worktree com mudanças não commitadas, e depois
+`git stash pop` é rodado em outra worktree (ou no main), os arquivos restaurados ficam no
+working tree mas NÃO no commit — `git diff HEAD` mostra diferença, mas `git status` apenas
+lista `M` (modified, unstaged).
+
+**Caso concreto desta sessão:** `design-review.md` tinha 399 linhas no commit `3c6fab5` mas
+541 no working tree após o stash pop (o modo `--audit`, 142 linhas, estava só no stash).
+O CI rodou contra o commit (399 linhas, sem erros visíveis), mas as linhas problemáticas
+estavam na versão do working tree que foi comitada *depois* do rebase. As duas versões
+coexistiram silenciosamente por horas antes de serem reconciliadas.
+
+**Fix:** sempre rodar `git diff HEAD --stat` antes de `git add` para garantir que o
+conteúdo staged é exatamente o esperado. Nunca assumir que `git status` mostra o whole diff.
+
+---
+
 ## 2026-03-03 — NSPanel `hidesOnDeactivate = false` é obrigatório para floating panels
 
 Por padrão, `NSPanel.hidesOnDeactivate` é `true` — o panel desaparece automaticamente

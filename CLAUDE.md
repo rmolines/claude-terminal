@@ -95,6 +95,8 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | PTY colors (TUI apps) | Cores apagadas vs iTerm — `TERM=xterm-256color` não basta | Adicionar `COLORTERM=truecolor` ao env do PTY; sem ela, Claude Code (e outros TUIs) cai para paleta ANSI de 16 cores em vez de 24-bit true color |
 | Worktree stale + Xcode | Diretório `.claude/worktrees/<nome>` existe no disco mas não no `git worktree list` → Xcode não consegue encontrar os arquivos fonte e falha o build com "Build input files cannot be found" | Remover o diretório stale (`rm -rf`) + limpar o derived data correspondente em `~/Library/Developer/Xcode/DerivedData/` |
 | Hook `PermissionRequest` global | Hook registrado em `~/.claude/settings.json` dispara para TODAS as sessões Claude Code da máquina, não só as do app | Usar env var `CLAUDE_TERMINAL_MANAGED=1` no PTY para identificar sessões gerenciadas; auto-aprovar silenciosamente as externas |
+| `.markdownlint-cli2.yaml` sem `config:` | Criar o arquivo com só `ignores:` faz markdownlint-cli2 v0.6.0 ignorar `.markdownlint.yaml` e usar regras default — CI quebra com MD049/MD036 em arquivos intocados | Sempre incluir `config: .markdownlint.yaml` no topo do `.markdownlint-cli2.yaml` |
+| Stash pop cruzado entre worktrees | `git stash pop` numa worktree/branch restaura mudanças de outra worktree — working tree fica com mais conteúdo do que o commit HEAD, silenciosamente | Sempre rodar `git diff HEAD --stat` antes de `git add` para confirmar que staged = expected |
 
 ## Worktree convention
 
