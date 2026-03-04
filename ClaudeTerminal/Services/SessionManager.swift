@@ -48,11 +48,6 @@ actor SessionManager {
         case .stopped:
             sessions[event.sessionID]?.status = .completed
             sessions[event.sessionID]?.currentActivity = "Completed"
-            let sid = event.sessionID
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(30))
-                SessionStore.shared.remove(sessionID: sid)
-            }
 
         case .heartbeat:
             sessions[event.sessionID]?.lastHeartbeat = Date()

@@ -1,5 +1,4 @@
 import AppKit
-import Observation
 import Sparkle
 import UserNotifications
 
@@ -26,28 +25,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         setupMenuBar()
         setupNotifications()
         Task { await HookIPCServer.shared.start() }
-        observeSessionStore()
         hitlPanelController = HITLFloatingPanelController()
         hitlPanelController?.start()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false  // Stay alive as menu bar app even when window is closed
-    }
-
-    // MARK: - Badge observation
-
-    /// Reactively updates the badge whenever SessionStore.pendingHITLCount changes.
-    /// Re-subscribes after each change — the canonical pattern for @Observable outside SwiftUI.
-    private func observeSessionStore() {
-        withObservationTracking {
-            _ = SessionStore.shared.pendingHITLCount
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
-                self?.updateBadge(count: SessionStore.shared.pendingHITLCount)
-                self?.observeSessionStore()
-            }
-        }
     }
 
     // MARK: - Menu bar
