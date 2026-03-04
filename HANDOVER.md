@@ -4,6 +4,23 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-04 — propagação do /explore (workflow.md + kickstart PR #12)
+
+**O que foi feito:** Substituiu `/refine-idea` por `/explore` no fluxo de workflow em ambos os repos. Adicionou bloco EXPLORAÇÃO separado antes de ESTRATÉGICO no fluxo visual. Atualizou tabela de skills com `/explore` e `/explore --fast`. Abriu e mergou PR #12 no `claude-kickstart`.
+
+**Decisões tomadas:**
+
+- `/refine-idea` vira stub; skill oficial é `/explore` (absorve e expande o caso de uso)
+- `/explore --fast` nomeado para preservar o caminho rápido (≈ antigo refine-idea)
+- sync-skills não propaga `rules/` — update de workflow.md sempre manual nos dois repos
+
+**Arquivos-chave:**
+- `.claude/rules/workflow.md` — atualizado em claude-terminal e claude-kickstart
+
+**Estado ao encerrar:** `main` limpo, 1 commit atrás do origin (sem push).
+
+---
+
 ## 2026-03-04 — docs cleanup (PR #34) — ship-feature + close-feature session
 
 **O que foi feito:** Limpeza do estado acumulado do repo — 13 arquivos modificados não commitados,

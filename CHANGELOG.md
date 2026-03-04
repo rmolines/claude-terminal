@@ -2,6 +2,33 @@
 
 ---
 
+## [chore] Substituir /refine-idea por /explore no workflow — 2026-03-04
+
+**Tipo:** chore
+**Tags:** workflow, skills, docs
+**PR:** [kickstart #12](https://github.com/rmolines/claude-kickstart/pull/12) · **Complexidade:** simples
+
+### O que mudou
+
+`/refine-idea` removido do fluxo — substituído por `/explore` (skill global mais poderosa).
+Fluxo visual ganhou bloco EXPLORAÇÃO separado antes de ESTRATÉGICO em ambos os repos.
+
+### Detalhes técnicos
+
+- `.claude/rules/workflow.md` atualizado em claude-terminal e claude-kickstart
+- Tabela de skills: `/explore` (deep) + `/explore --fast` (scan rápido) no lugar de `/refine-idea`
+- PR #12 mergeado no kickstart
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/rules/workflow.md` — fluxo visual + tabela de skills
+
+---
+
 ## [fix] HITL popups suprimidos para sessões externas — 2026-03-04
 
 **Tipo:** fix
