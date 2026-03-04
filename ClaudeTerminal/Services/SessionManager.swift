@@ -67,7 +67,8 @@ actor SessionManager {
             sessions[event.sessionID]?.totalCacheReadTokens += usage.cacheReadTokens
         }
 
-        if let session = sessions[event.sessionID] {
+        // Only push managed sessions to the store — external sessions (iTerm, etc.) stay invisible in the UI.
+        if let session = sessions[event.sessionID], event.isManagedByApp == true {
             Task { @MainActor in SessionStore.shared.update(session) }
         }
     }
@@ -114,4 +115,7 @@ struct AgentSession: Sendable {
     var totalOutputTokens: Int = 0
     var totalCacheReadTokens: Int = 0
     var recentMessages: [String] = []
+    /// True for sessions registered by the app before any hook fires (e.g. the main Terminal tab).
+    /// Evicted automatically when a real hook arrives for the same cwd.
+    var isSynthetic: Bool = false
 }
