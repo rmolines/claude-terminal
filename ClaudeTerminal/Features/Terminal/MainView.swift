@@ -8,15 +8,32 @@ import AppKit
 struct MainView: View {
     @State private var workingDirectory: String = NSHomeDirectory()
     @State private var sessionID: UUID = UUID()
+    @State private var selectedTab: AppTab = .terminal
+
+    private enum AppTab: String {
+        case terminal, skills
+    }
 
     var body: some View {
+        TabView(selection: $selectedTab) {
+            terminalTab
+                .tabItem { Label("Terminal", systemImage: "terminal") }
+                .tag(AppTab.terminal)
+
+            SkillsNavigatorView()
+                .tabItem { Label("Skills", systemImage: "bolt.horizontal") }
+                .tag(AppTab.skills)
+        }
+        .frame(minWidth: 700, minHeight: 400)
+    }
+
+    private var terminalTab: some View {
         VStack(spacing: 0) {
             header
             Divider()
             terminal
                 .id(sessionID)
         }
-        .frame(minWidth: 700, minHeight: 400)
     }
 
     // MARK: - Header
