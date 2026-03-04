@@ -28,7 +28,7 @@ struct MainView: View {
         .task(id: sessionID) {
             // Register the terminal session immediately so Skills tab works without waiting for a hook.
             // Uses sessionID as stable key; replaced when folder changes (new sessionID).
-            SessionStore.shared.update(AgentSession(sessionID: sessionID.uuidString, cwd: workingDirectory))
+            SessionStore.shared.update(AgentSession(sessionID: sessionID.uuidString, cwd: workingDirectory, isSynthetic: true))
         }
     }
 

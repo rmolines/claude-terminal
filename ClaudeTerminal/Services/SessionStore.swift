@@ -20,6 +20,10 @@ final class SessionStore {
     private init() {}
 
     func update(_ session: AgentSession) {
+        // When a real hook session arrives, evict any synthetic placeholder for the same cwd.
+        if !session.isSynthetic, let synthetic = sessions.values.first(where: { $0.isSynthetic && $0.cwd == session.cwd }) {
+            sessions.removeValue(forKey: synthetic.sessionID)
+        }
         sessions[session.sessionID] = session
     }
 

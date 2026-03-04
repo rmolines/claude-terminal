@@ -114,4 +114,7 @@ struct AgentSession: Sendable {
     var totalOutputTokens: Int = 0
     var totalCacheReadTokens: Int = 0
     var recentMessages: [String] = []
+    /// True for sessions registered by the app before any hook fires (e.g. the main Terminal tab).
+    /// Evicted automatically when a real hook arrives for the same cwd.
+    var isSynthetic: Bool = false
 }
