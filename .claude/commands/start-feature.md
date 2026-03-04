@@ -316,12 +316,39 @@ Salvar em `.claude/feature-plans/<nome>/plan.md`:
 ## Problema
 <Descrição do problema — usada pelo /validate para verificar alinhamento.>
 
+## Assunções
+<!-- [assumed] = não verificada | [verified] = confirmada em uso real -->
+- [assumed] <assunção 1 — ex: "o endpoint X retorna o campo Y que precisamos">
+- [assumed] <assunção 2 — ex: "SwiftData suporta query por este tipo de predicado">
+
+## Deliverables
+
+### Deliverable 1 — Walking Skeleton
+**O que faz:** <integração ponta-a-ponta mínima — o menor pedaço que conecta todas as camadas>
+**Critério de done:** <comportamento observável concreto — o que o usuário/dev consegue ver/testar>
+**Valida as assunções:** <assunção 1>, <assunção 2>
+
+**⚠️ Execute `/checkpoint` antes de continuar para o Deliverable 2.**
+
+### Deliverable 2 — <nome>
+**O que faz:** <funcionalidade completa deste incremento>
+**Critério de done:** <comportamento observável>
+**Valida as assunções:** <assunção N>
+
+**⚠️ Execute `/checkpoint` antes de continuar para o Deliverable 3.**
+
+<!-- Adicionar mais deliverables se necessário. Remover a linha ⚠️ do último deliverable. -->
+
 ## Arquivos a modificar
 - `path/to/file` — <o que fazer exatamente>
 
 ## Passos de execução
-1. <Passo 1 — arquivo exato, função, o que criar/editar>
-2. <Passo 2 — idem>
+<!-- Referenciar os deliverables em ordem. Cada bloco termina com /checkpoint (exceto o último). -->
+1. <Passo 1 — arquivo exato, função, o que criar/editar> [Deliverable 1]
+2. <Passo 2 — idem> [Deliverable 1]
+3. ⚠️ Execute `/checkpoint` — Deliverable 1 concluído
+4. <Passo 4 — arquivo exato, função, o que criar/editar> [Deliverable 2]
+5. <Passo 5 — idem> [Deliverable 2]
 
 ## Checklist de infraestrutura
 - [ ] Novo Secret: <não / qual>
@@ -358,7 +385,7 @@ Ler `.claude/feature-plans/<nome>/plan.md` integralmente.
 **Se não existir plan.md (Fase C fast):**
 1. Ler CLAUDE.md + arquivos mais relevantes (sem subagentes — leitura direta)
 2. Fazer 1-2 perguntas: "o que a feature deve fazer?" + "quais arquivos serão tocados?"
-3. Gerar mini plan.md (problema + passos concretos + rollback mínimo)
+3. Gerar mini plan.md (problema + assunções principais + deliverables simplificados + passos concretos + rollback mínimo)
 4. Mostrar ao usuário para confirmação rápida
 5. Prosseguir para C.2
 
@@ -421,6 +448,8 @@ Regras:
 - Se um passo falhar: diagnosticar, tentar corrigir; parar só após 2 tentativas sem sucesso
 - Se há outros agentes ativos: fazer push imediatamente após cada commit
 - **Não pedir confirmação entre passos — executar autonomamente**
+- **Ao encontrar um passo `⚠️ Execute /checkpoint` no plan.md: invocar `/checkpoint` e PARAR até receber resposta humana — nunca pular ou auto-responder**
+- Executar os passos na ordem dos Deliverables: concluir todos os passos de um deliverable antes de avançar para o próximo
 
 ### Passo C.6 — Build + testes automáticos
 
