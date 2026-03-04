@@ -10,7 +10,7 @@ Status: `codified` = implementado e validado | `proposed` = aprovado mas não im
 **When:** Há informação sobre o estado de um agente (tokens, status, CWD, fase da skill).
 **Then:** Exibir como badge/dot passivo — sem ação requerida. Reservar interrupção ativa (notificação, badge no menu bar, HITL panel) exclusivamente para decisões que requerem julgamento humano.
 **Because:** O usuário está com atenção dividida. Informação de status que não requer decisão não pode competir por atenção com HITL real. Ver `ux-identity.md` C1 e C5.
-**Screens:** AgentCard, DashboardView, NSStatusItem
+**Screens:** AgentCardView, DashboardView, SpawnedAgentView, NSStatusItem
 **Status:** codified
 
 ---
@@ -20,7 +20,7 @@ Status: `codified` = implementado e validado | `proposed` = aprovado mas não im
 **When:** Ação irreversível ou de alto impacto: cancelar sessão, deletar task, encerrar agente.
 **Then:** Alert de confirmação com descrição do efeito, botão destrutivo em vermelho, botão de cancelamento em destaque.
 **Because:** C1 — ação é deliberada. Acidente em ação destrutiva tem custo alto (perda de contexto do agente, tokens gastos sem resultado).
-**Screens:** AgentCard (cancel), TaskBacklog (delete task)
+**Screens:** AgentCardView (cancel), TaskBacklogView (delete task)
 **Status:** proposed
 
 ---
@@ -30,7 +30,7 @@ Status: `codified` = implementado e validado | `proposed` = aprovado mas não im
 **When:** Um agente tem estado rico (terminal output, evento history, sub-agents ativos).
 **Then:** Card mostra o mínimo (status dot, nome da task, timer, token spend, fase atual). Detail (SpawnedAgentView ou AgentTerminalView) mostra o raw output. Transição via tap/double-click no card.
 **Because:** C4 — não esconder, mas não forçar. Usuário decide quando quer profundidade.
-**Screens:** AgentCard → SpawnedAgentView / AgentTerminalView
+**Screens:** AgentCardView → SpawnedAgentView / AgentTerminalView
 **Status:** codified
 
 ---
@@ -40,7 +40,7 @@ Status: `codified` = implementado e validado | `proposed` = aprovado mas não im
 **When:** Qualquer view mostrando um agente.
 **Then:** Dot colorido indica estado: verde (running), amarelo (waiting HITL), cinza (idle/done), vermelho (error). Sempre presente, nunca ausente, nunca piscando (exceto HITL pending).
 **Because:** O usuário precisa avaliar o estado de N agentes em glance sem ler texto. Cor é o canal mais rápido. Piscagem é reservada para HITL porque é o único estado que pede ação.
-**Screens:** AgentCard, DashboardView
+**Screens:** AgentCardView, DashboardView
 **Status:** codified
 
 ---
@@ -80,6 +80,9 @@ Status: `codified` = implementado e validado | `proposed` = aprovado mas não im
 **When:** Agente envia pedido de aprovação (tool use confirmation, permissão de arquivo, etc.).
 **Then:** NSPanel flutuante aparece sobre qualquer janela ativa. Badge no menu bar pisca. Notificação macOS enviada se app não estiver em foreground.
 O painel tem duas ações: Aprovar (ação primária) e Rejeitar. Contexto completo do pedido visível sem scroll.
+Queue por projeto/repo: se dois agentes do mesmo projeto pedirem aprovação simultaneamente,
+o segundo entra na fila — o painel do primeiro fecha antes do próximo abrir. Agentes de
+projetos diferentes abrem painéis paralelos.
 **Because:** HITL é o único estado que justifica quebrar o foco do usuário. O custo de não ver HITL a tempo (agente bloqueado, timeout) é maior do que o custo de interromper.
 **Screens:** HITLPanelView, NSStatusItem
 **Status:** codified
@@ -112,5 +115,5 @@ Não mostra features do app — assume que o usuário já sabe o que quer. Desap
 **When:** Token spend e custo estimado de uma sessão.
 **Then:** Exibido no AgentCard como badge secundário (menor, menos destaque que status e nome). Formato: `$0.03` ou `3.2k tokens`. Nunca em notificação, nunca em alerta.
 **Because:** Custo é informação de background — útil para calibrar uso, mas nunca urgente. Transformar custo em interrupção criaria ansiedade e não mudaria comportamento.
-**Screens:** AgentCard
+**Screens:** AgentCardView
 **Status:** codified

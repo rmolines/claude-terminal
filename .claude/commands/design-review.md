@@ -56,14 +56,24 @@ no arquivo de screens e os padrões aplicáveis no arquivo de patterns.
 Após o pré-flight, determinar o modo de execução:
 
 ```text
+Se argumento for "--audit":
+  → Audit mode (diagnóstico retroativo)
 Se argumento for "--holistic":
   → Revisão holística
-Se argumento fornecido (e não --holistic):
+Se argumento fornecido (e não --audit nem --holistic):
   Buscar o nome no arquivo de screens da spec
   Se ENCONTRADO → Loop de revisão (por view) — fluxo padrão
   Se NÃO ENCONTRADO → Intake mode
 Se sem argumento:
   → Loop de revisão (feature em progresso)
+```
+
+**Sinal para audit:**
+
+```text
+🔍 Iniciando audit retroativo de UX/UI.
+Avaliando cada view em 3 dimensões: Fluxo/navegação · Informação · Visual/estética.
+Não assumo que a spec está certa — avalio código e spec de forma independente.
 ```
 
 **Sinal para intake:**
@@ -151,6 +161,137 @@ Salvar essas adições na spec agora? (sim = eu escrevo; não = você decide dep
 ```
 
 Aguardar confirmação explícita antes de escrever qualquer arquivo.
+
+---
+
+## Audit mode
+
+Invocação: `/design-review --audit`
+
+Diagnóstico retroativo de UX/UI existente. Avalia o app como está — não como a spec diz que deveria ser.
+Somente leitura. Produz um relatório de findings e um backlog priorizado de fixes. Não modifica arquivos.
+
+O audit usa a spec como referência mas não como árbitro: a spec pode estar errada também.
+Cada finding especifica se o problema é no código, na spec, ou em ambos.
+
+### Dimensões de avaliação
+
+**Dimensão 1 — Fluxo/navegação**
+Pergunta central: _o usuário sempre sabe onde está e para onde pode ir?_
+
+- Construir o grafo de navegação real a partir do código (não da spec)
+- Para cada view: entry points reais vs. declarados na spec — convergem?
+- Transições: fazem sentido no contexto do job da tela de origem?
+- Dead-ends práticos: views sem saída clara (botão de fechar que não existe, empty state sem CTA)
+- Contexto perdido: o usuário carrega informação mental de uma tela para outra que o app não preserva?
+
+**Dimensão 2 — Informação por tela**
+Pergunta central: _cada dado exibido ajuda o usuário a completar o job desta tela?_
+
+- Para cada view: listar todos os dados/elementos visíveis na implementação atual
+- Para cada elemento: qual decisão ele habilita? Se nenhuma → candidato a remover ou rebaixar
+- Job overload: a tela pede mais de uma decisão primária do usuário? (viola C3)
+- Dado ausente: há informação que o usuário precisa para completar o job e não está aqui?
+- Dado prematuro: há informação que só é relevante em outro momento do fluxo?
+
+**Dimensão 3 — Visual/estética**
+Pergunta central: _a hierarquia visual guia o olho para o que importa?_
+
+- Executar `{{VISUAL_PREVIEW_CMD}}` para cada view com preview block disponível
+- Hierarquia: o elemento mais importante visualmente é o mais importante funcionalmente?
+- Espaçamento e densidade: a tela está sobrecarregada? Há respiro suficiente?
+- Consistência: os padrões de `ux-patterns.md` com status `codified` estão visualmente uniformes entre views?
+- macOS HIG: controles nativos usados corretamente? Typography system respeitado?
+
+Se uma view não tiver preview block, registrar o gap e avaliar apenas via código.
+
+---
+
+### Procedimento
+
+### Etapa 1 — Inventário de views
+
+Listar todas as views em `ux-screens.md`. Para cada uma: localizar o arquivo de implementação e verificar se há preview block.
+
+Registrar:
+
+```text
+| View | Arquivo | Preview disponível |
+|---|---|---|
+| DashboardView | ... | Sim / Não |
+```
+
+### Etapa 2 — Avaliação por view
+
+Para cada view, avaliar nas 3 dimensões. Usar `{{VISUAL_PREVIEW_CMD}}` quando disponível.
+
+Para cada finding, classificar severidade:
+- 🔴 **Crítico** — usuário não consegue completar o job da tela, ou o fluxo quebra
+- 🟡 **Maior** — fricção real, informação que confunde, inconsistência visual significativa
+- 🟢 **Menor** — polish, ajuste fino, melhoria incremental
+
+### Etapa 3 — Spec accuracy check
+
+Após avaliar todas as views: identificar onde a _spec_ está desatualizada, incompleta ou capturou intenção errada.
+
+```text
+| View | Problema na spec | Sugestão de atualização |
+|---|---|---|
+```
+
+---
+
+### Relatório de audit
+
+```markdown
+## Design Audit — <nome do app>
+Data: <hoje>
+Escopo: Fluxo/navegação · Informação · Visual/estética
+
+### Inventário de previews
+| View | Preview | Avaliação visual |
+|---|---|---|
+| <nome> | Sim/Não | Completa / Código apenas |
+
+### Findings por view
+
+#### <NomeDaView>
+**Fluxo/navegação**
+- 🔴/🟡/🟢 [finding]
+  Evidência: [o que vi no código/render]
+  Problema em: [código / spec / ambos]
+
+**Informação**
+- 🔴/🟡/🟢 [finding]
+  Evidência: [elemento específico]
+  Problema em: [código / spec / ambos]
+
+**Visual/estética**
+- 🔴/🟡/🟢 [finding]
+  Evidência: [o que vi no render]
+  Problema em: [código / spec / ambos]
+
+[repetir para cada view]
+
+### Spec accuracy check
+| View | Item na spec | Problema | Atualização sugerida |
+|---|---|---|---|
+| <nome> | <campo> | <o que está errado> | <proposta> |
+
+### Backlog priorizado de fixes
+> Ordenado por impacto: Críticos primeiro, depois Maiores, depois Menores.
+> Dentro da mesma severidade: menor esforço primeiro.
+
+| # | View | Dimensão | Problema | Fix proposto | Esforço | Afeta spec? |
+|---|---|---|---|---|---|---|
+| 1 | <view> | Fluxo | <problema> | <fix> | S/M/L | Sim/Não |
+
+### Próximos passos
+Para cada fix no backlog:
+1. Implementar correção (código e/ou spec)
+2. `/design-review <View>` → gate → se aprovado, marcar item como feito
+3. Próximo item do backlog
+```
 
 ---
 
@@ -394,6 +535,7 @@ corrigidos na próxima feature que tocar essa view:
 |---|---|---|
 | Tela existente na spec | `/design-review Dashboard` | Loop de revisão com drift check + checklist de padrões |
 | Tela nova (não existe na spec) | `/design-review NovaTela` | Sinal 🆕 + entrevista em rounds + proposta de contrato |
+| Audit retroativo | `/design-review --audit` | Sinal 🔍 + inventário de previews + findings por view em 3 dimensões + backlog priorizado |
 | Revisão holística | `/design-review --holistic` | Sinal 🔭 + mapa de navegação + matriz padrões × telas + auditoria de constraints |
 | Feature em progresso | `/design-review` | Detecta branch atual + lista views tocadas + revisa cada uma |
 | Sem spec files | `/design-review` com CLAUDE.md sem UX spec | Aviso ⚠️ com instruções para criar spec primeiro |

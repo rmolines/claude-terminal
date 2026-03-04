@@ -26,6 +26,88 @@ removidos + derived data limpa.
 
 ---
 
+## 2026-03-04 — terminal-first-ui
+
+**O que foi feito:** Substituiu o DashboardView por uma UI minimalista —
+app abre direto com `claude` rodando em PTY embedded. Nova `MainView` com
+header (path + botão "Open Folder…") e terminal inline. Removeu 28 arquivos
+(dashboard, onboarding, skill registry, task backlog, 14 models/services).
+Backend (HookIPCServer, SessionManager, NotificationService) mantido intacto.
+
+**Decisão-chave:** `COLORTERM=truecolor` adicionado ao ambiente do PTY — sem essa
+variável, Claude Code cai para modo paleta ANSI e as cores aparecem apagadas vs iTerm.
+Com `truecolor`, o processo emite escape codes 24-bit e as cores são exatas.
+
+**Armadilhas encontradas:**
+
+- `COLORTERM=truecolor` é obrigatório para cores vibrantes — não basta `TERM=xterm-256color`.
+  Claude Code detecta suporte a true color por essa variável.
+- SwiftTerm usa `NSColor(deviceRed:)` que em displays P3 pode produzir cores ligeiramente
+  diferentes dos valores sRGB originais — mas o impacto real foi o `COLORTERM` ausente.
+
+**Arquivos-chave:**
+
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — nova view principal
+- `ClaudeTerminal/Features/Terminal/TerminalViewRepresentable.swift` — wrapper SwiftTerm
+
+**PR:** #31
+
+---
+
+## 2026-03-03 — hitl-floating-nspanel
+
+**O que foi feito:** Implementou `HITLFloatingPanelController` — NSPanel com `level = .floating`
+que aparece sobre qualquer janela (incluindo apps externos) quando um agente entra em
+`.awaitingInput`. Wired up em `AppDelegate`. PR #30.
+
+**Arquivos criados/modificados:**
+
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — controller `@MainActor`,
+  observa `SessionStore.sessions` via `withObservationTracking`, gerencia ciclo de vida do panel
+- `ClaudeTerminal/App/AppDelegate.swift` — +3 linhas: instância + `start()`
+
+**Decisões tomadas:**
+
+- `hidesOnDeactivate = false` — crítico para o panel não sumir ao trocar de app
+- `collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]` — aparece em todos os Spaces
+  e sobre apps em full-screen
+- `NSHostingView.sizingOptions = [.minSize]` — panel auto-dimensiona a partir da SwiftUI view
+- `panel.center()` apenas na primeira exibição (`!panel.isVisible`) — respeita reposicionamento
+  manual do usuário
+
+**PR:** #30
+
+---
+
+## 2026-03-03 — ux-design-lead
+
+**O que foi feito:** Criou o sistema de invariantes de UX do projeto.
+PR #29 adicionou intake mode e revisão holística ao `/design-review`.
+
+**Arquivos criados/modificados:**
+
+- `.claude/ux-identity.md` — modelo mental + 5 constraints operacionais (C1-C5)
+- `.claude/ux-patterns.md` — 8 padrões codificados
+- `.claude/ux-screens.md` — contratos de 10 telas (Job/Data/Entry/Exit/Open)
+- `.claude/commands/design-review.md` — skill head of design com 3 modos
+- `CLAUDE.md` — tabela de hot files e seção de workflow de design
+
+**Decisões tomadas:**
+
+- Intake mode faz entrevista em rounds para não sobrecarregar o dev
+- Detecção de modo: `--holistic` verificada ANTES de buscar nome em ux-screens.md
+- Revisão holística é somente leitura — nunca modifica spec automaticamente
+
+**Armadilhas encontradas:**
+
+- `gh pr create` dentro de worktree detecta repo errado (`claude-kickstart`) —
+  usar `gh api repos/<owner>/<repo>/pulls` diretamente
+- Code blocks sem language tag causam falha no lint (MD040)
+
+**PR:** #29
+
+---
+
 ## 2026-03-03 — bet-bowl
 
 **O que foi feito:** Implementou o Bet Bowl — seção de captura efêmera de ideias de features no `TaskBacklogView`.

@@ -12,7 +12,8 @@
 
 O app mostrava popups de aprovação HITL para **qualquer** sessão do Claude Code na
 máquina — inclusive sessões abertas no iTerm — porque o hook `PermissionRequest` é
-global (`~/.claude/settings.json`).
+global (`~/.claude/settings.json`). O usuário era interrompido por sessões que não
+tinham relação com o app.
 
 ### Fix aplicado
 
@@ -26,6 +27,99 @@ para sessões com `isManagedByApp == true`; sessões externas são auto-aprovada
 - `ClaudeTerminalHelper/HookHandler.swift` — lê env var e popula campo
 - `ClaudeTerminal/Services/SessionManager.swift` — branching HITL por isManagedByApp
 - `ClaudeTerminal/Features/Terminal/MainView.swift` — define env var no PTY
+
+---
+
+## [feat] Terminal-first UI — app abre direto com `claude` embedded — 2026-03-04
+
+**Tipo:** feat
+**Tags:** ui, terminal, cleanup
+**PR:** [#31](https://github.com/rmolines/claude-terminal/pull/31) · **Complexidade:** média
+
+### O que mudou
+
+O app agora abre direto com um terminal rodando `claude` — sem dashboard, sem onboarding, sem ruído visual. Header minimalista com o diretório atual e botão para trocar de pasta.
+
+### Detalhes técnicos
+
+- Nova `MainView`: header com path + "Open Folder…" + PTY embedded via `TerminalViewRepresentable`
+- `COLORTERM=truecolor` adicionado ao ambiente do PTY — cores vibrantes (fix vs iTerm)
+- Remove 28 arquivos: DashboardView, AgentCardView, onboarding, skill registry, task backlog, views de quick-terminal/agent, schemas SwiftData V1-V3, models não usados
+- Backend (HookIPCServer, SessionManager, NotificationService, SessionStore) mantido intacto
+
+### Impacto
+
+- **Breaking:** Não — somente UI. Backend e IPC inalterados.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — nova view principal (criado)
+- `ClaudeTerminal/App/ClaudeTerminalApp.swift` — usa MainView, removeu SwiftData e WindowGroups extras
+
+---
+
+## [feat] HITL floating NSPanel over all windows — 2026-03-03
+
+**Tipo:** feat
+**Tags:** hitl, appkit, nspanel, ux
+**PR:** [#30](https://github.com/rmolines/claude-terminal/pull/30) · **Complexidade:** simples
+
+### O que mudou
+
+O painel de aprovação HITL agora aparece flutuante sobre qualquer janela ativa — incluindo
+apps externos como Xcode, Finder ou navegadores — sem precisar trazer o Claude Terminal
+para o primeiro plano. Antes, os controles Approve/Reject ficavam embutidos no card do agente.
+
+### Detalhes técnicos
+
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — novo controller `@MainActor`
+  que gerencia um `NSPanel` com `level = .floating`, `collectionBehavior = [.canJoinAllSpaces,
+  .fullScreenAuxiliary]`, `hidesOnDeactivate = false`, `isReleasedWhenClosed = false`
+- Observa `SessionStore.sessions` via `withObservationTracking` — show/dismiss automático
+- Reutiliza `HITLPanelView` existente via `NSHostingView` com callbacks approve/reject
+- `ClaudeTerminal/App/AppDelegate.swift` — +3 linhas para instanciar e iniciar o controller
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — controller do panel
+- `ClaudeTerminal/App/AppDelegate.swift` — ponto de entrada
+
+---
+
+## [feat] UX design system — identity, patterns, screens + design-review skill — 2026-03-03
+
+**Tipo:** feat
+**Tags:** ux, design, skills, documentation
+**PR:** [#29](https://github.com/rmolines/claude-terminal/pull/29) · **Complexidade:** média
+
+### O que mudou
+
+Sistema de invariantes de UX: três arquivos de spec que Claude lê antes de qualquer trabalho de design,
+mais a skill `/design-review` com três modos — revisão de view, intake de nova tela e auditoria holística do app.
+
+### Detalhes técnicos
+
+- `.claude/ux-identity.md` — modelo mental + 5 constraints operacionais (C1-C5)
+- `.claude/ux-patterns.md` — 8 padrões codificados com When/Then/Because/Screens
+- `.claude/ux-screens.md` — contratos de 10 telas (Job/Data/Entry/Exit/Open items)
+- `.claude/commands/design-review.md` — skill com detecção de modo automática:
+  - Argumento existente → revisão normal (RenderPreview + drift check + constraint audit)
+  - Argumento novo → intake mode (entrevista estruturada → proposta de contrato)
+  - `--holistic` → mapa de navegação + matriz padrões × telas + auditoria sistêmica C1-C5
+- `CLAUDE.md` — spec files adicionados à tabela de hot files + seção de workflow de design
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/commands/design-review.md` — skill principal
+- `.claude/ux-identity.md`, `.claude/ux-patterns.md`, `.claude/ux-screens.md` — spec files
 
 ---
 

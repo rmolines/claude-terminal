@@ -10,7 +10,7 @@ Gaps entre spec e código = drift a corrigir. Seção `Open` = decisões de UX a
 **Job:** Monitorar o estado de todos os agentes ativos em glance e identificar HITL pendente.
 **Data:** Grid de AgentCards (um por agente/sessão ativa) + sidebar TaskBacklog.
 **Entry:** Janela principal do app ao abrir; foco retorna aqui após fechar qualquer detail view.
-**Exit:** AgentCard → SpawnedAgentView | AgentCard → AgentTerminalView | Botão "+" → NewAgentSheet.
+**Exit:** AgentCard → SpawnedAgentView | AgentCard → AgentTerminalView | Botão "+" → NewAgentSheet | Menu lateral → SkillRegistryView.
 **Open:**
 - Layout quando não há agentes ativos: empty state com CTA para criar primeiro agente?
 - Ordenação dos cards: por status (HITL primeiro)? por hora de criação? configurável?
@@ -46,22 +46,24 @@ Gaps entre spec e código = drift a corrigir. Seção `Open` = decisões de UX a
 **Job:** Inspecionar o output raw de um agente específico sem deixar o dashboard.
 **Data:** PTY output do processo `claude`, scroll completo, sem input (read-only).
 **Entry:** Botão terminal no AgentCard.
-**Exit:** Fechar view → retorna ao DashboardView.
-**Open:**
-- Deveria permitir input? (decisão pendente — conflita com C2 de ux-identity.md)
-- Busca no output (Cmd+F)? Útil mas aumenta complexidade.
+**Exit:** Fechar view → DashboardView.
+
+**Open items resolvidos:**
+- Input: não — terminal é read-only por definição. (C2)
+- Busca (Cmd+F): pendente.
 
 ---
 
 ## SpawnedAgentView
 
 **Job:** Inspecionar o agente em janela dedicada para análise mais profunda.
-**Data:** Terminal full-size do agente + metadata (status, tokens, eventos recentes).
+**Data:** Terminal full-size do agente + token badge no toolbar.
+**Estrutura:** NSWindow separada (não NavigationSplitView detail). Sem sidebar de eventos — job único é inspecionar o output raw.
 **Entry:** Double-click no AgentCard no DashboardView.
 **Exit:** Fechar janela → foco retorna ao DashboardView.
-**Open:**
-- Deve ser uma NSWindow separada ou um NavigationSplitView detail?
-- Sidebar de eventos nesta view ou só terminal?
+
+**Open items resolvidos:**
+- Estrutura: NSWindow separada. Toolbar com token badge. Sem sidebar de eventos. (C3 — uma tela, uma decisão)
 
 ---
 
@@ -70,7 +72,7 @@ Gaps entre spec e código = drift a corrigir. Seção `Open` = decisões de UX a
 **Job:** Abrir um terminal zsh ad-hoc sem criar task ou sessão de agente.
 **Data:** PTY interativo (zsh), sem associação a ClaudeTask.
 **Entry:** Ação secundária no DashboardView (não via fluxo principal).
-**Exit:** Fechar view.
+**Exit:** Fechar view → DashboardView.
 **Open:**
 - Deve aparecer no grid do Dashboard como card? (Provavelmente não — cria confusão com agentes reais.)
 - CWD default: último usado? home? repo root?
@@ -82,7 +84,7 @@ Gaps entre spec e código = drift a corrigir. Seção `Open` = decisões de UX a
 **Job:** Iniciar uma sessão `claude` ad-hoc sem criar task formal — para exploração rápida.
 **Data:** PTY interativo rodando `claude` no diretório escolhido.
 **Entry:** Ação secundária no DashboardView.
-**Exit:** Fechar view.
+**Exit:** Fechar view → DashboardView.
 **Open:**
 - Deve criar um ClaudeAgent efêmero no SwiftData? Ou rodar completamente fora do modelo?
 - Como distinguir visualmente de um AgentCard real no grid?
@@ -94,7 +96,7 @@ Gaps entre spec e código = drift a corrigir. Seção `Open` = decisões de UX a
 **Job:** Ver e gerenciar o backlog de ClaudeTasks — o trabalho planejado que ainda não tem agente.
 **Data:** Lista de ClaudeTasks ordenada por prioridade/criação. Status: pending, in-progress, done.
 **Entry:** Sidebar do DashboardView (sempre visível).
-**Exit:** Selecionar task → contexto para criar novo agente | Botão "+" → criar nova task.
+**Exit:** Selecionar task → NewAgentSheet (task pré-selecionada) | Botão "+" → NewTaskSheet.
 **Open:**
 - Deve mostrar tasks done? (histórico) ou só pending/in-progress?
 - Drag-to-reorder para priorização?
@@ -108,10 +110,13 @@ Gaps entre spec e código = drift a corrigir. Seção `Open` = decisões de UX a
 **Data:** Identificação do agente, descrição do pedido (tool use, permissão, confirmação), contexto suficiente para decidir. Ações: Aprovar / Rejeitar.
 **Entry:** Push do agente via Unix domain socket → NSPanel aparece flutuante.
 **Exit:** Aprovação → fecha panel + sinal enviado ao agente | Rejeição → idem com resposta negativa.
-**Open:**
-- Timeout: o que acontece se o usuário não responder em N segundos? (Auto-reject? Bloquear?)
-- Múltiplos HITL simultâneos: queue ou um panel por agente?
-- Input livre para o usuário customizar a resposta de aprovação?
+**Open items resolvidos:**
+- Timeout: nenhum. Painel permanece até ação explícita do usuário. Se o agente tiver timeout
+  interno, ele reporta erro por conta própria — o app nunca age sem intent do usuário. (C1)
+- Múltiplos HITL: queue por projeto/repo — um painel por vez por projeto. Agentes em
+  projetos/repos diferentes abrem painéis paralelos. Badge no menu bar mostra total pendente.
+- Input livre: fora de escopo. Ações são Aprovar e Rejeitar — sem campo de texto para
+  customizar resposta. (C3)
 
 ---
 
@@ -131,7 +136,7 @@ Gaps entre spec e código = drift a corrigir. Seção `Open` = decisões de UX a
 
 **Job:** Explorar e descobrir skills instaladas no Claude Code, entender o que cada uma faz.
 **Data:** Lista de skills detectadas (lidas de `.claude/commands/`), nome, descrição curta, status (ativa/inativa).
-**Entry:** Item no menu lateral ou Settings.
+**Entry:** Menu lateral do DashboardView (item fixo) ou Settings.
 **Exit:** Fechar view.
 **Open:**
 - Read-only ou permite instalar/remover skills daqui?

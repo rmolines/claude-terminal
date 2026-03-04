@@ -51,7 +51,9 @@
       "status": "done",
       "milestone": "m1",
       "path": "deep",
-      "dependencies": ["hook-pipeline"],
+      "dependencies": [
+        "hook-pipeline"
+      ],
       "branch": null,
       "prNumber": 5,
       "startedAt": null,
@@ -64,7 +66,9 @@
       "status": "done",
       "milestone": "m1",
       "path": "deep",
-      "dependencies": ["hook-pipeline"],
+      "dependencies": [
+        "hook-pipeline"
+      ],
       "branch": null,
       "prNumber": 3,
       "startedAt": null,
@@ -103,7 +107,9 @@
       "status": "done",
       "milestone": "m2",
       "path": "deep",
-      "dependencies": ["terminal-per-agent-ui"],
+      "dependencies": [
+        "terminal-per-agent-ui"
+      ],
       "branch": null,
       "prNumber": null,
       "startedAt": null,
@@ -116,7 +122,9 @@
       "status": "done",
       "milestone": "m2",
       "path": "deep",
-      "dependencies": ["agent-spawn-ui"],
+      "dependencies": [
+        "agent-spawn-ui"
+      ],
       "branch": null,
       "prNumber": 8,
       "startedAt": null,
@@ -155,7 +163,9 @@
       "status": "done",
       "milestone": "m3",
       "path": "deep",
-      "dependencies": ["hook-installer-service"],
+      "dependencies": [
+        "hook-installer-service"
+      ],
       "branch": null,
       "prNumber": 10,
       "startedAt": null,
@@ -181,7 +191,9 @@
       "status": "done",
       "milestone": "m3",
       "path": "deep",
-      "dependencies": ["release-pipeline"],
+      "dependencies": [
+        "release-pipeline"
+      ],
       "branch": "feature/sparkle-autoupdate",
       "prNumber": null,
       "startedAt": null,
@@ -194,7 +206,11 @@
       "status": "done",
       "milestone": "m3",
       "path": "fast",
-      "dependencies": ["hook-setup-onboarding", "release-pipeline", "readme-demo"],
+      "dependencies": [
+        "hook-setup-onboarding",
+        "release-pipeline",
+        "readme-demo"
+      ],
       "branch": "feature/launch-distribution",
       "prNumber": 16,
       "startedAt": null,
@@ -233,7 +249,9 @@
       "status": "done",
       "milestone": "m4",
       "path": "fast",
-      "dependencies": ["project-grouping-task-priorities"],
+      "dependencies": [
+        "project-grouping-task-priorities"
+      ],
       "branch": null,
       "prNumber": 19,
       "startedAt": null,
@@ -254,5 +272,44 @@
       "createdAt": "2026-03-02"
     }
   ],
-  "pitches": []
+  "pitches": [
+    {
+      "id": "terminal-keyboard-shortcuts",
+      "title": "Atalhos de teclado nativos no terminal (Cmd+Backspace, Option+Backspace, Shift+Enter)",
+      "description": "Implementar NSText system no terminal embedded: Cmd+Backspace (kill-whole-line via ^U), Option+Backspace (backward-kill-word via ESC+DEL) via NSEvent monitor local no TerminalViewRepresentable. Shift+Enter requer kitty keyboard protocol — considerar como sub-feature separada. Cmd+Backspace e Option+Backspace são ~20 linhas; Shift+Enter é mais envolvida.",
+      "status": "awaiting-bet",
+      "dependencies": ["terminal-first-ui"],
+      "createdAt": "2026-03-03"
+    }
+  ],
+  "icebox": [
+    {
+      "id": "hitl-floating-nspanel",
+      "title": "HITLPanelView: NSPanel flutuante com level = .floating",
+      "description": "Hoje o HITL é inline no AgentCard. Desejado: NSPanel com windowLevel = .floating que aparece sobre qualquer janela, inclusive apps externos. Requer lifecycle management fora do sistema de janelas do SwiftUI.",
+      "status": "done",
+      "milestone": "m4",
+      "dependencies": [],
+      "branch": null,
+      "prNumber": 30,
+      "startedAt": null,
+      "completedAt": "2026-03-03T17:29:12Z",
+      "createdAt": "2026-03-03"
+    },
+    {
+      "id": "hitl-queue-per-repo",
+      "title": "HITLPanelView: queue por projeto/repo (um panel, outros enfileiram)",
+      "description": "Hoje múltiplos HITL requests do mesmo projeto aparecem como cards paralelos. Desejado: um panel por repo, requests adicionais enfileiram. Requer que AgentSession / SessionManager conheça a repo identity por agente.",
+      "status": "pending",
+      "milestone": "m4",
+      "dependencies": [
+        "hitl-floating-nspanel"
+      ],
+      "branch": null,
+      "prNumber": null,
+      "startedAt": null,
+      "completedAt": null,
+      "createdAt": "2026-03-03"
+    }
+  ]
 }

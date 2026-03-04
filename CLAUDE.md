@@ -89,8 +89,12 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | Worktree + plan.md | Escrever `plan.md` no working tree do `main` antes de criar worktree → arquivo fica não-rastreado, bloqueia `git pull` após merge | Sempre escrever `plan.md` no path do worktree: `/worktrees/<feature>/...` |
 | Implementação no main em vez do worktree | Agente implementa arquivos diretamente no `main` (sem worktree) → arquivos ficam como unstaged em `main`, precisam ser copiados manualmente para o worktree antes do commit | Sempre confirmar o CWD antes de criar arquivos: `git branch --show-current` deve retornar `feature/<nome>` |
 | Curly quotes em string interpolation Swift | `"texto \(var)"` com aspas tipográficas (`"..."`) dentro do literal quebra o parser do Swift com erro críptico de `FormatStyle` | Usar aspas retas escapadas: `\"` dentro de string interpolation |
-| Worktree stale + Xcode | Diretório `.claude/worktrees/<nome>` existe no disco mas não no `git worktree list` → Xcode falha com "Build input files cannot be found" | `rm -rf` o diretório stale + deletar derived data em `~/Library/Developer/Xcode/DerivedData/<nome>-*` |
-| Hook `PermissionRequest` global | Hook em `~/.claude/settings.json` dispara para TODAS as sessões Claude Code da máquina, não só as do app | Usar env var `CLAUDE_TERMINAL_MANAGED=1` no PTY para identificar sessões gerenciadas; auto-aprovar silenciosamente as externas |
+| `gh pr create` em worktree | `gh` detecta o repo errado (`claude-kickstart`) quando rodando de dentro de um worktree | Usar `gh api repos/<owner>/<repo>/pulls` diretamente com `--method POST` |
+| Code blocks sem language tag em .md | Lint falha com MD040 — mesmo pseudocódigo ou texto livre dentro de ` ``` ` sem language tag | Sempre usar ` ```text ` para blocos sem linguagem específica |
+| NSPanel flutuante | `hidesOnDeactivate = true` (padrão) faz o panel sumir ao trocar de app | Sempre definir `hidesOnDeactivate = false` em panels que devem persistir sobre outros apps; incluir `.fullScreenAuxiliary` no `collectionBehavior` para apps em full-screen |
+| PTY colors (TUI apps) | Cores apagadas vs iTerm — `TERM=xterm-256color` não basta | Adicionar `COLORTERM=truecolor` ao env do PTY; sem ela, Claude Code (e outros TUIs) cai para paleta ANSI de 16 cores em vez de 24-bit true color |
+| Worktree stale + Xcode | Diretório `.claude/worktrees/<nome>` existe no disco mas não no `git worktree list` → Xcode não consegue encontrar os arquivos fonte e falha o build com "Build input files cannot be found" | Remover o diretório stale (`rm -rf`) + limpar o derived data correspondente em `~/Library/Developer/Xcode/DerivedData/` |
+| Hook `PermissionRequest` global | Hook registrado em `~/.claude/settings.json` dispara para TODAS as sessões Claude Code da máquina, não só as do app | Usar env var `CLAUDE_TERMINAL_MANAGED=1` no PTY para identificar sessões gerenciadas; auto-aprovar silenciosamente as externas |
 
 ## Worktree convention
 
@@ -123,11 +127,55 @@ swift test           # Rodar testes
 
 ## Design workflow
 
-Antes de qualquer feature que toca UI:
+### Para corrigir UX existente (retroativo)
+
+```text
+/design-review --audit
+```
+
+Diagnóstico completo do app: avalia fluxo/navegação, informação por tela e visual/estética.
+Produz um backlog priorizado de fixes. Não modifica arquivos.
+Não assume que a spec está certa — avalia código e spec de forma independente.
+
+Após o audit: para cada item do backlog:
+1. Implementar a correção
+2. `/design-review <NomeDaView>` → gate → se aprovado, próximo item
+
+### Para novas views (antes de implementar)
+
+```text
+/design-review <NomeDaView>
+```
+
+Se a view não existir na spec → intake mode: entrevista estruturada que define o contrato
+antes de qualquer código. Aprovado pelo dev → salvo em `ux-screens.md`.
+
+### Durante implementação (loop visual)
+
+```text
+RenderPreview → ajusta → RenderPreview → (satisfeito) → /design-review <View>
+```
+
+Usar `RenderPreview` do Xcode MCP para iterar visualmente antes do gate final.
+
+### Gate obrigatório antes do PR
+
+```text
+/design-review <NomeDaView>
+```
 
 1. Ler `.claude/ux-identity.md` + `.claude/ux-screens.md` da(s) tela(s) afetada(s)
 2. Verificar padrões aplicáveis em `.claude/ux-patterns.md`
-3. Após implementar: `/design-review <NomeDaView>` antes de abrir PR
+3. Executar `/design-review <NomeDaView>` — veredito APROVADO é requisito para abrir PR
+
+### Audit periódico (por milestone)
+
+```text
+/design-review --holistic
+```
+
+Após fechar um milestone: auditoria sistêmica de navegação, consistência de padrões
+e constraints. Complementar ao `--audit` — foco em coerência do sistema, não em fixes.
 
 ## Desenvolvimento com Xcode MCP
 

@@ -4,6 +4,20 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-03 — NSPanel `hidesOnDeactivate = false` é obrigatório para floating panels
+
+Por padrão, `NSPanel.hidesOnDeactivate` é `true` — o panel desaparece automaticamente
+quando o app perde o foco. Para um panel utilitário que precisa ficar visível enquanto o
+usuário trabalha em outro app (ex: HITL approval), isso é o comportamento errado.
+
+**Fix:** `panel.hidesOnDeactivate = false` — panel permanece visível independentemente de qual
+app está em foreground. Combinado com `level = .floating`, garante z-order e persistência.
+
+**Armadilha correlata:** `collectionBehavior` precisa incluir `.fullScreenAuxiliary` para o panel
+aparecer em cima de apps em full-screen (ex: Xcode em modo full-screen).
+
+---
+
 ## 2026-03-02 — Claude Code MCP servers ficam em `~/.claude.json`, não em `settings.json`
 
 `~/.claude/settings.json` **não aceita** o campo `mcpServers` — o schema valida e rejeita a edição.
