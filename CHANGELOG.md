@@ -2,6 +2,34 @@
 
 ---
 
+## [feat] Skills tab + Worktrees tab com orientação de workflow por agente — 2026-03-04
+
+**Tipo:** feat
+**Tags:** ui, skills, worktrees, session-manager
+**PR:** [#35](https://github.com/rmolines/claude-terminal/pull/35) · **Complexidade:** alta
+
+### O que mudou
+O app agora tem duas novas abas: **Skills** (mostra a fase do workflow de cada agente ativo e as próximas 1-3 skills recomendadas com botão copy) e **Worktrees** (lista worktrees com branch dropdown no header).
+
+### Detalhes técnicos
+- `WorkflowPhase.swift` — enum de fases (strategic/featureActive/readyToShip/unknown) + `SkillDefinition` com todas as skills do sistema
+- `GitStateService.swift` — actor async para git queries sem bloquear atores; polling 15s via `.task {}`
+- `AgentWorkflowCard.swift` — card SwiftUI por sessão com fase detectada + próximos passos + copy buttons
+- `SkillsNavigatorView.swift` — view principal da aba Skills
+- `WorktreesView.swift` — aba Worktrees + branch dropdown no header
+- `SessionStore`/`SessionManager` — fix: sessões externas (sem `CLAUDE_TERMINAL_MANAGED=1`) ignoradas; evict de sintéticas quando hook real chega
+
+### Impacto
+- **Breaking:** Não
+
+### Arquivos-chave
+- `ClaudeTerminal/Features/Skills/WorkflowPhase.swift` — data layer de skills
+- `ClaudeTerminal/Features/Skills/SkillsNavigatorView.swift` — aba Skills
+- `ClaudeTerminal/Services/GitStateService.swift` — git queries async
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — TabView atualizado
+
+---
+
 ## [chore] Substituir /refine-idea por /explore no workflow — 2026-03-04
 
 **Tipo:** chore

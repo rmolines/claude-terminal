@@ -4,6 +4,42 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-04 — skills-navigator + worktrees-tab (PR #35)
+
+### O que foi feito
+- Aba **Skills** no app: detecta a fase do workflow por agente (strategic/featureActive/readyToShip) a partir da branch e cwd, exibe as próximas skills recomendadas com botão copy
+- Aba **Worktrees**: lista worktrees ativos com branch dropdown no header
+- `WorkflowPhase` + `SkillDefinition`: enum + data layer estático com todas as skills do sistema
+- `GitStateService`: actor async para queries de git sem bloquear atores (polling 15s)
+- `AgentWorkflowCard`: card por sessão com fase + próximos passos
+- Fix `SessionStore`/`SessionManager`: só sessões `CLAUDE_TERMINAL_MANAGED=1` entram no store — externas são ignoradas; evict de sessões sintéticas quando hook real chega para o mesmo cwd
+
+### Decisões técnicas
+- `Foundation.Process` para git queries (sem dependências extras) — `terminationHandler` marcado `@Sendable` para Swift 6
+- Polling a cada 15s via `.task {}` — cancela automaticamente quando a view sai de cena
+- `WorkflowPhase.infer()` prioriza cwd (`.claude/worktrees/`) antes da branch — mais confiável para worktrees com branch genérica
+- Branch `worktree-*` stripped do prefixo para inferência de fase
+
+### Armadilhas encontradas
+- Worktree ficou stale (diretório em disco, não no `git worktree list`) — a worktree havia sido removida do tracking mas o diretório persistiu; branch local tinha os commits mas o working tree apontava para main. Solução: trabalhar direto com a branch local + `git push --force-with-lease` após rebase
+- `gh pr merge` deu erro "Could not resolve to a PullRequest" sem `-R owner/repo` — usar sempre `-R rmolines/claude-terminal` em repos com múltiplos remotes/worktrees
+
+### Arquivos-chave
+- `ClaudeTerminal/Features/Skills/WorkflowPhase.swift` — enum de fases + SkillDefinition
+- `ClaudeTerminal/Features/Skills/SkillsNavigatorView.swift` — view principal da aba Skills
+- `ClaudeTerminal/Features/Skills/AgentWorkflowCard.swift` — card por agente
+- `ClaudeTerminal/Services/GitStateService.swift` — git queries async
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — TabView com 3 abas
+- `ClaudeTerminal/Features/Worktrees/WorktreesView.swift` — aba Worktrees
+- `ClaudeTerminal/Services/SessionStore.swift` — filtro de sessões gerenciadas
+
+### Próximos passos possíveis
+- Mostrar o trigger condition de skills auto-trigger na aba Skills
+- Refresh manual na aba Skills (pull-to-refresh ou botão)
+- Persistir fase detectada no SwiftData para histórico
+
+---
+
 ## 2026-03-04 — propagação do /explore (workflow.md + kickstart PR #12)
 
 **O que foi feito:** Substituiu `/refine-idea` por `/explore` no fluxo de workflow em ambos os repos. Adicionou bloco EXPLORAÇÃO separado antes de ESTRATÉGICO no fluxo visual. Atualizou tabela de skills com `/explore` e `/explore --fast`. Abriu e mergou PR #12 no `claude-kickstart`.
