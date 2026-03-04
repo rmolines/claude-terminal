@@ -1,0 +1,6 @@
+config: .markdownlint.yaml
+ignores:
+  - ".build/**"
+  - ".swiftpm/**"
+  - ".claude/worktrees/**"
+  - ".claude/feature-plans/**"
