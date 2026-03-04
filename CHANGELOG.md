@@ -2,6 +2,33 @@
 
 ---
 
+## [fix] HITL popups suprimidos para sessões externas — 2026-03-04
+
+**Tipo:** fix
+**Tags:** hitl, hooks, ipc
+**PR:** [#33](https://github.com/rmolines/claude-terminal/pull/33) · **Complexidade:** simples
+
+### Problema
+
+O app mostrava popups de aprovação HITL para **qualquer** sessão do Claude Code na
+máquina — inclusive sessões abertas no iTerm — porque o hook `PermissionRequest` é
+global (`~/.claude/settings.json`).
+
+### Fix aplicado
+
+Sessões iniciadas pelo app recebem `CLAUDE_TERMINAL_MANAGED=1` no ambiente do PTY.
+Esse env var propaga via `fork/exec` até o helper. O `SessionManager` só mostra popup
+para sessões com `isManagedByApp == true`; sessões externas são auto-aprovadas silenciosamente.
+
+### Arquivos-chave
+
+- `Shared/IPCProtocol.swift` — campo `isManagedByApp: Bool?` em `AgentEvent`
+- `ClaudeTerminalHelper/HookHandler.swift` — lê env var e popula campo
+- `ClaudeTerminal/Services/SessionManager.swift` — branching HITL por isManagedByApp
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — define env var no PTY
+
+---
+
 ## [feat] Bet Bowl — quick idea capture + random draw to task — 2026-03-03
 
 **Tipo:** feat

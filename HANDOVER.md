@@ -4,6 +4,28 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-04 — fix(hitl): suppress HITL popups para sessões externas
+
+**O que foi feito:** Corrigido bug onde o app mostrava popups HITL para sessões Claude Code
+iniciadas externamente (iTerm). Solução: env var `CLAUDE_TERMINAL_MANAGED=1` no PTY propaga
+via fork/exec até o hook binary. `SessionManager` só mostra popup para `isManagedByApp == true`.
+Sessões externas são auto-aprovadas silenciosamente. **PR:** #33.
+
+**Decisões:** Auto-approve para externos (hook é bloqueante — sem pass-through). `isManagedByApp`
+como `Bool?` para backward compat com helpers antigos. fd armazenado antes de `handleEvent` no
+`HookIPCServer` para que auto-approve encontre o fd imediatamente.
+
+**Armadilhas:** PR #32 conflitou — `SpawnedAgentView` foi deletado pelo PR #31 (terminal-first UI)
+que mergeu primeiro. Solução: novo branch do main atual, fix vai para `MainView.swift`.
+Worktrees stale (`terminal-first-ui`, `hook-setup-onboarding`) causavam erro de build no Xcode —
+removidos + derived data limpa.
+
+**Arquivos:** `Shared/IPCProtocol.swift`, `ClaudeTerminalHelper/HookHandler.swift`,
+`ClaudeTerminal/Services/HookIPCServer.swift`, `ClaudeTerminal/Services/SessionManager.swift`,
+`ClaudeTerminal/Features/Terminal/MainView.swift`
+
+---
+
 ## 2026-03-03 — bet-bowl
 
 **O que foi feito:** Implementou o Bet Bowl — seção de captura efêmera de ideias de features no `TaskBacklogView`.

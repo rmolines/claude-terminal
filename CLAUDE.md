@@ -89,6 +89,8 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | Worktree + plan.md | Escrever `plan.md` no working tree do `main` antes de criar worktree → arquivo fica não-rastreado, bloqueia `git pull` após merge | Sempre escrever `plan.md` no path do worktree: `/worktrees/<feature>/...` |
 | Implementação no main em vez do worktree | Agente implementa arquivos diretamente no `main` (sem worktree) → arquivos ficam como unstaged em `main`, precisam ser copiados manualmente para o worktree antes do commit | Sempre confirmar o CWD antes de criar arquivos: `git branch --show-current` deve retornar `feature/<nome>` |
 | Curly quotes em string interpolation Swift | `"texto \(var)"` com aspas tipográficas (`"..."`) dentro do literal quebra o parser do Swift com erro críptico de `FormatStyle` | Usar aspas retas escapadas: `\"` dentro de string interpolation |
+| Worktree stale + Xcode | Diretório `.claude/worktrees/<nome>` existe no disco mas não no `git worktree list` → Xcode falha com "Build input files cannot be found" | `rm -rf` o diretório stale + deletar derived data em `~/Library/Developer/Xcode/DerivedData/<nome>-*` |
+| Hook `PermissionRequest` global | Hook em `~/.claude/settings.json` dispara para TODAS as sessões Claude Code da máquina, não só as do app | Usar env var `CLAUDE_TERMINAL_MANAGED=1` no PTY para identificar sessões gerenciadas; auto-aprovar silenciosamente as externas |
 
 ## Worktree convention
 
