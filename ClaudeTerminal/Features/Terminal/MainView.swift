@@ -53,6 +53,7 @@ struct MainView: View {
         env["TERM"] = "xterm-256color"
         env["COLORTERM"] = "truecolor"
         env["HOME"] = NSHomeDirectory()
+        env["CLAUDE_TERMINAL_MANAGED"] = "1"
         let envArray = env.map { "\($0.key)=\($0.value)" }
         return TerminalViewRepresentable(
             executable: "/bin/zsh",

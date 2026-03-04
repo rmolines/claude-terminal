@@ -46,14 +46,18 @@ public struct AgentEvent: Codable, Sendable {
     public let timestamp: Date
     public let detail: String?          // truncated bash cmd, permission desc, etc.
     public let tokenUsage: TokenUsage?
+    /// True when the Claude Code session was spawned by Claude Terminal (CLAUDE_TERMINAL_MANAGED=1 in PTY env).
+    /// False for sessions started externally (e.g. iTerm). Nil from older helper versions = treated as external.
+    public let isManagedByApp: Bool?
 
-    public init(sessionID: String, type: AgentEventType, cwd: String, detail: String? = nil, tokenUsage: TokenUsage? = nil) {
+    public init(sessionID: String, type: AgentEventType, cwd: String, detail: String? = nil, tokenUsage: TokenUsage? = nil, isManagedByApp: Bool? = nil) {
         self.sessionID = sessionID
         self.type = type
         self.cwd = cwd
         self.timestamp = Date()
         self.detail = detail
         self.tokenUsage = tokenUsage
+        self.isManagedByApp = isManagedByApp
     }
 }
 
