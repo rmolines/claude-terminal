@@ -7,9 +7,13 @@ Mapa completo das skills, quando usar cada uma, e como se relacionam.
 ## Fluxo visual
 
 ```text
+EXPLORAÇÃO (antes de criar um projeto)
+──────────────────────────────────────────
+  /explore [intuição] → explore.md → /start-project
+
 ESTRATÉGICO (uma vez por projeto/milestone)
 ──────────────────────────────────────────
-  /refine-idea → /start-project → /plan-roadmap → /start-milestone
+  /start-project → /plan-roadmap → /start-milestone
 
 TÁTICO (por feature)
 ──────────────────────────────────────────
@@ -38,7 +42,8 @@ AD-HOC (feature sem roadmap)
 
 | Skill | Quando usar | Input | Output | Próxima skill |
 |-------|-------------|-------|--------|---------------|
-| `/refine-idea` | Ideia nova ou vaga | Descrição livre | Brief estruturado | `/start-project` |
+| `/explore` | Explorar domínio desconhecido antes de criar projeto | Intuição/pergunta | `explore.md` com mapa + hipótese | `/start-project` ou `/explore --deepen` |
+| `/explore --fast` | Scan rápido (≈ antigo refine-idea) | Ideia | Brief estruturado | `/start-project` |
 | `/start-project` | Criar repositório do zero | Brief aprovado | Repo + skills especializadas | `/plan-roadmap` |
 | `/plan-roadmap` | Definir milestones e features | Projeto existente | `roadmap.md` atualizado | `/start-milestone` |
 | `/start-milestone` | Começar um novo milestone | `roadmap.md` ou `backlog.json` | `<M>/sprint.md` com features | `/start-feature` |
