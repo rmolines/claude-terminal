@@ -22,6 +22,21 @@ O argumento passado é o nome ou descrição do bug: $ARGUMENTS
 
 Verifique a existência dos arquivos em `.claude/fix-plans/<nome>/`:
 
+**Verificar debug report disponível:**
+Antes de iniciar Fase 1, verificar se existe algum `report.md` em `.claude/debug-plans/`:
+
+```bash
+ls .claude/debug-plans/*/report.md 2>/dev/null
+```
+
+Se encontrado(s): apresentar lista e perguntar:
+> "Encontrei relatório(s) de /debug disponível(is): [lista].
+> Usar como base para o diagnóstico? (sim = pulo a investigação; não = diagnostico do zero)"
+
+Se sim: ler o report.md escolhido, gerar `diagnosis.md` a partir dele (mapeando
+"Causa raiz hipotética" → "Causa raiz", "Fix sugerido" → "Fix planejado"),
+e pular direto para Fase 2.
+
 | Arquivos presentes | Fase |
 |---|---|
 | Nenhum | Fase 1 — Diagnóstico |
