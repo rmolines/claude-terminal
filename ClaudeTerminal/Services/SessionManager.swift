@@ -87,12 +87,18 @@ actor SessionManager {
     func approveHITL(sessionID: String) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
         sessions[sessionID]?.status = .running
+        if let session = sessions[sessionID] {
+            Task { @MainActor in SessionStore.shared.update(session) }
+        }
         await HookIPCServer.shared.respondHITL(sessionID: sessionID, approved: true)
     }
 
     func rejectHITL(sessionID: String) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
         sessions[sessionID]?.status = .blocked
+        if let session = sessions[sessionID] {
+            Task { @MainActor in SessionStore.shared.update(session) }
+        }
         await HookIPCServer.shared.respondHITL(sessionID: sessionID, approved: false)
     }
 

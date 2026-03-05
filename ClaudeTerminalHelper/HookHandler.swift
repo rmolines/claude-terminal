@@ -45,7 +45,9 @@ final class HookHandler: @unchecked Sendable {
         if eventType == .bashToolUse {
             detail = payload.toolInput?["command"].map { String($0.prefix(80)) }
         } else if eventType == .permissionRequest {
-            detail = payload.toolInput?["description"].map { String($0.prefix(80)) }
+            // PermissionRequest: prefer "command" (Bash), fall back to "description" or tool name
+            detail = (payload.toolInput?["command"] ?? payload.toolInput?["description"] ?? payload.toolName)
+                .map { String($0.prefix(80)) }
         } else if eventType == .notification {
             detail = payload.toolInput?["message"].map { String($0.prefix(200)) }
         } else if eventType == .userPromptSubmit {
