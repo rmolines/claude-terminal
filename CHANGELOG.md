@@ -2,6 +2,69 @@
 
 ---
 
+## [feat] Multi-project workspace — sidebar + PTYs persistentes — 2026-03-05
+
+**Tipo:** feat
+**Tags:** swiftdata, multi-terminal, navigation, pty
+**PR:** [#37](https://github.com/rmolines/claude-terminal/pull/37) · **Complexidade:** alta
+
+### O que mudou
+
+O app agora gerencia múltiplos projetos simultaneamente. Uma sidebar lista repositórios git;
+trocar de projeto preserva a sessão Claude ativa (PTY continua rodando em segundo plano via ZStack).
+
+### Detalhes técnicos
+
+- `ClaudeProject` @Model (SwiftData) com git root como chave canônica — worktrees do mesmo repo
+  aparecem sob um único projeto via `git rev-parse --git-common-dir`
+- `MainView` reescrito: `NavigationSplitView` + `ZStack` com `opacity(0/1)` em vez de `TabView`
+- `migrateIfNeeded()` converte `@AppStorage("workingDirectory")` + `recentDirectoriesData` → entities
+- `cleanupAndDeduplicateProjects()` mescla duplicatas, remove orphans e corrige displayPaths stale
+- `ProjectDetailView` com header de path + branch menu + tabs (Terminal/Skills/Worktrees)
+
+### Impacto
+
+- **Breaking:** Não — store distinto (`ClaudeTerminalProjectsV1.store`); dados antigos migrados
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Models/ClaudeProject.swift` — novo @Model
+- `ClaudeTerminal/Models/AppMigrationPlan.swift` — novo ModelContainer factory
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — reescrito
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift` — novo
+- `ClaudeTerminal/Services/GitStateService.swift` — adicionado `gitRootPath(for:)`
+
+---
+
+## [improvement] Absorver ideias do Superpowers — intake + verification + TDD — 2026-03-05
+
+**Tipo:** improvement
+**Tags:** skills, tdd, intake, verification
+**PR:** [#36](https://github.com/rmolines/claude-terminal/pull/36) · **Complexidade:** simples
+
+### O que mudou
+
+Skills de desenvolvimento ganham três novos guardrails: intake mais focado (uma pergunta por vez),
+gate obrigatório de build+test antes de qualquer PR, e regra de TDD sempre em contexto.
+
+### Detalhes técnicos
+
+- `start-feature.md` Fase 0: regra "uma pergunta por vez, prefira múltipla escolha" nas rodadas de intake
+- `ship-feature.md`: Passo 0.5 (HARD GATE) roda `{{BUILD_CMD}}` + `{{TEST_CMD}}` antes de qualquer commit
+- `.claude/rules/tdd.md`: novo rule file com ciclo RED/GREEN/REFACTOR e escopo no projeto
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/commands/start-feature.md` — regra de intake Fase 0
+- `.claude/commands/ship-feature.md` — Passo 0.5 + Regras
+- `.claude/rules/tdd.md` — novo
+
+---
+
 ## [fix] Sinalizar saltos invisíveis em plan-roadmap e ship-feature (Lei 3/4) — 2026-03-04
 
 **Tipo:** fix
@@ -9,13 +72,17 @@
 **PR:** [#14](https://github.com/rmolines/claude-kickstart/pull/14) (kickstart) · **Complexidade:** simples
 
 ### Problema
-`/plan-roadmap` lia artefatos de `/start-project` silenciosamente sem avisar o dev quais foram encontrados. `/ship-feature` pulava o checklist de infra sem nenhum sinal quando `plan.md` não existia — violações das Leis 3 e 4.
+
+`/plan-roadmap` lia artefatos de `/start-project` silenciosamente sem avisar o dev quais foram encontrados.
+`/ship-feature` pulava o checklist de infra sem nenhum sinal quando `plan.md` não existia — violações das Leis 3 e 4.
 
 ### Fix aplicado
+
 - `plan-roadmap` Fase 1: bloco de sinalização explícita dos artefatos encontrados/ausentes antes de prosseguir
 - `ship-feature` Passo 0: aviso `⚠️` explícito quando `plan.md` não existe, antes de continuar sem checklist de infra
 
 ### Arquivos-chave
+
 - `~/.claude/commands/plan-roadmap.md` — Fase 1
 - `.claude/commands/ship-feature.md` — Passo 0
 
@@ -28,9 +95,12 @@
 **PR:** [#35](https://github.com/rmolines/claude-terminal/pull/35) · **Complexidade:** alta
 
 ### O que mudou
-O app agora tem duas novas abas: **Skills** (mostra a fase do workflow de cada agente ativo e as próximas 1-3 skills recomendadas com botão copy) e **Worktrees** (lista worktrees com branch dropdown no header).
+
+O app agora tem duas novas abas: **Skills** (mostra a fase do workflow de cada agente ativo e as próximas
+1-3 skills recomendadas com botão copy) e **Worktrees** (lista worktrees com branch dropdown no header).
 
 ### Detalhes técnicos
+
 - `WorkflowPhase.swift` — enum de fases (strategic/featureActive/readyToShip/unknown) + `SkillDefinition` com todas as skills do sistema
 - `GitStateService.swift` — actor async para git queries sem bloquear atores; polling 15s via `.task {}`
 - `AgentWorkflowCard.swift` — card SwiftUI por sessão com fase detectada + próximos passos + copy buttons
@@ -39,9 +109,11 @@ O app agora tem duas novas abas: **Skills** (mostra a fase do workflow de cada a
 - `SessionStore`/`SessionManager` — fix: sessões externas (sem `CLAUDE_TERMINAL_MANAGED=1`) ignoradas; evict de sintéticas quando hook real chega
 
 ### Impacto
+
 - **Breaking:** Não
 
 ### Arquivos-chave
+
 - `ClaudeTerminal/Features/Skills/WorkflowPhase.swift` — data layer de skills
 - `ClaudeTerminal/Features/Skills/SkillsNavigatorView.swift` — aba Skills
 - `ClaudeTerminal/Services/GitStateService.swift` — git queries async

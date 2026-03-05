@@ -4,18 +4,114 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-05 — multi-project-workspace (PR #37)
+
+### O que foi feito
+
+Transformou o Claude Terminal de app single-project para multi-project workspace. Agora o app
+mantém N sessões Claude simultâneas, com sidebar de projetos e ZStack mantendo PTYs vivos.
+
+**Deliverables entregues:**
+
+1. **SwiftData foundation** — `ClaudeProject` @Model (id, name, path=git root, displayPath=cwd ativo,
+   sortOrder, statusRaw), `ModelContainer.makeShared()` com store em `~/Library/Application Support/ClaudeTerminal/ClaudeTerminalProjectsV1.store`
+
+2. **Multi-terminal ZStack** — `openedProjectIDs: [PersistentIdentifier]` acumula projetos abertos;
+   ZStack com `opacity(0/1)` + `allowsHitTesting` mantém PTYs vivos ao trocar de projeto
+
+3. **Git root grouping** — `GitStateService.gitRootPath(for:)` usa `git rev-parse --git-common-dir`
+   (não `--show-toplevel`) para unificar worktrees do mesmo repo sob um único `ClaudeProject`
+
+4. **Migration** — `migrateIfNeeded()` converte `@AppStorage("workingDirectory")` +
+   `recentDirectoriesData` → `ClaudeProject` entities na primeira abertura
+
+5. **Cleanup** — `cleanupAndDeduplicateProjects()` mescla duplicatas por git root, remove orphans,
+   reseta `displayPath` stale para git root, roda em cada `.onAppear`
+
+### Decisões tomadas
+
+- **`--git-common-dir` em vez de `--show-toplevel`**: mostra o diretório `.git` compartilhado
+  entre todas as worktrees → parent = canonical repo root. `--show-toplevel` retornaria o path
+  da worktree individual, aparecendo como projeto separado.
+- **`List` com `onTapGesture` manual** (não `List(selection:)`): conflito entre `var id: UUID`
+  explícito e `persistentModelID` do SwiftData causava cliques ignorados.
+- **Store name distinto**: `ClaudeTerminalProjectsV1.store` (não default) evita colisão com
+  stores residuais do ciclo DashboardView.
+- **Deliverable 3 parcial**: status badge na sidebar não foi entregue — `SessionStore` → `ClaudeProject`
+  upsert ficou fora do escopo desta iteração; `ProjectDetailView` criado com header de path + branch
+  como substituto.
+
+### Armadilhas encontradas
+
+- **`ModelContainer` não cria diretórios intermediários**: sem `FileManager.createDirectory` antes
+  do `ModelConfiguration(url:)`, o store cai silenciosamente para in-memory e dados se perdem.
+- **`List(selection:)` com @Model + `var id: UUID`**: SwiftData adiciona `Identifiable` via
+  `persistentModelID`; conflito com `var id: UUID` explícito faz cliques serem ignorados.
+- **PTY não reinicia após `displayPath` corrigido externamente**: `sessionID` não muda quando
+  `cleanupAndDeduplicateProjects()` altera `displayPath` → `.onChange(of: project.displayPath)`
+  detecta e reseta `sessionID`.
+- **Worktrees aparecem como projetos separados**: `--show-toplevel` retorna path da worktree;
+  correto é `--git-common-dir` + `deletingLastPathComponent`.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Models/ClaudeProject.swift` — novo @Model
+- `ClaudeTerminal/Models/AppMigrationPlan.swift` — novo ModelContainer factory
+- `ClaudeTerminal/App/ClaudeTerminalApp.swift` — adicionado `.modelContainer(sharedContainer)`
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — reescrito (NavigationSplitView + ZStack)
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift` — novo (header + tabs)
+- `ClaudeTerminal/Services/GitStateService.swift` — adicionado `gitRootPath(for:)`
+
+### Próximos passos
+
+- Deliverable 3 pendente: bridge `SessionStore` → `ClaudeProject.status` para badges na sidebar
+- Fix pré-existente: `CHANGELOG.md` + `.claude/commands/checkpoint.md` têm violações MD022/MD013
+  que estão quebrando o lint CI desde antes desta feature
+
+---
+
+## 2026-03-05 — absorver ideias do Superpowers (intake + verification + TDD)
+
+### O que foi feito
+
+- `start-feature.md`: regra "uma pergunta por vez, prefira múltipla escolha" adicionada antes das rodadas de intake da Fase 0 (--discover)
+- `ship-feature.md`: novo Passo 0.5 (HARD GATE) — roda `swift build` + `swift test` antes de qualquer commit
+- `tdd.md`: novo rule file — ciclo RED/GREEN/REFACTOR, escopo no projeto, tabela de racionalizações, hard rule
+- `workflow.md`: referência ao `skill-contracts.md` adicionada no cabeçalho
+
+### Decisões tomadas
+
+- Mantivemos regras como rule files (`.claude/rules/`) em vez de criar nova skill — menor overhead, sempre em contexto
+- `tdd.md` não se aplica a SwiftUI views (usar `RenderPreview` via Xcode MCP)
+
+### Arquivos-chave
+
+- `.claude/commands/start-feature.md` (Fase 0, Passos 0.3–0.5)
+- `.claude/commands/ship-feature.md` (Passo 0.5 + Regras)
+- `.claude/rules/tdd.md` (novo)
+- `~/.claude/commands/explore.md` (global — mesma regra de intake)
+
+### Próximos passos
+
+- Lint CI falha em `CHANGELOG.md` e `checkpoint.md` — violações pré-existentes, issue separado
+
+---
+
 ## 2026-03-04 — fix audit-skills violations #2 e #3
 
 ### O que foi feito
-- **Fix #2 `plan-roadmap` (Lei 3/4):** `~/.claude/commands/plan-roadmap.md` — Fase 1 agora sinaliza explicitamente quais artefatos de `/start-project` foram encontrados antes de lê-los; aborta se `project-brief.md` não existe
-- **Fix #3 `ship-feature` (Lei 4):** Passo 0 agora emite `⚠️` explícito quando `plan.md` não existe, em vez de prosseguir silenciosamente sem verificar o checklist de infra
-- Mudanças aplicadas em: `~/.claude/commands/plan-roadmap.md` (global), `claude-kickstart` (PR #14, mergeado), `claude-terminal` (commit direto em main + sync)
+
+- **Fix #2 `plan-roadmap` (Lei 3/4):** Fase 1 agora sinaliza explicitamente quais artefatos de `/start-project` foram encontrados antes de lê-los
+- **Fix #3 `ship-feature` (Lei 4):** Passo 0 emite `⚠️` explícito quando `plan.md` não existe
+- Mudanças aplicadas em: `~/.claude/commands/plan-roadmap.md` (global), `claude-kickstart` PR #14, `claude-terminal`
 
 ### Decisões técnicas
+
 - `plan-roadmap` é global (`~/.claude/commands/`) — sem git, mudança só em disco
-- `ship-feature` propagou via kickstart PR #14 (junto com melhoria `start-feature` do mesmo branch) → sync para claude-terminal
+- `ship-feature` propagou via kickstart PR #14 → sync para claude-terminal
 
 ### Arquivos-chave
+
 - `~/.claude/commands/plan-roadmap.md` — Fase 1, bloco de sinalização de artefatos
 - `.claude/commands/ship-feature.md` — Passo 0, bloco else de plan.md ausente
 
@@ -24,24 +120,27 @@ Newest entries at the top.
 ## 2026-03-04 — skills-navigator + worktrees-tab (PR #35)
 
 ### O que foi feito
-- Aba **Skills** no app: detecta a fase do workflow por agente (strategic/featureActive/readyToShip) a partir da branch e cwd, exibe as próximas skills recomendadas com botão copy
+
+- Aba **Skills**: detecta fase do workflow por agente (strategic/featureActive/readyToShip), exibe próximas skills com botão copy
 - Aba **Worktrees**: lista worktrees ativos com branch dropdown no header
 - `WorkflowPhase` + `SkillDefinition`: enum + data layer estático com todas as skills do sistema
 - `GitStateService`: actor async para queries de git sem bloquear atores (polling 15s)
-- `AgentWorkflowCard`: card por sessão com fase + próximos passos
-- Fix `SessionStore`/`SessionManager`: só sessões `CLAUDE_TERMINAL_MANAGED=1` entram no store — externas são ignoradas; evict de sessões sintéticas quando hook real chega para o mesmo cwd
+- Fix `SessionStore`/`SessionManager`: só sessões `CLAUDE_TERMINAL_MANAGED=1` entram no store
 
 ### Decisões técnicas
-- `Foundation.Process` para git queries (sem dependências extras) — `terminationHandler` marcado `@Sendable` para Swift 6
+
+- `Foundation.Process` para git queries — `terminationHandler` marcado `@Sendable` para Swift 6
 - Polling a cada 15s via `.task {}` — cancela automaticamente quando a view sai de cena
-- `WorkflowPhase.infer()` prioriza cwd (`.claude/worktrees/`) antes da branch — mais confiável para worktrees com branch genérica
-- Branch `worktree-*` stripped do prefixo para inferência de fase
+- `WorkflowPhase.infer()` prioriza cwd (`.claude/worktrees/`) antes da branch
 
 ### Armadilhas encontradas
-- Worktree ficou stale (diretório em disco, não no `git worktree list`) — a worktree havia sido removida do tracking mas o diretório persistiu; branch local tinha os commits mas o working tree apontava para main. Solução: trabalhar direto com a branch local + `git push --force-with-lease` após rebase
-- `gh pr merge` deu erro "Could not resolve to a PullRequest" sem `-R owner/repo` — usar sempre `-R rmolines/claude-terminal` em repos com múltiplos remotes/worktrees
+
+- Worktree ficou stale (diretório em disco, não no `git worktree list`) — branch local tinha os commits mas
+  working tree apontava para main. Solução: trabalhar direto com a branch + `git push --force-with-lease`
+- `gh pr merge` sem `-R owner/repo` deu erro "Could not resolve to a PullRequest"
 
 ### Arquivos-chave
+
 - `ClaudeTerminal/Features/Skills/WorkflowPhase.swift` — enum de fases + SkillDefinition
 - `ClaudeTerminal/Features/Skills/SkillsNavigatorView.swift` — view principal da aba Skills
 - `ClaudeTerminal/Features/Skills/AgentWorkflowCard.swift` — card por agente
@@ -51,6 +150,7 @@ Newest entries at the top.
 - `ClaudeTerminal/Services/SessionStore.swift` — filtro de sessões gerenciadas
 
 ### Próximos passos possíveis
+
 - Mostrar o trigger condition de skills auto-trigger na aba Skills
 - Refresh manual na aba Skills (pull-to-refresh ou botão)
 - Persistir fase detectada no SwiftData para histórico
@@ -59,7 +159,9 @@ Newest entries at the top.
 
 ## 2026-03-04 — propagação do /explore (workflow.md + kickstart PR #12)
 
-**O que foi feito:** Substituiu `/refine-idea` por `/explore` no fluxo de workflow em ambos os repos. Adicionou bloco EXPLORAÇÃO separado antes de ESTRATÉGICO no fluxo visual. Atualizou tabela de skills com `/explore` e `/explore --fast`. Abriu e mergou PR #12 no `claude-kickstart`.
+**O que foi feito:** Substituiu `/refine-idea` por `/explore` no fluxo de workflow em ambos os repos.
+Adicionou bloco EXPLORAÇÃO separado antes de ESTRATÉGICO no fluxo visual.
+Atualizou tabela de skills com `/explore` e `/explore --fast`. Abriu e mergou PR #12 no `claude-kickstart`.
 
 **Decisões tomadas:**
 

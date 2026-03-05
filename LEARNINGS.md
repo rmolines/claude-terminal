@@ -4,6 +4,34 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-05 — `git rev-parse --git-common-dir` para unificar worktrees sob um projeto
+
+`--show-toplevel` retorna o diretório da worktree ativa (ex: `.claude/worktrees/my-feature`) —
+cada worktree apareceria como projeto separado. `--git-common-dir` retorna o `.git` compartilhado
+do repo principal; seu parent é o canonical root, igual para todas as worktrees.
+
+```swift
+let raw = try await runGit(args: ["rev-parse", "--git-common-dir"], cwd: dir)
+let absolute = raw.hasPrefix("/") ? raw : (dir as NSString).appendingPathComponent(raw)
+return (absolute as NSString).deletingLastPathComponent  // canonical repo root
+```
+
+---
+
+## 2026-03-05 — `ModelContainer` não cria diretórios intermediários (SwiftData)
+
+Se o diretório pai do store não existir, `ModelContainer(for:configurations:)` **não falha** —
+silenciosamente cria um store in-memory. Dados persistem enquanto o app roda, mas são perdidos
+no próximo launch sem aviso.
+
+**Fix obrigatório antes de criar `ModelConfiguration(url:)`:**
+
+```swift
+try? FileManager.default.createDirectory(at: storeDir, withIntermediateDirectories: true)
+```
+
+---
+
 ## 2026-03-04 — `.markdownlint-cli2.yaml` sem `config:` quebra cascade no CI (v0.6.0)
 
 Criar `.markdownlint-cli2.yaml` no repo com apenas `ignores:` (sem `config:`) muda o
