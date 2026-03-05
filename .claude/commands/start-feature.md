@@ -6,44 +6,6 @@ O argumento passado é o nome ou descrição da feature: $ARGUMENTS
 
 ---
 
-## Passo -1 — Session Resume
-
-```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-SESSION_FILE="$REPO_ROOT/.claude/SESSION.md"
-```
-
-Se `SESSION.md` não existir em `$SESSION_FILE`: prosseguir para "Detecção de fase".
-
-Se existir: ler integralmente. Extrair `feature`, `fase concluída`, `next command` e `context summary`.
-
-Tratar por caso:
-
-- **Sem argumento em `$ARGUMENTS`** → exibir prompt de retomada e aguardar resposta:
-
-  ```text
-  Encontrei sessão em andamento:
-  Feature: <nome>
-  Fase concluída: <fase>
-  <context summary>
-
-  Retomar? (sim / não — se não, qual feature iniciar?)
-  ```
-
-- **`$ARGUMENTS` == nome em `SESSION.md`** → retomar silenciosamente ("Retomando sessão de `<nome>`")
-
-- **`$ARGUMENTS` == nome diferente** → exibir conflito:
-
-  ```text
-  SESSION.md tem sessão de `<antigo>` em andamento.
-  (a) iniciar `<novo>` do zero
-  (b) retomar `<antigo>`
-  ```
-
-Se retomar: pré-carregar nome, fase, key decisions e context summary do SESSION.md antes de continuar para a detecção de fase.
-
----
-
 ## Detecção de fase
 
 ### 1. Identificar nome e flag
@@ -87,30 +49,6 @@ Verificar `.claude/feature-plans/<nome>/`:
 
 > Executada com `--discover`. Termina sem criar worktree.
 > Objetivo: definir o problema real antes de qualquer pesquisa técnica.
-
-### Passo 0.0 — Verificar explore.md
-
-Antes de qualquer pesquisa, verificar se `/explore` já rodou para esta feature:
-
-```bash
-[ -f ".claude/feature-plans/<nome>/explore.md" ] && echo "FOUND" || echo "NOT_FOUND"
-```
-
-Se encontrado, apresentar ao usuário:
-
-```text
-Encontrei explore.md na raiz do projeto.
-Incorporo como contexto para este discovery? (sim / não)
-
-Se sim: o conteúdo do explore.md vai guiar os subagentes — evitando que
-redescubram o que você já explorou e casem com código existente não relacionado.
-```
-
-Aguardar resposta:
-- **sim**: ler `explore.md` integralmente e usar as seções "O gap", "Hipótese" e "Próxima ação" para informar os prompts dos subagentes no Passo 0.1
-- **não**: prosseguir sem o arquivo
-
-Se **não encontrado**: prosseguir diretamente para Passo 0.1.
 
 ### Passo 0.1 — Pesquisa paralela (3 subagentes)
 
@@ -236,35 +174,6 @@ _Gerado em: <data>_
 [da pesquisa dos subagentes — Passo 0.1]
 ````
 
-### Passo 0.7 — Escrever SESSION.md
-
-Salvar em `$REPO_ROOT/.claude/SESSION.md` (sobrescrever se existir):
-
-````markdown
-# Session State
-_Updated: <ISO timestamp>_
-
-## Feature
-<nome>
-
-## Phase completed
-0-discovery
-
-## Next command
-`/start-feature --deep <nome>` ou `/start-feature <nome>`
-
-## Artifacts written
-- `.claude/feature-plans/<nome>/discovery.md` — <1 frase: problema central>
-
-## Key decisions
-- <pivot no problema ou confirmação do escopo original>
-- <escopo explicitamente excluído, se houver>
-- <complexidade estimada (P/M/G) e razão>
-
-## Context summary
-<2-3 frases: o que foi decidido, para quem, e a principal restrição>
-````
-
 Ao final:
 
 ```text
@@ -286,9 +195,6 @@ Se `discovery.md` existir: lê-lo integralmente. As seções "Problema real", "E
 Se não existir ou faltar contexto:
 - O que a feature faz?
 - Alguma restrição técnica conhecida?
-
-Se `.claude/feature-plans/<nome>/explore.md` existir: ler as seções "O gap", "Hipótese" e "O que ficou consolidado".
-Usar para orientar o Subagente C (Tech estimate) — evitar redescobrir o que `/explore` já mapeou.
 
 ### Passo A.2 — Subagentes em paralelo
 
@@ -370,36 +276,6 @@ Criar `.claude/feature-plans/<nome>/research.md`:
 <URLs do WebSearch, se usadas>
 ````
 
-### Passo A.5 — Escrever SESSION.md
-
-Salvar em `$REPO_ROOT/.claude/SESSION.md` (sobrescrever se existir):
-
-````markdown
-# Session State
-_Updated: <ISO timestamp>_
-
-## Feature
-<nome>
-
-## Phase completed
-A-research
-
-## Next command
-`/start-feature <nome>`
-
-## Artifacts written
-- `.claude/feature-plans/<nome>/discovery.md` — <1 frase: problema central>  [se existir]
-- `.claude/feature-plans/<nome>/research.md` — <1 frase: abordagem técnica>
-
-## Key decisions
-- <abordagem escolhida: web search encontrou precedentes / --novel aplicado>
-- <conflito de hot files identificado, se houver>
-- <principal risco técnico identificado>
-
-## Context summary
-<2-3 frases: o que foi pesquisado, abordagem técnica dominante, e principal restrição>
-````
-
 Ao final:
 
 ```text
@@ -413,62 +289,15 @@ Recomendo /clear antes de continuar — rode /start-feature <nome> novamente.
 
 ## FASE B — Planejamento
 
-### Passo B.1 — Ler artefatos anteriores
+### Passo B.1 — Ler a pesquisa
 
-Ler em ordem:
+Ler `.claude/feature-plans/<nome>/research.md` integralmente.
 
-1. `.claude/feature-plans/<nome>/research.md` — integralmente. Focar em: "Padrões identificados", "Dependências", "Riscos e restrições".
-2. `.claude/feature-plans/<nome>/discovery.md` (se existir) — extrair: "Problema real", "Escopo", "Critério de sucesso".
-3. `.claude/feature-plans/<nome>/explore.md` (se existir) — extrair: "O gap" e "O que ficou consolidado" como sanity check.
-
-Antes de continuar para B.2: anotar qualquer tensão entre `research.md` e o critério de sucesso de `discovery.md`.
-
-### Passo B.2 — Architecture Design
-
-Lance 2–3 arquitetos em paralelo (`run_in_background=true`), cada um com foco diferente:
-
-**Arquiteto A — Minimal changes:**
-> Leia research.md + arquivos relevantes identificados. Proponha a implementação com menor footprint possível: máximo reuso de código existente, mínimo de código novo.
-> Liste: arquivos a modificar, o que muda em cada um, trade-offs desta abordagem.
-
-**Arquiteto B — Clean architecture:**
-> Leia research.md + arquivos relevantes. Proponha a implementação mais elegante e maintainable, mesmo que exija novas abstrações ou mais código. Liste: arquivos/tipos novos, padrões aplicados, trade-offs.
-
-**Arquiteto C — Pragmatic balance** *(lançar só se feature for M ou G — pular em features P)*:
-> Leia research.md + arquivos relevantes. Proponha o equilíbrio entre velocidade e qualidade: reuse o que faz sentido, crie o que for necessário. Liste: decisões de design, trade-offs.
-
-Aguardar com `TaskOutput`. Depois:
-
-1. Sintetizar as abordagens em tabela comparativa (trade-offs, impacto em hot files, complexidade)
-2. Emitir recomendação com justificativa (1–2 frases)
-3. Apresentar ao usuário e **aguardar escolha explícita** antes de continuar
-
-Formato de apresentação:
-
-```text
-## Abordagens de implementação
-
-### A — Minimal changes
-<resumo + trade-offs>
-
-### B — Clean architecture
-<resumo + trade-offs>
-
-### C — Pragmatic (se aplicável)
-<resumo + trade-offs>
-
-**Minha recomendação: [A/B/C] — <razão em 1 frase>**
-
-Qual você prefere?
-```
-
-O Passo B.3 usa a abordagem escolhida para montar o plano de execução.
-
-### Passo B.3 — Montar plano de execução
+### Passo B.2 — Montar plano de execução
 
 Para cada mudança: arquivo exato, o que fazer (específico), ordem de execução, como reverter.
 
-### Passo B.4 — Checklist de infraestrutura
+### Passo B.3 — Checklist de infraestrutura
 
 - [ ] Novo Secret: <não / qual>
 - [ ] Script de setup: <não / o que faz>
@@ -476,11 +305,11 @@ Para cada mudança: arquivo exato, o que fazer (específico), ordem de execuçã
 - [ ] Config principal: <não muda / o que muda>
 - [ ] Novas dependências: <não / quais>
 
-### Passo B.5 — Validar contra LEARNINGS.md (se existir)
+### Passo B.4 — Validar contra LEARNINGS.md (se existir)
 
 Se `LEARNINGS.md` existir: lançar subagente `Explore` para ler e identificar learnings com impacto no plano. Incorporar ajustes e adicionar seção `## Learnings aplicados` no plan.md.
 
-### Passo B.6 — Salvar plan.md e perguntar
+### Passo B.5 — Salvar plan.md e perguntar
 
 Salvar em `.claude/feature-plans/<nome>/plan.md`:
 
@@ -560,37 +389,6 @@ Salvar em `.claude/feature-plans/<nome>/plan.md`:
 <Lista de learnings relevantes — ou "nenhum impacto identificado">
 ````
 
-### Passo B.7 — Escrever SESSION.md
-
-Salvar em `$REPO_ROOT/.claude/SESSION.md` (sobrescrever se existir):
-
-````markdown
-# Session State
-_Updated: <ISO timestamp>_
-
-## Feature
-<nome>
-
-## Phase completed
-B-planning
-
-## Next command
-`/start-feature <nome>`
-
-## Artifacts written
-- `.claude/feature-plans/<nome>/discovery.md` — <1 frase: problema central>  [se existir]
-- `.claude/feature-plans/<nome>/research.md` — <1 frase: abordagem técnica>  [se existir]
-- `.claude/feature-plans/<nome>/plan.md` — <1 frase: deliverables + abordagem escolhida>
-
-## Key decisions
-- <abordagem de arquitetura escolhida: A-minimal / B-clean / C-pragmatic e razão>
-- <assunções [blocking] identificadas>
-- <learnings do LEARNINGS.md aplicados, se houver>
-
-## Context summary
-<2-3 frases: o que foi decidido, para quem, e a principal restrição>
-````
-
 Apresentar e aguardar:
 
 ```text
@@ -605,22 +403,9 @@ Executar agora ou /clear primeiro?
 
 ## FASE C — Execução
 
-### Passo C.0 — Limpar SESSION.md
-
-`plan.md` é o source of truth na fase de execução. Deletar `SESSION.md` se existir:
-
-```bash
-rm -f "$REPO_ROOT/.claude/SESSION.md"
-```
-
 ### Passo C.1 — Ler o plano
 
 Ler `.claude/feature-plans/<nome>/plan.md` integralmente.
-
-Se artefatos anteriores existirem, extrair antes de C.6.5 e C.7:
-
-- De `.claude/feature-plans/<nome>/discovery.md`: "Fora (explícito)" → informar Revisor 3; "Critério de sucesso" → checklist C.7; "Riscos identificados" → Revisor 2
-- De `.claude/feature-plans/<nome>/research.md`: "Hot files que serão tocados" → Revisor 3 cross-check com git diff; "Riscos e restrições" → Revisor 2; "Padrões identificados" → Revisor 1
 
 **Se não existir plan.md (Fase C fast):**
 1. Ler CLAUDE.md + arquivos mais relevantes (sem subagentes — leitura direta)
@@ -628,10 +413,6 @@ Se artefatos anteriores existirem, extrair antes de C.6.5 e C.7:
 3. Gerar mini plan.md (problema + assunções principais + deliverables simplificados + passos concretos + rollback mínimo)
 4. Mostrar ao usuário para confirmação rápida
 5. Prosseguir para C.2
-
-> **`--novel` no fast path:** Se ativo, em vez de fazer perguntas abertas, aplicar chain of thought de primitivos
-> (mesmas Etapas 1–4 da Fase 0, versão técnica) para derivar a abordagem do mini plan.
-> Útil quando a feature é inédita mas simples o suficiente para não precisar de worktree própria.
 
 ### Passo C.2 — Verificar coordinator (se existir)
 
@@ -705,49 +486,8 @@ Lançar em background (`run_in_background=true`):
 Enquanto aguarda: exibir resumo (arquivos criados/editados, decisões tomadas).
 
 Resultado:
-- ✅: prosseguir para C.6.5
-- ❌: exibir erro completo, corrigir, repetir C.6 — **nunca avançar para C.6.5 com build quebrado**
-
-### Passo C.6.5 — Code Quality Review
-
-Lançar 3 revisores em paralelo (`run_in_background=true`):
-
-**Revisor 1 — Simplicity / DRY / Elegance:**
-> Leia os arquivos modificados nesta branch (use `git diff origin/main...HEAD --name-only` para listar).
-> Avalie: código duplicado, abstrações desnecessárias, naming, complexidade evitável.
-> Retorne: lista de issues com severidade (alta/média/baixa) e sugestão de fix concreta.
-
-**Revisor 2 — Bugs / Correctness:**
-> Leia os arquivos modificados. Avalie: lógica incorreta, edge cases não tratados,
-> thread safety (Swift actors), nil/optional handling, race conditions.
-> Retorne: lista de issues com severidade e onde exatamente no código.
-
-**Revisor 3 — Project Conventions:**
-> Leia o CLAUDE.md do projeto + arquivos modificados. Avalie: conformidade com Swift 6 strict concurrency,
-> padrões de SwiftData (var, optional, context.save), armadilhas do CLAUDE.md, coding style rules.
-> Retorne: lista de violations com severidade.
-
-Aguardar com `TaskOutput`. Depois:
-
-1. Consolidar findings, removendo duplicatas
-2. Separar em: issues que recomendo corrigir agora (alta severidade) vs. baixa prioridade
-3. Apresentar ao usuário usando o formato abaixo e aguardar resposta
-4. Agir conforme decisão do usuário
-5. Se houve correções: re-rodar C.6 (build + testes) para confirmar que nada quebrou
-
-Formato de apresentação:
-
-```text
-## Code Quality Review
-
-### Corrigir agora (recomendado)
-- [alta] <issue> em `arquivo:linha` — <sugestão>
-
-### Baixa prioridade (opcional)
-- [baixa] <issue> — <sugestão>
-
-O que você quer fazer? (corrigir tudo / corrigir só os altos / prosseguir como está)
-```
+- ✅: prosseguir para C.7
+- ❌: exibir erro completo, corrigir, repetir C.6 — **nunca avançar para C.7 com build quebrado**
 
 ### Passo C.7 — Checklist de testes para o usuário
 
