@@ -50,6 +50,30 @@ Verificar `.claude/feature-plans/<nome>/`:
 > Executada com `--discover`. Termina sem criar worktree.
 > Objetivo: definir o problema real antes de qualquer pesquisa técnica.
 
+### Passo 0.0 — Verificar explore.md
+
+Antes de qualquer pesquisa, verificar se existe `explore.md` na raiz do projeto:
+
+```bash
+ls explore.md 2>/dev/null && echo "FOUND" || echo "NOT_FOUND"
+```
+
+Se encontrado, apresentar ao usuário:
+
+```text
+Encontrei explore.md na raiz do projeto.
+Incorporo como contexto para este discovery? (sim / não)
+
+Se sim: o conteúdo do explore.md vai guiar os subagentes — evitando que
+redescubram o que você já explorou e casem com código existente não relacionado.
+```
+
+Aguardar resposta:
+- **sim**: ler `explore.md` integralmente e usar as seções "O gap", "Hipótese" e "Próxima ação" para informar os prompts dos subagentes no Passo 0.1
+- **não**: prosseguir sem o arquivo
+
+Se **não encontrado**: prosseguir diretamente para Passo 0.1.
+
 ### Passo 0.1 — Pesquisa paralela (3 subagentes)
 
 Lance os 3 subagentes simultaneamente com Task tool (`run_in_background=true`).
