@@ -110,7 +110,7 @@ struct SessionStateMachineTests {
                 sessions[event.sessionID]?.status = .awaitingInput
             case .stopped:
                 sessions[event.sessionID]?.status = .completed
-            case .heartbeat:
+            case .heartbeat, .userPromptSubmit:
                 break
             }
             if let usage = event.tokenUsage {
