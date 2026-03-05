@@ -129,6 +129,9 @@ Caso contrário, apresentar:
 
 ### Passos 0.3–0.5 — Rodadas de perguntas
 
+> **Regra de intake:** Uma pergunta por vez. Prefira múltipla escolha quando possível.
+> Aguardar resposta antes de fazer a próxima.
+
 Fazer **no máximo 3 perguntas por rodada**, aguardar resposta antes de continuar.
 
 - **0.3 Problema:** o que existe no codebase/produto que toca isso; o que está faltando; para quem
