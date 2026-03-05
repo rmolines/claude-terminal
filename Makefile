@@ -1,4 +1,4 @@
-.PHONY: help check lint validate sync-skills clean setup xcode-mcp
+.PHONY: help check lint validate sync-skills clean setup xcode-mcp install install-hooks
 
 # Default target
 help: ## Show this help
@@ -68,3 +68,36 @@ xcode-mcp: ## One-time: register Xcode MCP server with Claude Code (requires Xco
 	@claude mcp add --scope user --transport stdio xcode -- xcrun mcpbridge
 	@echo "✅ Xcode MCP registered. Keep Package.swift open in Xcode during dev sessions."
 	@echo "   Key tools: BuildProject, RunAllTests, RenderPreview, XcodeListNavigatorIssues"
+
+INSTALL_DIR := /Applications/ClaudeTerminal.app
+SPARKLE_SRC := .build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework
+
+install: ## Build release + assemble .app + ad-hoc sign + copy to /Applications
+	@echo "→ Building release..."
+	@swift build --configuration release
+	@echo "→ Assembling .app bundle..."
+	@rm -rf "$(INSTALL_DIR)"
+	@mkdir -p "$(INSTALL_DIR)/Contents/MacOS" \
+	           "$(INSTALL_DIR)/Contents/Frameworks" \
+	           "$(INSTALL_DIR)/Contents/Resources"
+	@cp .build/release/ClaudeTerminal "$(INSTALL_DIR)/Contents/MacOS/"
+	@cp .build/release/ClaudeTerminalHelper "$(INSTALL_DIR)/Contents/MacOS/"
+	@cp ClaudeTerminal/App/Info.plist "$(INSTALL_DIR)/Contents/"
+	@if [ -d "$(SPARKLE_SRC)" ]; then \
+		cp -R "$(SPARKLE_SRC)" "$(INSTALL_DIR)/Contents/Frameworks/"; \
+	fi
+	@echo "→ Fixing rpaths..."
+	@install_name_tool -add_rpath @executable_path/../Frameworks "$(INSTALL_DIR)/Contents/MacOS/ClaudeTerminal"
+	@echo "→ Ad-hoc signing (local, no notarization)..."
+	@if [ -d "$(INSTALL_DIR)/Contents/Frameworks/Sparkle.framework" ]; then \
+		codesign --sign - --force "$(INSTALL_DIR)/Contents/Frameworks/Sparkle.framework"; \
+	fi
+	@codesign --sign - --force "$(INSTALL_DIR)/Contents/MacOS/ClaudeTerminalHelper"
+	@codesign --sign - --force "$(INSTALL_DIR)"
+	@echo "✅ Installed to $(INSTALL_DIR)"
+	@echo "   To configure hooks: make install-hooks"
+
+install-hooks: ## Update ~/.claude/settings.json to point to installed helper
+	@command -v python3 > /dev/null || (echo "❌ python3 required" && exit 1)
+	@python3 .claude/scripts/install-hooks.py "$(INSTALL_DIR)/Contents/MacOS/ClaudeTerminalHelper"
+	@echo "✅ Hooks updated"

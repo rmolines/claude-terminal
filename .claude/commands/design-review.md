@@ -293,7 +293,9 @@ Para cada constraint documentada no arquivo de identidade de UX que se aplica a 
 
 ## Relatório de saída
 
-Após revisar todas as views relevantes, gerar relatório estruturado:
+Após revisar todas as views relevantes, gerar relatório estruturado e salvá-lo em
+`.claude/design-reviews/<argumento>-<YYYY-MM-DD>.md` (criar o diretório se não existir).
+Exibir também na conversa.
 
 ```markdown
 ## Design Review: <view(s) revisadas>

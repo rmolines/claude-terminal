@@ -69,9 +69,12 @@ Mapear cada item/passo listado em `plan.md` (seção `## Passos de execução` o
 | ❌ Faltando | Item não encontrado no diff |
 | ➕ Não planejado | Mudança no diff que não corresponde a nenhum item do plano |
 
-### Passo 4 — Gerar relatório
+### Passo 4 — Gerar e salvar relatório
 
 Produzir o relatório completo no formato abaixo. Ser específico: citar arquivos, funções, linhas onde possível. Evitar julgamentos vagos como "parece ok".
+
+Salvar em `.claude/feature-plans/<nome>/validation-report.md` (sobrescrever se já existir).
+Exibir também na conversa.
 
 ---
 
