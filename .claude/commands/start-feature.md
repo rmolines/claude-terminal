@@ -6,6 +6,44 @@ O argumento passado é o nome ou descrição da feature: $ARGUMENTS
 
 ---
 
+## Passo -1 — Session Resume
+
+```bash
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+SESSION_FILE="$REPO_ROOT/.claude/SESSION.md"
+```
+
+Se `SESSION.md` não existir em `$SESSION_FILE`: prosseguir para "Detecção de fase".
+
+Se existir: ler integralmente. Extrair `feature`, `fase concluída`, `next command` e `context summary`.
+
+Tratar por caso:
+
+- **Sem argumento em `$ARGUMENTS`** → exibir prompt de retomada e aguardar resposta:
+
+  ```text
+  Encontrei sessão em andamento:
+  Feature: <nome>
+  Fase concluída: <fase>
+  <context summary>
+
+  Retomar? (sim / não — se não, qual feature iniciar?)
+  ```
+
+- **`$ARGUMENTS` == nome em `SESSION.md`** → retomar silenciosamente ("Retomando sessão de `<nome>`")
+
+- **`$ARGUMENTS` == nome diferente** → exibir conflito:
+
+  ```text
+  SESSION.md tem sessão de `<antigo>` em andamento.
+  (a) iniciar `<novo>` do zero
+  (b) retomar `<antigo>`
+  ```
+
+Se retomar: pré-carregar nome, fase, key decisions e context summary do SESSION.md antes de continuar para a detecção de fase.
+
+---
+
 ## Detecção de fase
 
 ### 1. Identificar nome e flag
@@ -52,10 +90,12 @@ Verificar `.claude/feature-plans/<nome>/`:
 
 ### Passo 0.0 — Verificar explore.md
 
-Antes de qualquer pesquisa, verificar se existe `explore.md` na raiz do projeto:
+Antes de qualquer pesquisa, verificar se existe `explore.md` na raiz do repositório git (onde `/explore` o salvou):
 
 ```bash
-ls explore.md 2>/dev/null && echo "FOUND" || echo "NOT_FOUND"
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+EXPLORE_PATH="${REPO_ROOT:+$REPO_ROOT/explore.md}"
+[ -n "$EXPLORE_PATH" ] && [ -f "$EXPLORE_PATH" ] && echo "FOUND" || echo "NOT_FOUND"
 ```
 
 Se encontrado, apresentar ao usuário:
@@ -198,6 +238,35 @@ _Gerado em: <data>_
 [da pesquisa dos subagentes — Passo 0.1]
 ````
 
+### Passo 0.7 — Escrever SESSION.md
+
+Salvar em `$REPO_ROOT/.claude/SESSION.md` (sobrescrever se existir):
+
+````markdown
+# Session State
+_Updated: <ISO timestamp>_
+
+## Feature
+<nome>
+
+## Phase completed
+0-discovery
+
+## Next command
+`/start-feature --deep <nome>` ou `/start-feature <nome>`
+
+## Artifacts written
+- `.claude/feature-plans/<nome>/discovery.md` — <1 frase: problema central>
+
+## Key decisions
+- <pivot no problema ou confirmação do escopo original>
+- <escopo explicitamente excluído, se houver>
+- <complexidade estimada (P/M/G) e razão>
+
+## Context summary
+<2-3 frases: o que foi decidido, para quem, e a principal restrição>
+````
+
 Ao final:
 
 ```text
@@ -219,6 +288,9 @@ Se `discovery.md` existir: lê-lo integralmente. As seções "Problema real", "E
 Se não existir ou faltar contexto:
 - O que a feature faz?
 - Alguma restrição técnica conhecida?
+
+Se `$REPO_ROOT/explore.md` existir: ler as seções "O gap", "Hipótese" e "O que ficou consolidado".
+Usar para orientar o Subagente C (Tech estimate) — evitar redescobrir o que `/explore` já mapeou.
 
 ### Passo A.2 — Subagentes em paralelo
 
@@ -300,6 +372,36 @@ Criar `.claude/feature-plans/<nome>/research.md`:
 <URLs do WebSearch, se usadas>
 ````
 
+### Passo A.5 — Escrever SESSION.md
+
+Salvar em `$REPO_ROOT/.claude/SESSION.md` (sobrescrever se existir):
+
+````markdown
+# Session State
+_Updated: <ISO timestamp>_
+
+## Feature
+<nome>
+
+## Phase completed
+A-research
+
+## Next command
+`/start-feature <nome>`
+
+## Artifacts written
+- `.claude/feature-plans/<nome>/discovery.md` — <1 frase: problema central>  [se existir]
+- `.claude/feature-plans/<nome>/research.md` — <1 frase: abordagem técnica>
+
+## Key decisions
+- <abordagem escolhida: web search encontrou precedentes / --novel aplicado>
+- <conflito de hot files identificado, se houver>
+- <principal risco técnico identificado>
+
+## Context summary
+<2-3 frases: o que foi pesquisado, abordagem técnica dominante, e principal restrição>
+````
+
 Ao final:
 
 ```text
@@ -313,9 +415,15 @@ Recomendo /clear antes de continuar — rode /start-feature <nome> novamente.
 
 ## FASE B — Planejamento
 
-### Passo B.1 — Ler a pesquisa
+### Passo B.1 — Ler artefatos anteriores
 
-Ler `.claude/feature-plans/<nome>/research.md` integralmente.
+Ler em ordem:
+
+1. `.claude/feature-plans/<nome>/research.md` — integralmente. Focar em: "Padrões identificados", "Dependências", "Riscos e restrições".
+2. `.claude/feature-plans/<nome>/discovery.md` (se existir) — extrair: "Problema real", "Escopo", "Critério de sucesso".
+3. `$REPO_ROOT/explore.md` (se existir) — extrair: "O gap" e "O que ficou consolidado" como sanity check.
+
+Antes de continuar para B.2: anotar qualquer tensão entre `research.md` e o critério de sucesso de `discovery.md`.
 
 ### Passo B.2 — Architecture Design
 
@@ -454,6 +562,37 @@ Salvar em `.claude/feature-plans/<nome>/plan.md`:
 <Lista de learnings relevantes — ou "nenhum impacto identificado">
 ````
 
+### Passo B.7 — Escrever SESSION.md
+
+Salvar em `$REPO_ROOT/.claude/SESSION.md` (sobrescrever se existir):
+
+````markdown
+# Session State
+_Updated: <ISO timestamp>_
+
+## Feature
+<nome>
+
+## Phase completed
+B-planning
+
+## Next command
+`/start-feature <nome>`
+
+## Artifacts written
+- `.claude/feature-plans/<nome>/discovery.md` — <1 frase: problema central>  [se existir]
+- `.claude/feature-plans/<nome>/research.md` — <1 frase: abordagem técnica>  [se existir]
+- `.claude/feature-plans/<nome>/plan.md` — <1 frase: deliverables + abordagem escolhida>
+
+## Key decisions
+- <abordagem de arquitetura escolhida: A-minimal / B-clean / C-pragmatic e razão>
+- <assunções [blocking] identificadas>
+- <learnings do LEARNINGS.md aplicados, se houver>
+
+## Context summary
+<2-3 frases: o que foi decidido, para quem, e a principal restrição>
+````
+
 Apresentar e aguardar:
 
 ```text
@@ -468,9 +607,22 @@ Executar agora ou /clear primeiro?
 
 ## FASE C — Execução
 
+### Passo C.0 — Limpar SESSION.md
+
+`plan.md` é o source of truth na fase de execução. Deletar `SESSION.md` se existir:
+
+```bash
+rm -f "$REPO_ROOT/.claude/SESSION.md"
+```
+
 ### Passo C.1 — Ler o plano
 
 Ler `.claude/feature-plans/<nome>/plan.md` integralmente.
+
+Se artefatos anteriores existirem, extrair antes de C.6.5 e C.7:
+
+- De `discovery.md`: "Fora (explícito)" → informar Revisor 3; "Critério de sucesso" → checklist C.7; "Riscos identificados" → Revisor 2
+- De `research.md`: "Hot files que serão tocados" → Revisor 3 cross-check com git diff; "Riscos e restrições" → Revisor 2; "Padrões identificados" → Revisor 1
 
 **Se não existir plan.md (Fase C fast):**
 1. Ler CLAUDE.md + arquivos mais relevantes (sem subagentes — leitura direta)
