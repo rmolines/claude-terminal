@@ -64,8 +64,8 @@ Continuando com base apenas no CLAUDE.md.
 Antes de qualquer commit ou push, rodar:
 
 ```bash
-{{BUILD_CMD}}    # ex: swift build
-{{TEST_CMD}}     # ex: swift test
+{{BUILD_CMD}}    # ex: npm run build, swift build, make build
+{{TEST_CMD}}     # ex: npm test, swift test, make test
 ```
 
 Se qualquer um falhar: **parar aqui**. Não criar PR com build quebrado.

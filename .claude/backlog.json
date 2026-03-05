@@ -278,7 +278,9 @@
       "title": "Atalhos de teclado nativos no terminal (Cmd+Backspace, Option+Backspace, Shift+Enter)",
       "description": "Implementar NSText system no terminal embedded: Cmd+Backspace (kill-whole-line via ^U), Option+Backspace (backward-kill-word via ESC+DEL) via NSEvent monitor local no TerminalViewRepresentable. Shift+Enter requer kitty keyboard protocol — considerar como sub-feature separada. Cmd+Backspace e Option+Backspace são ~20 linhas; Shift+Enter é mais envolvida.",
       "status": "awaiting-bet",
-      "dependencies": ["terminal-first-ui"],
+      "dependencies": [
+        "terminal-first-ui"
+      ],
       "createdAt": "2026-03-03"
     }
   ],

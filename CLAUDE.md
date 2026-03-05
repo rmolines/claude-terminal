@@ -99,6 +99,8 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | Hook `PermissionRequest` global | Hook registrado em `~/.claude/settings.json` dispara para TODAS as sessões Claude Code da máquina, não só as do app | Usar env var `CLAUDE_TERMINAL_MANAGED=1` no PTY para identificar sessões gerenciadas; auto-aprovar silenciosamente as externas |
 | `.markdownlint-cli2.yaml` sem `config:` | Criar o arquivo com só `ignores:` faz markdownlint-cli2 v0.6.0 ignorar `.markdownlint.yaml` e usar regras default — CI quebra com MD049/MD036 em arquivos intocados | Sempre incluir `config: .markdownlint.yaml` no topo do `.markdownlint-cli2.yaml` |
 | Stash pop cruzado entre worktrees | `git stash pop` numa worktree/branch restaura mudanças de outra worktree — working tree fica com mais conteúdo do que o commit HEAD, silenciosamente | Sempre rodar `git diff HEAD --stat` antes de `git add` para confirmar que staged = expected |
+| `List(selection:)` com @Model + `var id: UUID` | SwiftData adiciona `Identifiable` via `persistentModelID`; conflito com `var id: UUID` explícito faz cliques na List serem ignorados silenciosamente | Usar `List { ForEach { ... .onTapGesture { ... } } }` com seleção manual; `listRowBackground` para highlight |
+| `ModelContainer` silenciosamente in-memory | Se o diretório pai do store URL não existe, `ModelContainer` não falha — cria store in-memory. Dados são perdidos no próximo launch sem aviso | Sempre `FileManager.default.createDirectory(at: storeDir, withIntermediateDirectories: true)` antes de `ModelConfiguration(url:)` |
 
 ## Worktree convention
 
