@@ -25,7 +25,10 @@ struct MainView: View {
                 projectSidebar
             } detail: {
                 if let project = selectedProject {
+                    // .id forces full recreation (including @State sessionID) when
+                    // the selected project changes — so the PTY restarts in the new directory.
                     ProjectDetailView(project: project)
+                        .id(project.id)
                 } else {
                     ContentUnavailableView("Select a Project", systemImage: "folder")
                         .frame(minWidth: 700, minHeight: 400)
