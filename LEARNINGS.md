@@ -2,6 +2,14 @@
 
 Gotchas, limitations, and non-obvious behaviors discovered while working on this project.
 
+## 2026-03-05 — Actor que muta estado local não reflete no @Observable automaticamente
+
+`SessionManager` (actor) e `SessionStore` (@Observable, @MainActor) são stores separados.
+Mutar `sessions[id]` dentro do actor **não** notifica o `SessionStore` — é preciso chamar
+`Task { @MainActor in SessionStore.shared.update(session) }` explicitamente.
+Sem isso, views que observam `SessionStore` nunca recebem o update e parecem "congeladas".
+Padrão a seguir: toda mutação de estado que precisa refletir na UI deve terminar com o update explícito ao Store.
+
 ---
 
 ## 2026-03-05 — `NSHostingView.rootView` durante layout cycle causa EXC_BREAKPOINT no macOS 26
