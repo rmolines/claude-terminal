@@ -4,8 +4,11 @@ import UserNotifications
 
 /// AppDelegate handles: NSStatusItem (menu bar badge), NSPanel (HITL HUD),
 /// UNUserNotificationCenter setup, and lifecycle events.
+///
+/// Also acts as `SPUUpdaterDelegate` to save terminal snapshots before Sparkle relaunches the app,
+/// preserving session context across updates.
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, SPUUpdaterDelegate {
     private var statusItem: NSStatusItem?
     var updaterController: SPUStandardUpdaterController!
     private var hitlPanelController: HITLFloatingPanelController?
@@ -18,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
-            updaterDelegate: nil,
+            updaterDelegate: self,
             userDriverDelegate: nil
         )
 
@@ -127,6 +130,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         )
         center.setNotificationCategories([category])
         center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+    }
+
+    // MARK: - SPUUpdaterDelegate
+
+    /// Called by Sparkle right before it relaunches the app to apply an update.
+    /// Saves all terminal snapshots so they can be restored after the update.
+    nonisolated func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
+        Task { @MainActor in
+            let snapshots = TerminalRegistry.shared.captureAll()
+            for snapshot in snapshots {
+                try? TerminalSnapshotStore.shared.save(
+                    projectID: snapshot.projectID,
+                    path: snapshot.path,
+                    content: snapshot.data
+                )
+            }
+        }
     }
 
     nonisolated func userNotificationCenter(
