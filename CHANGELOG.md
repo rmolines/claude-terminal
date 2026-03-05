@@ -2,6 +2,36 @@
 
 ---
 
+## [improvement] Skill flow improvements — architecture design + quality review — 2026-03-05
+
+**Tipo:** improvement
+**Tags:** skills, workflow, architecture, quality
+**PR:** [#38](https://github.com/rmolines/claude-terminal/pull/38) · **Complexidade:** simples
+
+### O que mudou
+
+`/start-feature` ganha duas novas etapas: arquitetos paralelos propõem abordagens de implementação
+antes do plano (B.2), e revisores paralelos auditam qualidade após o build (C.6.5).
+`workflow.md` corrige o fluxo PITCH e adiciona `/design-review` como gate obrigatório para features com UI.
+
+### Detalhes técnicos
+
+- `start-feature.md` B.2: 3 arquitetos (Minimal/Clean/Pragmatic) em paralelo; síntese comparativa + escolha do usuário
+- `start-feature.md` C.6.5: 3 revisores (Simplicity/Bugs/Conventions) em paralelo após build verde
+- `workflow.md`: PITCH flow corrigido; `/design-review` no TÁTICO e AD-HOC; tabela `--discover` corrigida
+- Lint: 36 erros → 0 em CHANGELOG.md, HANDOVER.md, checkpoint.md
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/rules/workflow.md` — fluxos e tabela de skills
+- `.claude/commands/start-feature.md` — Fase B (B.2) e Fase C (C.6.5)
+
+---
+
 ## [feat] Multi-project workspace — sidebar + PTYs persistentes — 2026-03-05
 
 **Tipo:** feat

@@ -4,6 +4,38 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-05 — skill-flow-improvements (PR #38)
+
+### O que foi feito
+
+- `workflow.md`: 4 fixes — fluxo PITCH corrigido (--discover → só discovery.md → /clear → --deep);
+  gate `/design-review` adicionado no TÁTICO e AD-HOC; tabela `--discover` output e próxima skill corrigidos;
+  linha `/design-review` adicionada na tabela de skills
+- `start-feature.md`: B.2 Architecture Design — 3 arquitetos paralelos (Minimal/Clean/Pragmatic) com
+  síntese comparativa e escolha explícita do usuário antes de montar o plano
+- `start-feature.md`: C.6.5 Code Quality Review — 3 revisores paralelos após build verde
+  (Simplicity/Bugs/Conventions); usuário decide o que corrigir; re-roda C.6 se houver fixes
+- `start-feature.md`: nota `--novel` no fast path — chain of thought em vez de perguntas abertas
+- Lint: 36 erros → 0 em CHANGELOG.md, HANDOVER.md, checkpoint.md (blank lines após headings + line length)
+
+### Decisões tomadas
+
+- Architecture Design (B.2) usa 3 arquitetos em vez de 2 para features M/G; Arquiteto C (Pragmatic)
+  é pulado em features P para não adicionar overhead desnecessário
+- Code Quality Review (C.6.5) só executa após build verde — nunca bloqueia o fluxo com build quebrado
+- Lint fixes aplicados oportunisticamente já que estávamos tocando CHANGELOG.md e HANDOVER.md de qualquer forma
+
+### Arquivos-chave
+
+- `.claude/rules/workflow.md` — fluxos PITCH, TÁTICO, AD-HOC e tabela de skills
+- `.claude/commands/start-feature.md` — Fase B (B.2–B.6) e Fase C (C.6.5)
+
+### Próximos passos
+
+- Propagar `start-feature.md` atualizado ao kickstart (B.2 Architecture Design e C.6.5 são genéricos)
+
+---
+
 ## 2026-03-05 — multi-project-workspace (PR #37)
 
 ### O que foi feito
