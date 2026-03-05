@@ -124,8 +124,26 @@ git push -u origin <branch-atual>
 
 ### 4. Criar Pull Request
 
+Extrair owner e repo do remote:
+
 ```bash
-gh pr create --title "<título>" --body "$(cat <<'EOF'
+REMOTE=$(git remote get-url origin)
+OWNER=$(echo "$REMOTE" | sed 's|.*github\.com[:/]\([^/]*\)/.*|\1|')
+REPO_NAME=$(echo "$REMOTE" | sed 's|.*github\.com[:/][^/]*/\([^.]*\).*|\1|')
+```
+
+Usar o GitHub MCP tool `create_pull_request` com:
+
+- `owner`: `$OWNER`
+- `repo`: `$REPO_NAME`
+- `title`: `<título descritivo baseado nos commits>`
+- `head`: `<branch atual>`
+- `base`: `"main"`
+- `body`: (formato abaixo)
+
+Body format:
+
+```text
 ## O que foi feito
 - <bullet list das mudanças>
 
@@ -140,8 +158,6 @@ gh pr create --title "<título>" --body "$(cat <<'EOF'
 
 ## Arquivos modificados
 - `path/to/file` — <descrição>
-EOF
-)"
 ```
 
 Criar diretamente **sem pedir confirmação** — exibir a URL do PR após criar.
@@ -167,16 +183,15 @@ Com base no `plan.md` (passo 0), verificar cada item antes de mergear:
 
 ### 6. Merge e acompanhamento do CI
 
-Mergear diretamente **sem pedir confirmação**:
-```bash
-BRANCH=$(git branch --show-current)
-gh pr merge --squash
-# --delete-branch falha silenciosamente em worktree (main já checked out no repo pai)
-# Deletar remote branch explicitamente:
-REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" 2>/dev/null \
-  || echo "⚠️  Remote branch não deletada automaticamente — limpar com: gh api -X DELETE repos/$REPO/git/refs/heads/$BRANCH"
-```
+Mergear diretamente **sem pedir confirmação** usando o GitHub MCP tool `merge_pull_request` com:
+
+- `owner`: `$OWNER`
+- `repo`: `$REPO_NAME`
+- `pullNumber`: número do PR criado no passo 4
+- `mergeMethod`: `"squash"`
+- `deleteBranch`: `true`
+
+(O MCP tool gerencia a deleção do branch remoto nativamente — sem workaround necessário.)
 
 Monitorar o run de CI disparado pelo merge:
 ```bash

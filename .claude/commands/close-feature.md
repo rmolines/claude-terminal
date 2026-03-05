@@ -20,11 +20,23 @@ Se sim: ler integralmente para entender o que foi feito (contexto para a documen
 
 ### 0.5 — Detectar PR mergeado
 
+Extrair owner/repo:
+
 ```bash
-BRANCH=$(git branch --show-current 2>/dev/null || git -C "$WORKTREE_PATH" branch --show-current)
-PR_DATA=$(gh pr list --head "$BRANCH" --state merged --json number,mergedAt --limit 1 2>/dev/null || echo "[]")
-PR_NUMBER=$(echo "$PR_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data[0]['number'] if data else '')" 2>/dev/null)
+REMOTE=$(git remote get-url origin)
+OWNER=$(echo "$REMOTE" | sed 's|.*github\.com[:/]\([^/]*\)/.*|\1|')
+REPO_NAME=$(echo "$REMOTE" | sed 's|.*github\.com[:/][^/]*/\([^.]*\).*|\1|')
+BRANCH=$(git branch --show-current 2>/dev/null)
 ```
+
+Usar GitHub MCP tool `list_pull_requests` com:
+
+- `owner`: `$OWNER`
+- `repo`: `$REPO_NAME`
+- `state`: `"closed"`
+- `head`: `<branch atual>` (formato `owner:branch`)
+
+Extrair `number` do primeiro resultado com `mergedAt != null`.
 
 Se `PR_NUMBER` encontrado: usar nos passos 1b (CHANGELOG) e 1f (backlog.json).
 Se não encontrado: perguntar ao usuário o número ou pular o update de backlog.json.
@@ -205,16 +217,18 @@ Com confirmação, criar a versão template:
 KICKSTART=/Users/rmolines/git/claude-kickstart
 git -C "$KICKSTART" add .claude/commands/<nome>.md
 git -C "$KICKSTART" commit -m "feat(skills): add /<nome> — propagated from <projeto>"
-# Usar gh api diretamente (gh pr create pode detectar repo errado em worktrees):
 BRANCH=$(git -C "$KICKSTART" branch --show-current)
 git -C "$KICKSTART" push origin "$BRANCH"
-gh api repos/rmolines/claude-kickstart/pulls \
-  --method POST \
-  -f title="feat(skills): add /<nome>" \
-  -f head="$BRANCH" \
-  -f base="main" \
-  -f body="Propagado de <projeto> após uso real na feature <nome-feature>."
 ```
+
+Usar GitHub MCP tool `create_pull_request` com:
+
+- `owner`: `"rmolines"`
+- `repo`: `"claude-kickstart"`
+- `title`: `"feat(skills): add /<nome>"`
+- `head`: branch atual no kickstart
+- `base`: `"main"`
+- `body`: `"Propagado de <projeto> após uso real na feature <nome-feature>."`
 
 Exibir URL do PR e aguardar confirmação de merge antes de continuar.
 
