@@ -11,6 +11,8 @@ struct MainView: View {
     @Query(sort: \ClaudeProject.sortOrder) var projects: [ClaudeProject]
     @Environment(\.modelContext) var modelContext
     @State private var selectedProject: ClaudeProject?
+    /// Projects whose terminals have been opened this session — kept alive in ZStack.
+    @State private var openedProjectIDs: [PersistentIdentifier] = []
 
     // Legacy storage — read once for migration, not written after migration
     @AppStorage("workingDirectory") private var legacyWorkingDirectory: String = ""
@@ -24,14 +26,22 @@ struct MainView: View {
             NavigationSplitView {
                 projectSidebar
             } detail: {
-                if let project = selectedProject {
-                    // .id forces full recreation (including @State sessionID) when
-                    // the selected project changes — so the PTY restarts in the new directory.
-                    ProjectDetailView(project: project)
-                        .id(project.id)
-                } else {
+                if openedProjectIDs.isEmpty {
                     ContentUnavailableView("Select a Project", systemImage: "folder")
                         .frame(minWidth: 700, minHeight: 400)
+                } else {
+                    // ZStack keeps every opened terminal alive — switching projects
+                    // just changes visibility, never destroys the PTY process.
+                    ZStack {
+                        ForEach(openedProjectIDs, id: \.self) { pid in
+                            if let project = projects.first(where: { $0.persistentModelID == pid }) {
+                                ProjectDetailView(project: project)
+                                    .opacity(selectedProject?.persistentModelID == pid ? 1 : 0)
+                                    .allowsHitTesting(selectedProject?.persistentModelID == pid)
+                            }
+                        }
+                    }
+                    .frame(minWidth: 700, minHeight: 400)
                 }
             }
             .frame(minWidth: 750, minHeight: 400)
@@ -40,7 +50,17 @@ struct MainView: View {
                 cleanupAndDeduplicateProjects()
                 autoSelectProject()
             }
+            .onChange(of: selectedProject) { _, newProject in
+                guard let project = newProject else { return }
+                let pid = project.persistentModelID
+                if !openedProjectIDs.contains(pid) {
+                    openedProjectIDs.append(pid)
+                }
+            }
             .onChange(of: projects) {
+                // Remove IDs for deleted projects
+                let existing = Set(projects.map { $0.persistentModelID })
+                openedProjectIDs = openedProjectIDs.filter { existing.contains($0) }
                 autoSelectProject()
             }
         }
@@ -138,8 +158,12 @@ struct MainView: View {
     }
 
     private func autoSelectProject() {
-        guard selectedProject == nil else { return }
-        selectedProject = projects.first
+        guard selectedProject == nil, let first = projects.first else { return }
+        selectedProject = first
+        let pid = first.persistentModelID
+        if !openedProjectIDs.contains(pid) {
+            openedProjectIDs.append(pid)
+        }
     }
 
     /// Merges duplicate projects that share the same git root, and removes projects
