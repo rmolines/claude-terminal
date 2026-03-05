@@ -37,6 +37,7 @@ struct MainView: View {
             .frame(minWidth: 750, minHeight: 400)
             .onAppear {
                 migrateIfNeeded()
+                cleanupAndDeduplicateProjects()
                 autoSelectProject()
             }
             .onChange(of: projects) {
@@ -139,6 +140,52 @@ struct MainView: View {
     private func autoSelectProject() {
         guard selectedProject == nil else { return }
         selectedProject = projects.first
+    }
+
+    /// Merges duplicate projects that share the same git root, and removes projects
+    /// whose paths no longer resolve to any git repository. Runs async — safe to call
+    /// on every .onAppear since it's guarded by finding actual duplicates/orphans.
+    private func cleanupAndDeduplicateProjects() {
+        Task {
+            var rootToProject: [String: ClaudeProject] = [:]
+            var toDelete: [ClaudeProject] = []
+
+            for project in projects.sorted(by: { $0.sortOrder < $1.sortOrder }) {
+                var rootPath = await GitStateService.shared.gitRootPath(for: project.path)
+                if rootPath == nil {
+                    rootPath = await GitStateService.shared.gitRootPath(for: project.displayPath)
+                }
+                guard let rootPath else {
+                    // Path and its parents are not in any git repo — remove orphan
+                    toDelete.append(project)
+                    continue
+                }
+
+                if let canonical = rootToProject[rootPath] {
+                    // Duplicate: keep the canonical (lower sortOrder), merge displayPath if useful
+                    if canonical.displayPath == canonical.path {
+                        canonical.displayPath = project.displayPath
+                    }
+                    toDelete.append(project)
+                } else {
+                    rootToProject[rootPath] = project
+                    // Normalise path to git root
+                    if project.path != rootPath {
+                        project.path = rootPath
+                        project.name = (rootPath as NSString).lastPathComponent
+                    }
+                }
+            }
+
+            guard !toDelete.isEmpty else { return }
+            for project in toDelete {
+                if selectedProject?.persistentModelID == project.persistentModelID {
+                    selectedProject = nil
+                }
+                modelContext.delete(project)
+            }
+            try? modelContext.save()
+        }
     }
 
     private func migrateIfNeeded() {

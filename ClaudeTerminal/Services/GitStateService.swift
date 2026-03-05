@@ -15,11 +15,17 @@ actor GitStateService {
     static let shared = GitStateService()
     private init() {}
 
-    /// Returns the git root for any path inside a repo (handles worktrees).
-    /// Returns nil if the path is not inside a git repository.
+    /// Returns the git root for any path inside a repo (handles worktrees and stale paths).
+    /// If `directory` doesn't exist on disk, walks up to the nearest existing parent before
+    /// running `git rev-parse --show-toplevel`. Returns nil if not inside a git repository.
     func gitRootPath(for directory: String) async -> String? {
-        guard FileManager.default.fileExists(atPath: directory) else { return nil }
-        let output = try? await runGit(args: ["rev-parse", "--show-toplevel"], cwd: directory)
+        var dir = directory
+        while !FileManager.default.fileExists(atPath: dir) {
+            let parent = (dir as NSString).deletingLastPathComponent
+            if parent == dir { return nil }
+            dir = parent
+        }
+        let output = try? await runGit(args: ["rev-parse", "--show-toplevel"], cwd: dir)
         return output?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
     }
 
