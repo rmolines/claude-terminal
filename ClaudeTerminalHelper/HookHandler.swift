@@ -33,6 +33,14 @@ final class HookHandler: @unchecked Sendable {
         }
 
         let eventType = mapEventType(hookName: payload.hookEventName, toolName: payload.toolName)
+
+        // UserPromptSubmit: only forward slash commands to avoid noise
+        if eventType == .userPromptSubmit {
+            guard let prompt = payload.prompt, prompt.hasPrefix("/") else {
+                return 0
+            }
+        }
+
         let detail: String?
         if eventType == .bashToolUse {
             detail = payload.toolInput?["command"].map { String($0.prefix(80)) }
@@ -40,6 +48,8 @@ final class HookHandler: @unchecked Sendable {
             detail = payload.toolInput?["description"].map { String($0.prefix(80)) }
         } else if eventType == .notification {
             detail = payload.toolInput?["message"].map { String($0.prefix(200)) }
+        } else if eventType == .userPromptSubmit {
+            detail = payload.prompt.map { String($0.prefix(100)) }
         } else {
             detail = nil
         }
@@ -95,6 +105,8 @@ final class HookHandler: @unchecked Sendable {
             return .bashToolUse
         case "PermissionRequest":
             return .permissionRequest
+        case "UserPromptSubmit":
+            return .userPromptSubmit
         default:
             return .notification
         }

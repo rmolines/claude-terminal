@@ -24,6 +24,8 @@ public struct HookPayload: Codable, Sendable {
     public let toolName: String?
     public let toolInput: [String: String]?
     public let usage: TokenUsage?
+    /// The user prompt text (only present in UserPromptSubmit hook).
+    public let prompt: String?
 
     enum CodingKeys: String, CodingKey {
         case sessionID = "session_id"
@@ -33,6 +35,7 @@ public struct HookPayload: Codable, Sendable {
         case toolName = "tool_name"
         case toolInput = "tool_input"
         case usage
+        case prompt
     }
 }
 

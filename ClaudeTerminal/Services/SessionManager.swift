@@ -30,6 +30,8 @@ actor SessionManager {
             updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
             if let cmd = event.detail {
                 sessions[event.sessionID]?.currentActivity = "$ \(cmd)"
+                let cwd = event.cwd
+                Task { @MainActor in WorkflowUpdateService.shared.applyBashFingerprint(cmd, forProjectAt: cwd) }
             }
 
         case .subAgentStarted:
@@ -59,6 +61,15 @@ actor SessionManager {
 
         case .heartbeat:
             sessions[event.sessionID]?.lastHeartbeat = Date()
+
+        case .userPromptSubmit:
+            updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
+            if let prompt = event.detail {
+                let skillID = String(prompt.components(separatedBy: " ").first ?? prompt)
+                sessions[event.sessionID]?.currentActivity = skillID
+                let cwd = event.cwd
+                Task { @MainActor in WorkflowUpdateService.shared.markActive(skillID: skillID, forProjectAt: cwd) }
+            }
         }
 
         if let usage = event.tokenUsage {

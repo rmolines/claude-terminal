@@ -19,4 +19,7 @@ public enum AgentEventType: String, Codable, Sendable {
 
     /// Heartbeat — helper is still alive.
     case heartbeat
+
+    /// User submitted a prompt starting with "/" (slash command detected).
+    case userPromptSubmit = "user_prompt_submit"
 }
