@@ -2,6 +2,9 @@
 
 Mapa completo das skills, quando usar cada uma, e como se relacionam.
 
+> Contratos invariantes entre skills: ver `~/.claude/rules/skill-contracts.md`.
+> Princípio central: o usuário é o gate — nenhuma skill lê artefatos de outra automaticamente.
+
 ---
 
 ## Fluxo visual
