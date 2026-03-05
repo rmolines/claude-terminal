@@ -4,6 +4,34 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-05 — fix(hitl): panel nunca fechava + descrição sempre genérica
+
+**O que foi feito:**
+Dois bugs no fluxo HITL corrigidos na branch `chore/skills-ship-close-fixes`, PR #45.
+
+**Bug 1 — Panel nunca fechava após Approve/Reject:**
+`approveHITL`/`rejectHITL` em `SessionManager` atualizavam `sessions` localmente mas
+não chamavam `SessionStore.shared.update()`. O `HITLFloatingPanelController` observa
+`SessionStore` via `withObservationTracking` — sem o update, o panel nunca recebia o sinal
+para fechar. Do ponto de vista do usuário: clicar em Approve/Reject não fazia nada visível.
+
+**Bug 2 — Descrição sempre "Awaiting approval":**
+`HookHandler` buscava `toolInput["description"]` para PermissionRequest, mas o Claude Code
+envia o comando Bash em `toolInput["command"]`. Resultado: `detail = nil` sempre para Bash,
+e o panel mostrava "Awaiting approval" em vez do comando real.
+
+**Fixes:**
+- `SessionManager.approveHITL`/`rejectHITL`: adicionado `Task { @MainActor in SessionStore.shared.update(session) }` após mudar status
+- `HookHandler`: extração de detail agora usa `toolInput["command"]` → fallback `toolInput["description"]` → fallback `toolName`
+
+**Arquivos-chave:**
+- `ClaudeTerminal/Services/SessionManager.swift:87-101`
+- `ClaudeTerminalHelper/HookHandler.swift:47-50`
+
+**Próximos passos:** nenhum — fixes pontuais, sem dívida técnica.
+
+---
+
 ## 2026-03-05 — hitl-panel-crash (PR #44)
 
 ### O que foi feito

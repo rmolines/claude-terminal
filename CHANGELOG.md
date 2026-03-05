@@ -2,6 +2,27 @@
 
 ---
 
+## [fix] HITL panel nunca fechava + descrição sempre genérica — 2026-03-05
+
+**Tipo:** fix
+**Tags:** hitl, session-manager, hook-handler
+**PR:** [#45](https://github.com/rmolines/claude-terminal/pull/45) · **Complexidade:** simples
+
+### Problema
+O painel HITL aparecia mas os botões Approve/Reject não faziam nada visualmente (o painel
+ficava aberto). Além disso, o painel sempre mostrava "Awaiting approval" em vez do comando
+real que o agente queria executar.
+
+### Fix aplicado
+- `approveHITL`/`rejectHITL` agora propagam o status atualizado ao `SessionStore`, permitindo que o painel feche imediatamente
+- `HookHandler` agora extrai o comando de `toolInput["command"]` (Bash) em vez de `toolInput["description"]` (que era sempre `nil`)
+
+### Arquivos-chave
+- `ClaudeTerminal/Services/SessionManager.swift` — SessionStore.update() adicionado em approve/reject
+- `ClaudeTerminalHelper/HookHandler.swift` — extração de detail corrigida
+
+---
+
 ## [fix] HITL panel crash em postWindowNeedsUpdateConstraints — 2026-03-05
 
 **Tipo:** fix
