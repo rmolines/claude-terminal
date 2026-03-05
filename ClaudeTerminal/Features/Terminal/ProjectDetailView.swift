@@ -4,13 +4,13 @@ import SwiftData
 
 /// Detail pane for a selected project: header + TabView (Terminal / Skills / Worktrees).
 ///
-/// Each `ProjectDetailView` instance owns an independent `sessionID` — swapping the
-/// selected project in the sidebar creates a new instance, restarting the PTY.
-/// (Deliverable 2 will keep PTYs alive across project switches via a ZStack.)
+/// Multiple worktree terminals are kept alive in a ZStack — switching paths
+/// only changes visibility, never destroys the PTY process.
 struct ProjectDetailView: View {
     @Bindable var project: ClaudeProject
 
-    @State private var sessionID: UUID = UUID()
+    /// Paths whose terminals have been opened this session — kept alive in ZStack.
+    @State private var openedPaths: [String] = []
     @State private var selectedTab: ProjectTab = .terminal
     @State private var currentBranch: String = "—"
     @State private var headerWorktrees: [WorktreeInfo] = []
@@ -31,24 +31,22 @@ struct ProjectDetailView: View {
                     .tag(ProjectTab.skills)
 
                 WorktreesView(rootDirectory: project.displayPath) { path in
-                    project.displayPath = path
-                    sessionID = UUID()
                     selectedTab = .terminal
+                    project.displayPath = path
+                    openPath(path)
                 }
                 .tabItem { Label("Worktrees", systemImage: "arrow.triangle.branch") }
                 .tag(ProjectTab.worktrees)
             }
         }
-        .task(id: sessionID) {
-            SessionStore.shared.update(
-                AgentSession(sessionID: sessionID.uuidString, cwd: project.displayPath, isSynthetic: true)
-            )
+        .onAppear {
+            openPath(project.displayPath)
         }
         .onChange(of: project.displayPath) { _, newPath in
             // displayPath changed externally (e.g. cleanup replaced a stale worktree path
-            // with the git root) — restart the PTY in the correct directory.
-            if !FileManager.default.fileExists(atPath: newPath) { return }
-            sessionID = UUID()
+            // with the git root) — open a terminal for the new path if it doesn't exist yet.
+            guard FileManager.default.fileExists(atPath: newPath) else { return }
+            openPath(newPath)
         }
         .task(id: project.displayPath) {
             while !Task.isCancelled {
@@ -74,7 +72,7 @@ struct ProjectDetailView: View {
                 ForEach(headerWorktrees) { wt in
                     Button {
                         project.displayPath = wt.path
-                        sessionID = UUID()
+                        openPath(wt.path)
                     } label: {
                         Label(wt.displayName, systemImage: "arrow.triangle.branch")
                     }
@@ -100,7 +98,17 @@ struct ProjectDetailView: View {
     // MARK: - Terminal
 
     private var terminalView: some View {
-        let escaped = project.displayPath.replacingOccurrences(of: "'", with: "'\\''")
+        ZStack {
+            ForEach(openedPaths, id: \.self) { path in
+                makeTerminal(for: path)
+                    .opacity(project.displayPath == path ? 1 : 0)
+                    .allowsHitTesting(project.displayPath == path)
+            }
+        }
+    }
+
+    private func makeTerminal(for path: String) -> TerminalViewRepresentable {
+        let escaped = path.replacingOccurrences(of: "'", with: "'\\''")
         var env = ProcessInfo.processInfo.environment
         env["TERM"] = "xterm-256color"
         env["COLORTERM"] = "truecolor"
@@ -112,6 +120,16 @@ struct ProjectDetailView: View {
             args: ["-l", "-i", "-c", "cd '\(escaped)' && claude"],
             environment: envArray
         )
-        .id(sessionID)
+    }
+
+    // MARK: - Helpers
+
+    private func openPath(_ path: String) {
+        if !openedPaths.contains(path) {
+            openedPaths.append(path)
+        }
+        SessionStore.shared.update(
+            AgentSession(sessionID: "synthetic-\(path)", cwd: path, isSynthetic: true)
+        )
     }
 }
