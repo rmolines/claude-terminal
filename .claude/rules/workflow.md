@@ -20,7 +20,7 @@ ESTRATÉGICO (uma vez por projeto/milestone)
 
 TÁTICO (por feature)
 ──────────────────────────────────────────
-  /start-feature [--deep] → [implementar] → /validate → /ship-feature → /close-feature
+  /start-feature [--deep] → [implementar] → /validate → [/design-review se UI] → /ship-feature → /close-feature
 
 ORIENTAÇÃO (qualquer momento)
 ──────────────────────────────────────────
@@ -32,11 +32,12 @@ INVESTIGAÇÃO (sem commit)
 
 PITCH / DISCOVERY (antes do bet)
 ──────────────────────────────────────────
-  /start-feature --discover <nome> → discovery.md + research.md → bet → /start-feature <nome>
+  /start-feature --discover <nome> → discovery.md → /clear
+    → /start-feature --deep <nome> → research.md + plan.md → bet → /start-feature <nome>
 
 AD-HOC (feature sem roadmap)
 ──────────────────────────────────────────
-  /start-feature <nome> → [implementar] → /ship-feature → /close-feature
+  /start-feature <nome> → [implementar] → /validate → [/design-review se UI] → /ship-feature → /close-feature
 ```
 
 ---
@@ -52,9 +53,10 @@ AD-HOC (feature sem roadmap)
 | `/start-milestone` | Começar um novo milestone | `roadmap.md` ou `backlog.json` | `<M>/sprint.md` com features | `/start-feature` |
 | `/start-feature` | Começar implementação (default: fast, sem pesquisa) | Nome da feature | Worktree + `plan.md` | `/validate`, `/ship-feature` |
 | `/start-feature --deep` | Feature complexa que precisa de pesquisa técnica | Nome da feature | `research.md` + `plan.md` + worktree | `/validate`, `/ship-feature` |
-| `/start-feature --discover` | Explorar um problema antes de fazer o bet | Nome/ideia | `discovery.md` + `research.md` (para sem worktree) | `/start-feature <nome>` |
+| `/start-feature --discover` | Explorar um problema antes de fazer o bet | Nome/ideia | `discovery.md` | `/start-feature --deep <nome>` ou `/start-feature <nome>` |
 | `/debug` | Investigar erro sem modificar nada | Descrição do problema | Relatório de causa raiz + fix sugerido | `/fix` (opcional) |
-| `/validate` | Verificar alinhamento antes de fazer PR | Branch com código | Relatório drift/cobertura | `/ship-feature` ou correção |
+| `/validate` | Verificar alinhamento antes de fazer PR | Branch com código | Relatório drift/cobertura | `/design-review` (se UI) ou `/ship-feature` |
+| `/design-review` | Gate de UI antes do PR (obrigatório para features com mudanças de UI) | View modificada | Veredito APROVADO/REPROVADO | `/ship-feature` |
 | `/ship-feature` | Abrir PR após implementação | Código pronto | PR aberto no GitHub | `/close-feature` |
 | `/close-feature` | Limpar após PR merged | PR merged | Worktree removido + docs + `backlog.json` atualizados | `/project-compass` |
 | `/project-compass` | "Onde estou? O que fazer agora?" | Nenhum (lê git + `backlog.json` + sprint.md) | Relatório de estado + próxima ação | Varia |
