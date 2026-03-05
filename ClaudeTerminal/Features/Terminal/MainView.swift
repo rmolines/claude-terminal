@@ -174,6 +174,10 @@ struct MainView: View {
                         project.path = rootPath
                         project.name = (rootPath as NSString).lastPathComponent
                     }
+                    // If the last-used directory no longer exists, fall back to git root
+                    if !FileManager.default.fileExists(atPath: project.displayPath) {
+                        project.displayPath = rootPath
+                    }
                 }
             }
 
