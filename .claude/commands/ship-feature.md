@@ -59,6 +59,19 @@ O checklist de infra (secrets, scripts de setup) não será verificado.
 Continuando com base apenas no CLAUDE.md.
 ```
 
+### 0.5. Verificação local (HARD GATE)
+
+Antes de qualquer commit ou push, rodar:
+
+```bash
+{{BUILD_CMD}}    # ex: swift build
+{{TEST_CMD}}     # ex: swift test
+```
+
+Se qualquer um falhar: **parar aqui**. Não criar PR com build quebrado.
+
+Mostrar output completo — não resumir. Só avançar com ambos passando.
+
 ### 1. Commit (se houver mudanças pendentes)
 
 1. Identificar todos os arquivos modificados/novos
@@ -270,5 +283,6 @@ Quando estiver satisfeito, rode /close-feature para documentação e cleanup.
 - Nunca commitar arquivos com secrets (`.env`, tokens hardcoded)
 - Commit e PR criados autonomamente — sem aguardar confirmação da mensagem
 - Se qualquer passo falhar: parar e reportar antes de continuar
+- **Nunca criar PR sem antes rodar {{BUILD_CMD}} + {{TEST_CMD}} e mostrar output** (passo 0.5)
 - **Nunca declarar "em produção" sem ter verificado deploy (passo 6a) e smoke test (passo 7)**
 - **O smoke test usa o comando do CLAUDE.md ou plan.md — não inventar um genérico**
