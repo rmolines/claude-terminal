@@ -31,9 +31,10 @@ struct ProjectDetailView: View {
                     .tag(ProjectTab.skills)
 
                 WorktreesView(rootDirectory: project.displayPath) { path in
+                    selectedTab = .terminal
+                    guard path != project.displayPath else { return }
                     project.displayPath = path
                     sessionID = UUID()
-                    selectedTab = .terminal
                 }
                 .tabItem { Label("Worktrees", systemImage: "arrow.triangle.branch") }
                 .tag(ProjectTab.worktrees)
