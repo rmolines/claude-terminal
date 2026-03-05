@@ -90,12 +90,10 @@ Verificar `.claude/feature-plans/<nome>/`:
 
 ### Passo 0.0 — Verificar explore.md
 
-Antes de qualquer pesquisa, verificar se existe `explore.md` na raiz do repositório git (onde `/explore` o salvou):
+Antes de qualquer pesquisa, verificar se `/explore` já rodou para esta feature:
 
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-EXPLORE_PATH="${REPO_ROOT:+$REPO_ROOT/explore.md}"
-[ -n "$EXPLORE_PATH" ] && [ -f "$EXPLORE_PATH" ] && echo "FOUND" || echo "NOT_FOUND"
+[ -f ".claude/feature-plans/<nome>/explore.md" ] && echo "FOUND" || echo "NOT_FOUND"
 ```
 
 Se encontrado, apresentar ao usuário:
@@ -289,7 +287,7 @@ Se não existir ou faltar contexto:
 - O que a feature faz?
 - Alguma restrição técnica conhecida?
 
-Se `$REPO_ROOT/explore.md` existir: ler as seções "O gap", "Hipótese" e "O que ficou consolidado".
+Se `.claude/feature-plans/<nome>/explore.md` existir: ler as seções "O gap", "Hipótese" e "O que ficou consolidado".
 Usar para orientar o Subagente C (Tech estimate) — evitar redescobrir o que `/explore` já mapeou.
 
 ### Passo A.2 — Subagentes em paralelo
@@ -421,7 +419,7 @@ Ler em ordem:
 
 1. `.claude/feature-plans/<nome>/research.md` — integralmente. Focar em: "Padrões identificados", "Dependências", "Riscos e restrições".
 2. `.claude/feature-plans/<nome>/discovery.md` (se existir) — extrair: "Problema real", "Escopo", "Critério de sucesso".
-3. `$REPO_ROOT/explore.md` (se existir) — extrair: "O gap" e "O que ficou consolidado" como sanity check.
+3. `.claude/feature-plans/<nome>/explore.md` (se existir) — extrair: "O gap" e "O que ficou consolidado" como sanity check.
 
 Antes de continuar para B.2: anotar qualquer tensão entre `research.md` e o critério de sucesso de `discovery.md`.
 
@@ -621,8 +619,8 @@ Ler `.claude/feature-plans/<nome>/plan.md` integralmente.
 
 Se artefatos anteriores existirem, extrair antes de C.6.5 e C.7:
 
-- De `discovery.md`: "Fora (explícito)" → informar Revisor 3; "Critério de sucesso" → checklist C.7; "Riscos identificados" → Revisor 2
-- De `research.md`: "Hot files que serão tocados" → Revisor 3 cross-check com git diff; "Riscos e restrições" → Revisor 2; "Padrões identificados" → Revisor 1
+- De `.claude/feature-plans/<nome>/discovery.md`: "Fora (explícito)" → informar Revisor 3; "Critério de sucesso" → checklist C.7; "Riscos identificados" → Revisor 2
+- De `.claude/feature-plans/<nome>/research.md`: "Hot files que serão tocados" → Revisor 3 cross-check com git diff; "Riscos e restrições" → Revisor 2; "Padrões identificados" → Revisor 1
 
 **Se não existir plan.md (Fase C fast):**
 1. Ler CLAUDE.md + arquivos mais relevantes (sem subagentes — leitura direta)
