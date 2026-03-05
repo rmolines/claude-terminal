@@ -61,6 +61,21 @@ struct TerminalViewRepresentable: NSViewRepresentable {
 
         // Wire coordinator for snapshot capture
         context.coordinator.terminalView = tv
+
+        // Intercept Shift+Enter before SwiftTerm sees it — sends \n to the PTY so Claude Code
+        // can insert a newline in the input field without submitting. The monitor only acts when
+        // this specific terminal view is the window's first responder.
+        let keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak tv] event in
+            guard event.keyCode == 36,
+                  event.modifierFlags.contains(.shift),
+                  let tv,
+                  tv.window?.firstResponder === tv else { return event }
+            let newline: [UInt8] = [0x0a]
+            tv.send(data: newline[...])
+            return nil
+        }
+        context.coordinator.keyMonitor = keyMonitor
+
         if let pid = projectID, let p = path {
             context.coordinator.projectID = pid
             context.coordinator.path = p
@@ -121,6 +136,7 @@ struct TerminalViewRepresentable: NSViewRepresentable {
 
     final class Coordinator: LocalProcessTerminalViewDelegate {
         var inputObserver: NSObjectProtocol?
+        var keyMonitor: Any?
         var projectID: UUID?
         var path: String?
         weak var terminalView: LocalProcessTerminalView?
@@ -128,6 +144,9 @@ struct TerminalViewRepresentable: NSViewRepresentable {
         deinit {
             if let obs = inputObserver {
                 NotificationCenter.default.removeObserver(obs)
+            }
+            if let monitor = keyMonitor {
+                NSEvent.removeMonitor(monitor)
             }
             if let p = path {
                 Task { @MainActor in TerminalRegistry.shared.unregister(path: p) }

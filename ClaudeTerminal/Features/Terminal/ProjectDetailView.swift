@@ -11,6 +11,8 @@ struct ProjectDetailView: View {
 
     /// Paths whose terminals have been opened this session — kept alive in ZStack.
     @State private var openedPaths: [String] = []
+    /// Revision token per path — bumping forces SwiftUI to destroy and recreate the terminal.
+    @State private var terminalRevision: [String: UUID] = [:]
     @State private var selectedTab: ProjectTab = .terminal
     @State private var currentBranch: String = "—"
     @State private var headerWorktrees: [WorktreeInfo] = []
@@ -93,6 +95,13 @@ struct ProjectDetailView: View {
             .fixedSize()
             .disabled(headerWorktrees.isEmpty)
             Spacer()
+            Button {
+                restartCurrentTerminal()
+            } label: {
+                Image(systemName: "arrow.counterclockwise")
+            }
+            .buttonStyle(.borderless)
+            .help("Restart Claude")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -105,6 +114,7 @@ struct ProjectDetailView: View {
         ZStack {
             ForEach(openedPaths, id: \.self) { path in
                 makeTerminal(for: path)
+                    .id("\(path)-\(terminalRevision[path]?.uuidString ?? "initial")")
                     .opacity(project.displayPath == path ? 1 : 0)
                     .allowsHitTesting(project.displayPath == path)
             }
@@ -154,6 +164,13 @@ struct ProjectDetailView: View {
     }
 
     // MARK: - Helpers
+
+    private func restartCurrentTerminal() {
+        let path = project.displayPath
+        // Bump the revision — SwiftUI will destroy the old terminal view (closing the PTY)
+        // and create a new one. No snapshot is saved, so the new session starts clean.
+        terminalRevision[path] = UUID()
+    }
 
     private func openPath(_ path: String) {
         if !openedPaths.contains(path) {
