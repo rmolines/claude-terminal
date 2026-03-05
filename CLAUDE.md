@@ -102,6 +102,7 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | `List(selection:)` com @Model + `var id: UUID` | SwiftData adiciona `Identifiable` via `persistentModelID`; conflito com `var id: UUID` explícito faz cliques na List serem ignorados silenciosamente | Usar `List { ForEach { ... .onTapGesture { ... } } }` com seleção manual; `listRowBackground` para highlight |
 | `ModelContainer` silenciosamente in-memory | Se o diretório pai do store URL não existe, `ModelContainer` não falha — cria store in-memory. Dados são perdidos no próximo launch sem aviso | Sempre `FileManager.default.createDirectory(at: storeDir, withIntermediateDirectories: true)` antes de `ModelConfiguration(url:)` |
 | Agente paralelo sobrescrevendo branch | Agente A commita na branch X; agente B mergea X em main e deleta a branch. Commit do agente A fica perdido na branch deletada sem aviso | Commit ainda existe no reflog — `git cherry-pick <sha>` + nova branch a partir do main atualizado recupera tudo |
+| `NSHostingView` + `rootView` durante layout cycle | Atualizar `hosting.rootView` enquanto o NSPanel está visível dispara `setNeedsUpdateConstraints()` → `postWindowNeedsUpdateConstraints`. No macOS 26, se ocorre durante um layout cycle em andamento, lança `NSException` → `EXC_BREAKPOINT`. Sintoma: crash após ~1h quando painel HITL está aberto com eventos chegando. | Cachear conteúdo atual; pular `rootView =` se sessionID + description não mudaram |
 
 ## Worktree convention
 

@@ -4,6 +4,33 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-05 — hitl-panel-crash (PR #44)
+
+### O que foi feito
+
+Corrigido crash `EXC_BREAKPOINT (SIGTRAP)` em `postWindowNeedsUpdateConstraints` que ocorria
+após ~1h de uso quando um agente ficava aguardando aprovação HITL.
+
+Causa raiz: `HITLFloatingPanelController.updatePanel()` é chamado em **toda** mudança de
+`SessionStore.sessions` — heartbeats, bash events, etc. de qualquer sessão. Enquanto o painel
+HITL estava visível, `show()` chamava `hosting.rootView = view` repetidamente. Cada atribuição
+invalida constraints do `NSHostingView(.minSize)`, que dispara `setNeedsUpdateConstraints()` →
+`postWindowNeedsUpdateConstraints`. No macOS 26, esse método tem assertions mais rígidas e lança
+`NSException` quando acionado durante um layout cycle em andamento.
+
+Fix: adicionar `currentSessionID: String?` e `currentDescription: String?` ao controller.
+`show()` retorna cedo se o painel já está mostrando o mesmo conteúdo. Cache limpo no dismiss.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift`
+
+### Próximos passos
+
+- Nenhum pendente desta feature
+
+---
+
 ## 2026-03-05 — skill-flow-improvements (PR #38)
 
 ### O que foi feito

@@ -2,6 +2,32 @@
 
 ---
 
+## [fix] HITL panel crash em postWindowNeedsUpdateConstraints — 2026-03-05
+
+**Tipo:** fix
+**Tags:** hitl, appkit, crash
+**PR:** [#44](https://github.com/rmolines/claude-terminal/pull/44) · **Complexidade:** simples
+
+### Problema
+
+App crashava com `EXC_BREAKPOINT (SIGTRAP)` após ~1h de uso quando um agente entrava em
+modo de aprovação HITL. O painel flutuante era atualizado em cada hook event (heartbeats,
+bash commands, etc.), causando invalidação de constraints do `NSHostingView` durante um
+layout cycle do AppKit — que lança `NSException` em `postWindowNeedsUpdateConstraints`
+no macOS 26 (mais estrito que versões anteriores).
+
+### Fix aplicado
+
+`HITLFloatingPanelController.show()` agora guarda `currentSessionID` + `currentDescription`
+e pula `hosting.rootView = view` quando o painel já está visível com o mesmo conteúdo.
+O cache é limpo quando o painel é dispensado.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — guard em `show()`, cache limpo no dismiss
+
+---
+
 ## [improvement] Skill flow improvements — architecture design + quality review — 2026-03-05
 
 **Tipo:** improvement

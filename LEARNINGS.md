@@ -4,6 +4,34 @@ Gotchas, limitations, and non-obvious behaviors discovered while working on this
 
 ---
 
+## 2026-03-05 — `NSHostingView.rootView` durante layout cycle causa EXC_BREAKPOINT no macOS 26
+
+Atualizar `hosting.rootView` enquanto um `NSPanel` está visível invalida constraints do
+`NSHostingView(.minSize)` via `setNeedsUpdateConstraints()`. No macOS 26, se essa invalidação
+ocorre dentro de um layout cycle em andamento (`postWindowNeedsUpdateConstraints`), o AppKit
+lança `NSException` → `EXC_BREAKPOINT (SIGTRAP)`.
+
+**Sintoma:** crash após ~1h de uso, reproduzível apenas quando um painel HITL está visível
+enquanto outros eventos de hook chegam (heartbeats, bash commands de outras sessões).
+O stack trace aponta para `postWindowNeedsUpdateConstraints + 1716` com `NSException` acima.
+
+**Causa raiz:** observer pattern que atualiza `rootView` em cada mudança de `sessions` —
+mesmo quando o conteúdo exibido não muda. A atualização redundante é inofensiva no macOS
+14/15, mas problemática no macOS 26.
+
+**Fix:** cachear o conteúdo atual (`currentSessionID` + `currentDescription`). Pular a
+atualização de `rootView` se o painel já está visível com o mesmo conteúdo. Limpar cache no dismiss.
+
+```swift
+if panel.isVisible,
+   session.sessionID == currentSessionID,
+   description == currentDescription {
+    return  // sem rootView update desnecessário
+}
+```
+
+---
+
 ## 2026-03-05 — `git rev-parse --git-common-dir` para unificar worktrees sob um projeto
 
 `--show-toplevel` retorna o diretório da worktree ativa (ex: `.claude/worktrees/my-feature`) —
