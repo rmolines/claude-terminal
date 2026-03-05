@@ -48,8 +48,27 @@ struct MainView: View {
     // MARK: - Sidebar
 
     private var projectSidebar: some View {
-        List(projects, selection: $selectedProject) { project in
-            ProjectRow(project: project)
+        // Manual selection via onTapGesture — List(selection:) with @Model objects
+        // conflicts between the explicit `var id: UUID` and SwiftData's generated
+        // Identifiable conformance (persistentModelID), causing clicks to be ignored.
+        List {
+            ForEach(projects) { project in
+                ProjectRow(
+                    project: project,
+                    isSelected: selectedProject?.persistentModelID == project.persistentModelID
+                )
+                .contentShape(Rectangle())
+                .onTapGesture { selectedProject = project }
+                .contextMenu {
+                    Button("Remove", role: .destructive) {
+                        if selectedProject?.persistentModelID == project.persistentModelID {
+                            selectedProject = nil
+                        }
+                        modelContext.delete(project)
+                        try? modelContext.save()
+                    }
+                }
+            }
         }
         .navigationTitle("Projects")
         .navigationSplitViewColumnWidth(min: 180, ideal: 220)
@@ -59,12 +78,6 @@ struct MainView: View {
                     Image(systemName: "plus")
                 }
                 .help("Add Project")
-            }
-        }
-        .contextMenu(forSelectionType: ClaudeProject.self) { items in
-            Button("Remove", role: .destructive) {
-                for item in items { modelContext.delete(item) }
-                try? modelContext.save()
             }
         }
     }
@@ -150,10 +163,16 @@ struct MainView: View {
 
 private struct ProjectRow: View {
     let project: ClaudeProject
+    var isSelected: Bool = false
 
     var body: some View {
         Label(project.name, systemImage: "folder")
             .lineLimit(1)
+            .padding(.vertical, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .listRowBackground(
+                isSelected ? Color.accentColor.opacity(0.2) : Color.clear
+            )
     }
 }
 
