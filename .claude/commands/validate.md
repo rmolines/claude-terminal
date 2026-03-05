@@ -147,7 +147,7 @@ Exibir também na conversa.
 ## Testes
 
 | Cenário | Input | Output esperado |
-|---------|-------|-----------------|
+|---------|-------|----------------|
 | Feature alinhada | `/validate` em worktree com plan.md e código alinhado | Relatório com ✅ nas duas seções, veredito "Alinhado" |
 | Feature com drift | `/validate` em worktree onde código divergiu do problema | ⚠️ Drift identificado com arquivo/função específica |
 | Cobertura parcial | `/validate` com metade do plano implementada | 🔄 Parcial em vários itens, recomendação "Continuar" |

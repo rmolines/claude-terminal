@@ -176,24 +176,23 @@ Com base no `plan.md` (passo 0), verificar cada item antes de mergear:
 
 ### 6. Merge e acompanhamento do CI
 
-Mergear diretamente **sem pedir confirmação** usando GitHub MCP `merge_pull_request` com `owner`/`repo` explícitos e `deleteBranch: true`.
-
-O MCP retorna o SHA do merge commit — capturar como `MERGE_SHA`.
-
-Monitorar o run de CI disparado pelo merge usando o SHA para localizar o run exato:
-
+Mergear diretamente **sem pedir confirmação**:
 ```bash
-# <MERGE_SHA> = SHA retornado pelo merge_pull_request
-# <owner/repo> = extraído de: gh repo view --json nameWithOwner -q .nameWithOwner
-for i in $(seq 1 10); do
-  RUN_ID=$(gh run list --commit <MERGE_SHA> --repo <owner/repo> --json databaseId --limit 1 -q '.[0].databaseId' 2>/dev/null)
-  [ -n "$RUN_ID" ] && break
-  sleep 3
-done
-gh run watch "$RUN_ID" --repo <owner/repo>
+BRANCH=$(git branch --show-current)
+gh pr merge --squash
+# --delete-branch falha silenciosamente em worktree (main já checked out no repo pai)
+# Deletar remote branch explicitamente:
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" 2>/dev/null \
+  || echo "⚠️  Remote branch não deletada automaticamente — limpar com: gh api -X DELETE repos/$REPO/git/refs/heads/$BRANCH"
 ```
 
-Máximo 30s de espera para localizar o run. Se `RUN_ID` ainda vazio após 10 tentativas: `gh run list --limit 5 --repo <owner/repo>` para identificar manualmente.
+Monitorar o run de CI disparado pelo merge:
+```bash
+gh run list --limit 3
+# identificar o run de deploy
+gh run watch <id>
+```
 
 - Se o run **falhar**: exibir erro com `gh run view <id> --log-failed` e **parar** — não avançar sem CI verde
 
