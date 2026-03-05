@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import SwiftData
+import Shared
 
 /// Root view: sidebar of ClaudeProject entities + terminal detail for the selected project.
 ///
@@ -253,14 +254,45 @@ private struct ProjectRow: View {
     let project: ClaudeProject
     var isSelected: Bool = false
 
+    private var activeSessions: [AgentSession] {
+        SessionStore.shared.sessions.values.filter { session in
+            !session.isSynthetic &&
+            session.status != .completed &&
+            session.status != .blocked &&
+            session.cwd.hasPrefix(project.path)
+        }
+    }
+
+    private var aggregateStatus: AgentStatus? {
+        if activeSessions.contains(where: { $0.status == .awaitingInput }) { return .awaitingInput }
+        if activeSessions.contains(where: { $0.status == .running }) { return .running }
+        return nil
+    }
+
     var body: some View {
-        Label(project.name, systemImage: "folder")
-            .lineLimit(1)
-            .padding(.vertical, 2)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .listRowBackground(
-                isSelected ? Color.accentColor.opacity(0.2) : Color.clear
-            )
+        HStack(spacing: 6) {
+            Label(project.name, systemImage: "folder")
+                .lineLimit(1)
+            Spacer()
+            if let status = aggregateStatus {
+                HStack(spacing: 4) {
+                    if activeSessions.count > 1 {
+                        Text("\(activeSessions.count)")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                    }
+                    Circle()
+                        .fill(status == .awaitingInput ? Color.orange : Color.green)
+                        .frame(width: 7, height: 7)
+                }
+            }
+        }
+        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .listRowBackground(
+            isSelected ? Color.accentColor.opacity(0.2) : Color.clear
+        )
     }
 }
 
