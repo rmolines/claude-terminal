@@ -79,7 +79,10 @@ Para cada erro encontrado:
 
 ## Passo 4 — Relatório
 
-Gerar relatório sem criar nenhum arquivo:
+Gerar o relatório no formato abaixo e salvá-lo em `.claude/debug-plans/<descrição-kebab>/report.md`
+(criar o diretório se não existir). Exibir também na conversa.
+
+`<descrição-kebab>` = primeira 3-4 palavras de `$ARGUMENTS` em kebab-case.
 
 ```text
 ## 🔍 Debug: <descrição curta>
