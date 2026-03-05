@@ -26,34 +26,8 @@ PR_DATA=$(gh pr list --head "$BRANCH" --state merged --json number,mergedAt --li
 PR_NUMBER=$(echo "$PR_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data[0]['number'] if data else '')" 2>/dev/null)
 ```
 
-Se `PR_NUMBER` encontrado: usar nos passos 1b (CHANGELOG) e 1g (backlog.json).
+Se `PR_NUMBER` encontrado: usar nos passos 1b (CHANGELOG) e 1f (backlog.json).
 Se não encontrado: perguntar ao usuário o número ou pular o update de backlog.json.
-
-### 0.6 — Garantir branch main para commits de docs
-
-```bash
-BRANCH=$(git branch --show-current 2>/dev/null)
-if [ "$BRANCH" != "main" ]; then
-  echo "Branch atual: $BRANCH — mudando para main antes de commitar docs"
-  git checkout main
-  git pull --rebase origin main
-fi
-```
-
-Sem essa etapa, docs commitados na branch de feature/chore ficam fora do main.
-
-### 0.7 — Ler todos os arquivos de doc em paralelo
-
-Ler simultaneamente (um único batch) antes de iniciar qualquer edição:
-
-- `CHANGELOG.md`
-- `HANDOVER.md`
-- `LEARNINGS.md`
-- `CLAUDE.md`
-
-Garantir que todos foram lidos antes de iniciar qualquer Edit/Update.
-Evita o erro "File must be read first" durante as edições sequenciais.
-Se algum arquivo não existir: ignorar (será criado no passo correspondente).
 
 ### 1. Atualizar documentação
 
@@ -174,25 +148,7 @@ Critério: problema não-óbvio que outro agente cometeria no mesmo contexto.
 Se sim: propor ao usuário e, com aprovação, adicionar à tabela de armadilhas no CLAUDE.md.
 Se não houver nada novo: pular sem perguntar.
 
-#### 1f. LEARNINGS.md — fricção de processo (se houve)
-
-**Você** decide se algo deu errado durante a execução de `/ship-feature` ou `/close-feature`
-nesta sessão — não pergunte ao usuário.
-
-Critério: erros ou fricção causados pela skill, não pela feature em si.
-Exemplos: commit na branch errada, "file must be read first", polling de CI que não encontrou
-o run, worktree não detectada, merge em branch errada, etc.
-
-Se sim: adicionar seção ao `LEARNINGS.md`:
-
-```markdown
-## <data> — [processo] <título curto>
-<descrição do que deu errado, quando, e o fix sugerido na skill>
-```
-
-Se não houve fricção de processo: pular sem mensagem.
-
-#### 1g. backlog.json (se existir)
+#### 1f. backlog.json (se existir)
 
 ```bash
 command -v jq >/dev/null || { echo "jq não encontrado — pular update de backlog.json (brew install jq para habilitar)"; }
@@ -210,7 +166,7 @@ fi
 
 Substituir `<nome>` pelo slug da feature e `<pr_number>` pelo PR detectado no Passo 0.5 (ou `""` se não encontrado).
 
-#### 1h. Propagação ao kickstart (se houver skills novos/modificados)
+#### 1g. Propagação ao kickstart (se houver skills novos/modificados)
 
 Verificar se algum arquivo em `.claude/commands/` foi criado ou modificado nesta feature:
 
@@ -298,14 +254,6 @@ git -C "$REPO_ROOT" worktree list | grep "<nome>"
   ```
 - Se não existir em nenhum dos dois: pular sem mensagem
 
-### 2.5 — Limpar TodoWrite tasks abertas
-
-Verificar se há tasks abertas relacionadas à feature via TodoRead.
-Para cada task com status `in_progress` ou `pending` que mencione o nome da feature
-ou seja claramente relacionada: marcar como `done`.
-
-Se não houver tasks abertas relacionadas: pular sem mensagem.
-
 ### 3. Limpar feature-plans
 
 - Verificar se existe `.claude/feature-plans/<nome>/`
@@ -321,13 +269,11 @@ Documentação:
 - CHANGELOG.md ✅
 - MEMORY.md coordinator <✅ ou ⏭️ sem coordinator>
 - LEARNINGS.md <✅ ou ⏭️ pulado>
-- LEARNINGS.md fricção de processo <✅ ou ⏭️ sem fricção>
 - CLAUDE.md armadilhas <✅ ou ⏭️ pulado>
 - Kickstart propagation <✅ PR aberto | ⏭️ sem skills candidatos | ⏭️ não confirmado pelo dev>
 
 Worktree: <removida | já não existia | aguardando saída manual>
 feature-plans: arquivado
-Tasks abertas: <limpas | nenhuma encontrada>
 
 Próximos passos:
 - <qualquer item pendente, ou "nenhum">
