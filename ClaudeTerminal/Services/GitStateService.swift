@@ -15,6 +15,33 @@ actor GitStateService {
     static let shared = GitStateService()
     private init() {}
 
+    /// Returns the canonical repo root for any path, including linked worktrees.
+    ///
+    /// Uses `--git-common-dir` (not `--show-toplevel`) so that all worktrees of the same
+    /// repo resolve to the same root. `--show-toplevel` returns each worktree's own dir,
+    /// causing them to appear as separate projects.
+    ///
+    /// If `directory` doesn't exist on disk, walks up to the nearest existing parent first.
+    /// Returns nil if the path is not inside a git repository.
+    func gitRootPath(for directory: String) async -> String? {
+        var dir = directory
+        while !FileManager.default.fileExists(atPath: dir) {
+            let parent = (dir as NSString).deletingLastPathComponent
+            if parent == dir { return nil }
+            dir = parent
+        }
+        guard let raw = try? await runGit(args: ["rev-parse", "--git-common-dir"], cwd: dir),
+              let commonDir = raw.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        else { return nil }
+
+        // --git-common-dir may be relative (e.g. ".git") or absolute.
+        let absolute = commonDir.hasPrefix("/")
+            ? commonDir
+            : (dir as NSString).appendingPathComponent(commonDir)
+        // The repo root is the parent of the .git directory.
+        return (absolute as NSString).deletingLastPathComponent
+    }
+
     /// Retorna a branch atual no diretório dado. Retorna "—" em caso de erro.
     func currentBranch(in directory: String) async -> String {
         guard FileManager.default.fileExists(atPath: directory) else { return "—" }
