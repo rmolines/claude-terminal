@@ -59,6 +59,15 @@ O checklist de infra (secrets, scripts de setup) não será verificado.
 Continuando com base apenas no CLAUDE.md.
 ```
 
+### 0.3. Validate rodado?
+
+Se `.claude/feature-plans/<nome>/validation-report.md` não existir:
+
+> ⚠️  /validate não foi rodado para esta feature.
+> Recomendado antes do PR — rode /validate agora ou continue assim mesmo?
+
+Aguardar resposta. Se "continuar": prosseguir normalmente (não é bloqueante).
+
 ### 0.5. Verificação local (HARD GATE)
 
 Antes de qualquer commit ou push, rodar:

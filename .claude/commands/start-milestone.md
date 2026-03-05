@@ -97,6 +97,8 @@ Após confirmação, crie o diretório `.claude/feature-plans/<projeto>/<milesto
 # Sprint <Milestone> — <nome do milestone>
 _Gerado em: <data>_
 
+> Status ao vivo: use /project-compass. Este arquivo é readonly após criação.
+
 ## Milestone
 
 **Objetivo:** <meta/critério do roadmap.md>
@@ -145,6 +147,13 @@ Se `.claude/backlog.json` existir:
 3. Validar: `python3 -m json.tool .claude/backlog.json > /dev/null`
 
 Se backlog.json não existir: pular (não criar automaticamente).
+
+> **Nota de arquitetura:**
+> `sprint.md` é um artefato de **planejamento** — define a decomposição e ordem de execução.
+> Não é atualizado durante a execução. Não use os checkboxes do sprint.md para tracking.
+>
+> `backlog.json` é a **fonte de verdade de status** — atualizado por /start-feature (in-progress)
+> e /close-feature (done). Use /project-compass para ver o estado real.
 
 ---
 
