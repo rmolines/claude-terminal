@@ -13,6 +13,10 @@ final class HITLFloatingPanelController {
 
     private lazy var panel: NSPanel = makePanel()
     private var hostingView: NSHostingView<HITLPanelView>?
+    /// Tracks what the panel is currently showing to avoid redundant rootView updates
+    /// that trigger NSHostingView constraint invalidation during AppKit layout cycles.
+    private var currentSessionID: String?
+    private var currentDescription: String?
 
     // MARK: - Lifecycle
 
@@ -40,6 +44,8 @@ final class HITLFloatingPanelController {
         if let session = pending {
             show(session: session)
         } else {
+            currentSessionID = nil
+            currentDescription = nil
             panel.orderOut(nil)
         }
     }
@@ -47,9 +53,23 @@ final class HITLFloatingPanelController {
     // MARK: - Show / dismiss
 
     private func show(session: AgentSession) {
+        let description = session.currentActivity ?? "Agent at \(session.cwd) awaiting approval"
+
+        // Skip rootView update if the panel is already showing the same content.
+        // Redundant updates invalidate NSHostingView constraints during AppKit layout
+        // cycles, triggering a crash in postWindowNeedsUpdateConstraints on macOS 26.
+        if panel.isVisible,
+           session.sessionID == currentSessionID,
+           description == currentDescription {
+            return
+        }
+
+        currentSessionID = session.sessionID
+        currentDescription = description
+
         let view = HITLPanelView(
             sessionID: session.sessionID,
-            description: session.currentActivity ?? "Agent at \(session.cwd) awaiting approval"
+            description: description
         ) {
             Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID) }
         } onReject: {
