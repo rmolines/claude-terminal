@@ -4,6 +4,27 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-05 — chore: sync skills + docs (PR #46)
+
+**O que foi feito:**
+Sincronização das skills de workflow com upstream `claude-kickstart` (db742b0) + documentação
+dos fixes de HITL das sessões anteriores.
+
+**Skills atualizadas:**
+- `propagate-skills.md` — nova skill para sincronizar skills entre camadas
+- `close-feature.md` — streamlinado (removidos passos 0.6/0.7, 1f, 2.5)
+- `ship-feature.md` — gate `/validate` antes do PR + merge simplificado
+- `start-feature.md` — seção "quando usar sem roadmap"; conflitos de merge resolvidos
+- `start-milestone.md`, `validate.md`, `fix.md`, `checkpoint.md` — melhorias pontuais
+
+**Fricção encontrada:**
+CI do GitHub Actions não disparou para o PR após pushes e reopen — GitHub Actions em estado de
+"pending sem runs". Merge feito via admin bypass. Causa não identificada (não relacionada ao código).
+
+**Próximos passos:** nenhum — chore de manutenção.
+
+---
+
 ## 2026-03-05 — fix(hitl): panel nunca fechava + descrição sempre genérica
 
 **O que foi feito:**

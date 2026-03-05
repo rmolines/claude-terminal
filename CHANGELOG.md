@@ -2,6 +2,37 @@
 
 ---
 
+## [chore] Sync skills from upstream + docs update — 2026-03-05
+
+**Tipo:** chore
+**Tags:** skills, workflow, docs
+**PR:** [#46](https://github.com/rmolines/claude-terminal/pull/46) · **Complexidade:** simples
+
+### O que mudou
+
+Skills de workflow sincronizadas com o upstream `claude-kickstart` (db742b0) e documentação
+dos fixes de HITL atualizada em CHANGELOG, HANDOVER, LEARNINGS e CLAUDE.md.
+
+### Detalhes técnicos
+
+- `propagate-skills.md` — nova skill para sincronizar skills entre camadas projeto e global
+- `close-feature.md` — removidos passos redundantes (0.6/0.7, 1f, 2.5)
+- `ship-feature.md` — gate `/validate` antes do PR + merge step simplificado
+- `start-feature.md` — seção "sem roadmap" + tabela de flags atualizada + conflitos resolvidos
+- `start-milestone.md` + `validate.md` + `fix.md` + `checkpoint.md` — melhorias pontuais
+- CLAUDE.md: nova armadilha `toolInput["command"]` vs `["description"]`
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/commands/` — 8 skills atualizadas + 1 nova
+- `CLAUDE.md`, `CHANGELOG.md`, `HANDOVER.md`, `LEARNINGS.md` — docs
+
+---
+
 ## [fix] HITL panel nunca fechava + descrição sempre genérica — 2026-03-05
 
 **Tipo:** fix
