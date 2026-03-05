@@ -33,6 +33,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         false  // Stay alive as menu bar app even when window is closed
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Warn if real (non-synthetic) agents are still running
+        let running = SessionStore.shared.sessions.values
+            .filter { !$0.isSynthetic && $0.status == .running }.count
+        if running > 0 {
+            let alert = NSAlert()
+            alert.messageText = "\(running) agent\(running == 1 ? "" : "s") still running"
+            alert.informativeText = "Claude Code sessions are active. Quit anyway?"
+            alert.addButton(withTitle: "Quit")
+            alert.addButton(withTitle: "Cancel")
+            alert.alertStyle = .warning
+            if alert.runModal() == .alertSecondButtonReturn {
+                return .terminateCancel
+            }
+        }
+
+        // Save terminal snapshots synchronously (all @MainActor, < 100ms)
+        let snapshots = TerminalRegistry.shared.captureAll()
+        for snapshot in snapshots {
+            try? TerminalSnapshotStore.shared.save(
+                projectID: snapshot.projectID,
+                path: snapshot.path,
+                content: snapshot.data
+            )
+        }
+
+        return .terminateNow
+    }
+
     // MARK: - Menu bar
 
     private func setupMenuBar() {

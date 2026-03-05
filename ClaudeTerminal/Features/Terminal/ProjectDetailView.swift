@@ -15,7 +15,7 @@ struct ProjectDetailView: View {
     @State private var currentBranch: String = "—"
     @State private var headerWorktrees: [WorktreeInfo] = []
 
-    private enum ProjectTab: String { case terminal, skills, worktrees }
+    private enum ProjectTab: String { case terminal, skills, worktrees, workflow }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -37,6 +37,10 @@ struct ProjectDetailView: View {
                 }
                 .tabItem { Label("Worktrees", systemImage: "arrow.triangle.branch") }
                 .tag(ProjectTab.worktrees)
+
+                WorkflowGraphView(project: project)
+                    .tabItem { Label("Workflow", systemImage: "point.3.connected.trianglepath.dotted") }
+                    .tag(ProjectTab.workflow)
             }
         }
         .onAppear {
@@ -115,11 +119,38 @@ struct ProjectDetailView: View {
         env["HOME"] = NSHomeDirectory()
         env["CLAUDE_TERMINAL_MANAGED"] = "1"
         let envArray = env.map { "\($0.key)=\($0.value)" }
+
+        // Load snapshot once — delete immediately so it's not shown again unless re-saved on quit.
+        var restoreContent: (data: Data, savedAt: Date)? = nil
+        if let data = TerminalSnapshotStore.shared.load(projectID: project.id, path: path) {
+            let savedAt = snapshotModificationDate(projectID: project.id, path: path)
+            restoreContent = (data: data, savedAt: savedAt)
+            TerminalSnapshotStore.shared.delete(projectID: project.id, path: path)
+        }
+
         return TerminalViewRepresentable(
             executable: "/bin/zsh",
             args: ["-l", "-i", "-c", "cd '\(escaped)' && claude"],
-            environment: envArray
+            environment: envArray,
+            projectID: project.id,
+            path: path,
+            restoreContent: restoreContent
         )
+    }
+
+    /// Returns the modification date of the snapshot file, falling back to now.
+    private func snapshotModificationDate(projectID: UUID, path: String) -> Date {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        var hash: UInt64 = 5381
+        for byte in path.utf8 { hash = hash &* 31 &+ UInt64(byte) }
+        let hashStr = String(hash, radix: 16, uppercase: false)
+        let file = support
+            .appendingPathComponent("ClaudeTerminal/snapshots")
+            .appendingPathComponent(projectID.uuidString)
+            .appendingPathComponent(hashStr)
+            .appendingPathComponent("terminal.dat")
+        let attrs = try? FileManager.default.attributesOfItem(atPath: file.path)
+        return (attrs?[.modificationDate] as? Date) ?? Date()
     }
 
     // MARK: - Helpers

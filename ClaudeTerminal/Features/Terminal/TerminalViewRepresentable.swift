@@ -15,6 +15,9 @@ struct TerminalViewRepresentable: NSViewRepresentable {
     let environment: [String]?
     var initialInput: String? = nil
     var replyRoutingCwd: String? = nil
+    var projectID: UUID? = nil
+    var path: String? = nil
+    var restoreContent: (data: Data, savedAt: Date)? = nil
 
     /// True when running inside the Xcode canvas (set automatically by Xcode 26.3+).
     static var isPreview: Bool {
@@ -56,6 +59,28 @@ struct TerminalViewRepresentable: NSViewRepresentable {
             execName: nil
         )
 
+        // Wire coordinator for snapshot capture
+        context.coordinator.terminalView = tv
+        if let pid = projectID, let p = path {
+            context.coordinator.projectID = pid
+            context.coordinator.path = p
+            TerminalRegistry.shared.register(path: p, projectID: pid, coordinator: context.coordinator)
+        }
+
+        // Restore previous session scrollback if available
+        if let restore = restoreContent {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak tv] in
+                guard let tv else { return }
+                let bytes = [UInt8](restore.data)
+                tv.terminal.feed(buffer: bytes[...])
+                let df = DateFormatter()
+                df.dateStyle = .medium
+                df.timeStyle = .short
+                let divider = "\r\n\u{1B}[2m\u{2500}\u{2500} Session restored \(df.string(from: restore.savedAt)) \u{2500}\u{2500}\u{1B}[0m\r\n\r\n"
+                tv.terminal.feed(text: divider)
+            }
+        }
+
         if let input = initialInput {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak tv] in
                 guard let tv else { return }
@@ -96,11 +121,30 @@ struct TerminalViewRepresentable: NSViewRepresentable {
 
     final class Coordinator: LocalProcessTerminalViewDelegate {
         var inputObserver: NSObjectProtocol?
+        var projectID: UUID?
+        var path: String?
+        weak var terminalView: LocalProcessTerminalView?
 
         deinit {
             if let obs = inputObserver {
                 NotificationCenter.default.removeObserver(obs)
             }
+            if let p = path {
+                Task { @MainActor in TerminalRegistry.shared.unregister(path: p) }
+            }
+        }
+
+        /// Captures the current terminal buffer content, trimming trailing blank lines.
+        @MainActor func captureContent() -> Data? {
+            guard let tv = terminalView else { return nil }
+            let raw = tv.terminal.getBufferAsData()
+            guard var text = String(data: raw, encoding: .utf8) else { return raw }
+            var lines = text.components(separatedBy: "\n")
+            while lines.last?.trimmingCharacters(in: .whitespaces).isEmpty == true {
+                lines.removeLast()
+            }
+            text = lines.joined(separator: "\n")
+            return text.data(using: .utf8)
         }
 
         func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
