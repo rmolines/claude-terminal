@@ -44,6 +44,12 @@ struct ProjectDetailView: View {
                 AgentSession(sessionID: sessionID.uuidString, cwd: project.displayPath, isSynthetic: true)
             )
         }
+        .onChange(of: project.displayPath) { _, newPath in
+            // displayPath changed externally (e.g. cleanup replaced a stale worktree path
+            // with the git root) — restart the PTY in the correct directory.
+            if !FileManager.default.fileExists(atPath: newPath) { return }
+            sessionID = UUID()
+        }
         .task(id: project.displayPath) {
             while !Task.isCancelled {
                 currentBranch = await GitStateService.shared.currentBranch(in: project.displayPath)
