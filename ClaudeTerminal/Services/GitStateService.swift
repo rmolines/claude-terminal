@@ -15,6 +15,14 @@ actor GitStateService {
     static let shared = GitStateService()
     private init() {}
 
+    /// Returns the git root for any path inside a repo (handles worktrees).
+    /// Returns nil if the path is not inside a git repository.
+    func gitRootPath(for directory: String) async -> String? {
+        guard FileManager.default.fileExists(atPath: directory) else { return nil }
+        let output = try? await runGit(args: ["rev-parse", "--show-toplevel"], cwd: directory)
+        return output?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+    }
+
     /// Retorna a branch atual no diretório dado. Retorna "—" em caso de erro.
     func currentBranch(in directory: String) async -> String {
         guard FileManager.default.fileExists(atPath: directory) else { return "—" }

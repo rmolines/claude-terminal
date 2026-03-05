@@ -117,17 +117,23 @@ struct MainView: View {
         panel.title = "Choose Working Directory"
         panel.prompt = "Open"
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        let path = url.path
-        if let existing = projects.first(where: { $0.path == path || $0.displayPath == path }) {
-            selectedProject = existing
-            return
+        let selectedPath = url.path
+        Task {
+            // Use git root as the canonical project identity — so worktrees of
+            // the same repo map to one project, not N separate entries.
+            let rootPath = await GitStateService.shared.gitRootPath(for: selectedPath) ?? selectedPath
+            if let existing = projects.first(where: { $0.path == rootPath }) {
+                existing.displayPath = selectedPath
+                selectedProject = existing
+                return
+            }
+            let name = (rootPath as NSString).lastPathComponent
+            let project = ClaudeProject(name: name, path: rootPath, displayPath: selectedPath)
+            project.sortOrder = projects.count
+            modelContext.insert(project)
+            try? modelContext.save()
+            selectedProject = project
         }
-        let name = url.lastPathComponent
-        let project = ClaudeProject(name: name, path: path, displayPath: path)
-        project.sortOrder = projects.count
-        modelContext.insert(project)
-        try? modelContext.save()
-        selectedProject = project
     }
 
     private func autoSelectProject() {
@@ -147,13 +153,20 @@ struct MainView: View {
                 paths.append(dir)
             }
         }
-        for (index, path) in paths.enumerated() {
-            let name = (path as NSString).lastPathComponent
-            let project = ClaudeProject(name: name, path: path, displayPath: path)
-            project.sortOrder = index
-            modelContext.insert(project)
-        }
-        if !paths.isEmpty {
+        guard !paths.isEmpty else { return }
+        Task {
+            var seenRoots: Set<String> = []
+            var sortOrder = 0
+            for path in paths {
+                let rootPath = await GitStateService.shared.gitRootPath(for: path) ?? path
+                guard !seenRoots.contains(rootPath) else { continue }
+                seenRoots.insert(rootPath)
+                let name = (rootPath as NSString).lastPathComponent
+                let project = ClaudeProject(name: name, path: rootPath, displayPath: path)
+                project.sortOrder = sortOrder
+                sortOrder += 1
+                modelContext.insert(project)
+            }
             try? modelContext.save()
         }
     }
