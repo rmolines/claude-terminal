@@ -310,6 +310,28 @@ git -C "$REPO_ROOT" worktree list | grep "<nome>"
 
 ### 4. Resumo final
 
+**Antes de apresentar o resumo:** se `plan.md` foi lido no Passo 0, usar o campo `## Problema` e os `## Deliverables` para compor o bloco abaixo.
+Se não foi lido, usar o título do PR (Passo 0.5) e o CHANGELOG gerado (Passo 1b) como fonte.
+
+```text
+## O que foi entregue
+
+Feature: <nome>
+PR: #N — <título do PR>
+Data: YYYY-MM-DD
+
+Resumo: <1-2 frases do Problema do plan.md ou do título do PR, em linguagem simples>
+
+O que mudou:
+- <Deliverable 1 concluído — o que o usuário/dev consegue fazer agora>
+- <Deliverable 2 se houver>
+
+Arquivos principais:
+- path/to/file — <o que mudou>
+```
+
+---
+
 ```text
 ✅ Feature encerrada!
 
