@@ -247,6 +247,21 @@ make sync-skills
 
 Se `make sync-skills` não existir: avisar e sugerir verificar o Makefile.
 
+#### 1h. Sync com origin/main antes de commitar docs
+
+Antes de commitar a documentação em main, garantir que o local está atualizado
+com o squash-merge do PR (que já chegou em origin/main):
+
+```bash
+cd "$REPO_ROOT"
+# Stash arquivos unstaged (ex: commands/ editados fora do commit)
+git stash 2>/dev/null || true
+git pull --rebase origin main
+git stash pop 2>/dev/null || true
+```
+
+Se o rebase tiver conflito: listar e pedir orientação ao usuário — não forçar.
+
 ### 2. Remover worktree e branch local
 
 **ASSERT antes de prosseguir:** confirmar que a sessao atual nao esta dentro da worktree a ser removida.
