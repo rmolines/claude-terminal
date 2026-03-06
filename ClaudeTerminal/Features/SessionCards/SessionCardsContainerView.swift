@@ -81,11 +81,15 @@ struct SessionCardsContainerView: View {
     // MARK: - Session filtering
 
     private func activeSessions(for project: ClaudeProject) -> [AgentSession] {
-        SessionStore.shared.sessions.values
+        // Real sessions that haven't sent an event in 15 minutes are likely stale (process killed
+        // without a Stop hook). Synthetic sessions (idle terminal tabs) are always shown.
+        let staleThreshold = Date().addingTimeInterval(-15 * 60)
+        return SessionStore.shared.sessions.values
             .filter { session in
                 session.status != .completed &&
                 session.status != .blocked &&
-                (session.cwd.hasPrefix(project.path) || session.cwd.hasPrefix(project.displayPath))
+                (session.cwd.hasPrefix(project.path) || session.cwd.hasPrefix(project.displayPath)) &&
+                (session.isSynthetic || session.lastEventAt > staleThreshold)
             }
             .sorted { $0.startedAt < $1.startedAt }
     }
