@@ -11,6 +11,61 @@ feature completa por item, sem perder rastreabilidade por commit.
 
 ---
 
+## Deteccao de flag
+
+Se `$ARGUMENTS` comeca com `--close`:
+
+```bash
+BRANCH=$(git branch --show-current)
+if [[ "$BRANCH" != chore/polish-* ]]; then
+  echo "Branch atual nao e de polish: $BRANCH"
+  exit 1
+fi
+REPO_ROOT=$(git worktree list | head -1 | awk '{print $1}')
+if [ -z "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT" ]; then
+  echo "ERRO: nao foi possivel determinar REPO_ROOT. Abortando."
+  exit 1
+fi
+```
+
+**Fluxo `--close`:**
+
+**Passo A** — Atualizar `backlog.json`: `status: "merged"` para o registro cujo `branch` bate com o atual:
+
+```bash
+BACKLOG="$REPO_ROOT/.claude/backlog.json"
+if [ -f "$BACKLOG" ] && command -v jq >/dev/null; then
+  jq --arg branch "$BRANCH" \
+     '.chores |= map(if .branch == $branch then . + {status: "merged"} else . end)' \
+     "$BACKLOG" > "$BACKLOG.tmp" && mv "$BACKLOG.tmp" "$BACKLOG"
+fi
+```
+
+**Passo B** — Deletar branch local: `git branch -D "$BRANCH"`
+
+**Passo C** — Deletar branch remota via `gh`:
+
+```bash
+REMOTE_URL=$(git remote get-url origin)
+OWNER=$(echo "$REMOTE_URL" | sed -E 's|.*[:/]([^/]+)/[^/]+\.git|\1|')
+REPO=$(echo "$REMOTE_URL" | sed -E 's|.*[:/][^/]+/([^/]+)(\.git)?$|\1|')
+gh api -X DELETE "repos/$OWNER/$REPO/git/refs/heads/$BRANCH"
+```
+
+**Passo D** — Confirmar:
+
+```text
+Sessao de polish fechada.
+Branch $BRANCH removida (local + remota).
+backlog.json atualizado: status = merged.
+```
+
+**Encerrar aqui — nao continuar para o fluxo normal.**
+
+Se `$ARGUMENTS` nao comeca com `--close`: prosseguir para o Passo 1 normalmente.
+
+---
+
 ## Quando usar vs. alternativas
 
 | Situação | Skill certa |
@@ -169,10 +224,33 @@ Rodar em background (`run_in_background=true`):
 <BUILD_CMD do CLAUDE.md>   # ex: swift build, npm run build, make build
 ```
 
+Se o projeto tiver suite de testes, rodar tambem em background:
+
+```bash
+<TEST_CMD do CLAUDE.md>   # ex: swift test, npm test, make test
+```
+
 Enquanto aguarda: exibir resumo de arquivos modificados.
 
-- ✅: prosseguir para Passo 6
-- ❌: exibir erro completo, corrigir, repetir — não avançar com build quebrado
+- ✅: prosseguir para Passo 5b
+- ❌: exibir erro completo, corrigir, repetir — nao avançar com build quebrado
+
+### Passo 5b — Checklist de testes manuais (UI)
+
+Se algum item da sessao tocou arquivos `*View.swift`, `*Screen.swift` ou mencionou SwiftUI:
+
+Usar `RenderPreview` do Xcode MCP para cada view modificada:
+
+- Se MCP disponivel: renderizar preview e confirmar layout antes de abrir PR
+- Se MCP nao disponivel: exibir aviso e listar checklist manual:
+
+```text
+[MCP nao disponivel] Confirmar manualmente antes de abrir PR:
+- [ ] <view modificada> — aparencia correta
+- [ ] Dark mode sem quebras de layout
+```
+
+Aguardar confirmacao do usuario antes de prosseguir para o Passo 6.
 
 ---
 
@@ -217,6 +295,40 @@ Exibir URL do PR ao criar.
 
 **Importante:** Ao mergear, usar `mergeMethod: "merge"` (não `"squash"`) para preservar
 os micro-commits individuais no histórico do main.
+
+### Passo 6b — Registrar no backlog.json
+
+Apos criar o PR, capturar `number` e `html_url` do response de `create_pull_request`.
+
+```bash
+REPO_ROOT=$(git worktree list | head -1 | awk '{print $1}')
+BACKLOG="$REPO_ROOT/.claude/backlog.json"
+DATE=$(date +%Y-%m-%d)
+BRANCH=$(git branch --show-current)
+# PR_NUMBER e PR_URL: capturar do response do MCP create_pull_request
+# ITEMS_JSON e SKIPPED_JSON: arrays JSON construidos a partir dos itens do Passo 4
+# Exemplo: ITEMS_JSON='["Fix X","Refactor Y"]'  SKIPPED_JSON='[]'
+if [ -f "$BACKLOG" ] && command -v jq >/dev/null; then
+  ENTRY=$(jq -n \
+    --arg id      "polish-$DATE-$BRANCH" \
+    --arg type    "polish" \
+    --arg date    "$DATE" \
+    --arg branch  "$BRANCH" \
+    --argjson pr  "$PR_NUMBER" \
+    --arg url     "$PR_URL" \
+    --arg status  "open" \
+    --argjson items   "$ITEMS_JSON" \
+    --argjson skipped "$SKIPPED_JSON" \
+    '{id:$id, type:$type, date:$date, branch:$branch, prNumber:$pr, prUrl:$url,
+      status:$status, items:$items, skipped:$skipped}')
+  jq --argjson entry "$ENTRY" \
+     '. + {chores: ((.chores // []) + [$entry])}' \
+     "$BACKLOG" > "$BACKLOG.tmp" && mv "$BACKLOG.tmp" "$BACKLOG"
+fi
+```
+
+`(.chores // [])` e null-safe — funciona mesmo antes da key existir no backlog.
+Se `jq` nao estiver disponivel, pular silenciosamente (nao bloquear o fluxo).
 
 ---
 
