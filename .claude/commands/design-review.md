@@ -19,26 +19,6 @@ Antes de qualquer análise, leia o `CLAUDE.md` e extraia:
 - **Ferramenta de preview visual** — procure por Storybook, RenderPreview, live reload,
   screenshot CI ou equivalente → `{{VISUAL_PREVIEW_CMD}}`
 
-**Preflight MCP** (executar quando `{{VISUAL_PREVIEW_CMD}}` depende de Xcode MCP, ex: `RenderPreview`):
-
-Tentar `ListMcpResourcesTool` para verificar se o servidor Xcode MCP está conectado.
-
-- Se conectado (retorna recursos do servidor Xcode): prosseguir normalmente, `MCP_AVAILABLE = true`
-- Se falhar ou retornar lista vazia de recursos Xcode:
-
-```text
-[SEM MCP] Xcode MCP nao esta conectado nesta sessao.
-RenderPreview nao esta disponivel — revisao visual bloqueada para todas as views.
-
-Para reconectar: feche esta sessao (/clear ou nova janela), abra Package.swift no Xcode,
-e inicie uma nova sessao do Claude Code.
-(Nota: /clear destroi conexoes MCP irreversivelmente — sem reconnect mid-session.)
-
-Continuar revisao somente de codigo, sem render? [sim/nao]
-```
-
-Aguardar resposta antes de continuar. Se "nao": encerrar. Se "sim": continuar com `MCP_AVAILABLE = false`.
-
 Se o `CLAUDE.md` não listar spec files de UX:
 
 ```text
@@ -274,10 +254,24 @@ Opcoes:
 
 Aguardar decisão do dev antes de prosseguir.
 
-Se **existir preview** e **MCP_AVAILABLE = true:** executar `{{VISUAL_PREVIEW_CMD}}` e aguardar resultado visual.
+Se **existir preview:** tentar `{{VISUAL_PREVIEW_CMD}}` (ex: `RenderPreview`).
 
-Se **existir preview** mas **MCP_AVAILABLE = false:** pular render; continuar revisão somente de código.
-Anotar no relatório: `RenderPreview: indisponivel (Xcode MCP nao conectado — ver Preflight MCP)`.
+- Se **suceder**: exibir resultado visual e prosseguir normalmente.
+- Se **falhar com erro de MCP** (ferramenta indisponivel, servidor nao conectado, ou similar):
+
+```text
+[SEM MCP] RenderPreview falhou — Xcode MCP nao esta conectado nesta sessao.
+Revisao visual bloqueada para todas as views restantes.
+
+Para reconectar: feche esta sessao, abra Package.swift no Xcode,
+e inicie uma nova sessao do Claude Code.
+(/clear destroi conexoes MCP — nao ha reconnect mid-session.)
+
+Continuar revisao somente de codigo? [sim/nao]
+```
+
+Aguardar resposta. Se "nao": encerrar. Se "sim": pular render em todas as views restantes e anotar
+`RenderPreview: indisponivel (Xcode MCP nao conectado)` no relatório.
 
 ### Passo 2 — Checklist de padrões
 

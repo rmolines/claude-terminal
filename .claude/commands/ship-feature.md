@@ -70,15 +70,14 @@ Aguardar resposta. Se "continuar": prosseguir normalmente (não é bloqueante).
 
 ### 0.5. Verificação local (HARD GATE)
 
-Antes de qualquer commit ou push, verificar disponibilidade do Xcode MCP e rodar o build:
+Antes de qualquer commit ou push, rodar build e testes:
 
-**Preflight MCP:** Tentar `ListMcpResourcesTool` para verificar se o servidor Xcode MCP está conectado.
+**Build:** Tentar `BuildProject` (Xcode MCP) para saída estruturada de erros.
 
-- Se conectado (`MCP_AVAILABLE = true`): usar `BuildProject` para build com saída estruturada de erros.
-- Se não conectado (`MCP_AVAILABLE = false`): usar `{{BUILD_CMD}}` como fallback.
-  Emitir aviso antes de rodar: `[SEM MCP] Xcode MCP nao conectado — usando {{BUILD_CMD}} (saida menos estruturada).`
-
-Rodar também:
+- Se **suceder**: usar o resultado do `BuildProject`.
+- Se **falhar com erro de MCP** (ferramenta indisponivel, servidor nao conectado):
+  Emitir `[SEM MCP] Xcode MCP nao conectado — usando {{BUILD_CMD}} (saida menos estruturada).`
+  Rodar `{{BUILD_CMD}}` como fallback.
 
 ```bash
 {{TEST_CMD}}     # ex: npm test, swift test, make test
