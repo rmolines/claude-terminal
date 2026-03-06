@@ -9,11 +9,13 @@
 **PR:** N/A (feature global, fora do repo) · **Complexidade:** média
 
 ### O que mudou
+
 Hook de SessionStart que compara `~/.claude/commands/` com o `rmolines/claude-kickstart` remoto
 a cada sessão startup. Detecta arquivos modificados, faltando localmente ou deletados no upstream.
 Notifica via macOS notification e injeta contexto plain text para o Claude.
 
 ### Detalhes técnicos
+
 - `~/.claude/hooks/session-start-freshness.sh` — git fetch + hash comparison (shasum -a 256) por arquivo
 - `~/.claude/settings.json` — entrada `SessionStart` com `matcher: "startup"` (escrita atômica via mktemp + os.replace)
 - Timeout de 3s no fetch via subshell + kill (sem `timeout` command no macOS)
@@ -21,11 +23,13 @@ Notifica via macOS notification e injeta contexto plain text para o Claude.
 - osascript notification para visibilidade garantida (stderr de hooks não aparece no terminal)
 
 ### Impacto
+
 - **Breaking:** Não
 - Notificação macOS ao iniciar sessão quando há drift
 - Claude vê o drift no contexto e menciona proativamente
 
 ### Arquivos-chave
+
 - `~/.claude/hooks/session-start-freshness.sh` — script principal
 - `~/.claude/settings.json` — hook registrado em `hooks.SessionStart`
 

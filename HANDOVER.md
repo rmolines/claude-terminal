@@ -7,6 +7,7 @@ Newest entries at the top.
 ## 2026-03-06 — skill-freshness-check
 
 ### O que foi feito
+
 Hook global de SessionStart que detecta drift entre `~/.claude/commands/` e o repositório
 `rmolines/claude-kickstart` a cada sessão startup.
 
@@ -15,6 +16,7 @@ Hook global de SessionStart que detecta drift entre `~/.claude/commands/` e o re
 - `~/.claude/settings.json` — entrada `SessionStart` com `matcher: "startup"` adicionada atomicamente
 
 ### Decisões tomadas
+
 - **Plain text stdout** em vez de `hookSpecificOutput` JSON — Claude Code reporta "hook error" quando
   o SessionStart hook retorna JSON (não é um formato suportado para esse evento)
 - **sem `set -euo pipefail`** — causa crashes silenciosos em scripts de hook; substituído por
@@ -26,12 +28,14 @@ Hook global de SessionStart que detecta drift entre `~/.claude/commands/` e o re
 - **Sem worktree** — feature é 100% global, sem código Swift modificado
 
 ### Armadilhas encontradas
+
 1. `hookSpecificOutput` JSON não é suportado em SessionStart — reporta "hook error" mesmo com exit 0
 2. Stderr de hooks não aparece no terminal mesmo com hook síncrono (não-async)
 3. `set -euo pipefail` + `[ ] && cmd` em scripts de hook = crash silencioso
 4. `async: true` em SessionStart descarta stderr completamente (background sem terminal)
 
 ### Próximos passos
+
 - Rodar `git -C ~/git/claude-kickstart pull && sync-skills` para resolver o drift atual
 - Feature é notify-only — sem auto-update por design
 
