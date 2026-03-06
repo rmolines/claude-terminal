@@ -2,6 +2,38 @@
 
 ---
 
+## [feat] Kanban tab — visão kanban read-only do backlog.json — 2026-03-06
+
+**Tipo:** feat
+**Tags:** ui, kanban, backlog, workflow, swiftui
+**PR:** [#60](https://github.com/rmolines/claude-terminal/pull/60) · **Complexidade:** média
+
+### O que mudou
+
+Nova aba "Kanban" no `ProjectDetailView`: exibe features do `backlog.json` em 3 colunas
+(Todo / Doing / Done) agrupadas por milestone, com auto-refresh a cada 30s. O app é
+somente leitura — skills continuam sendo o editor canônico do JSON.
+
+### Detalhes técnicos
+
+- `BacklogKanbanModels.swift`: structs Decodable independentes (`KanbanMilestone`,
+  `KanbanFeature`, `KanbanBacklogFile`, `KanbanReader`) — não toca `WorkflowStateReader`
+- Novos campos opcionais (`labels`, `sortOrder`, `updatedAt`) — backward-compatible
+- `FlowLayout` custom (SwiftUI Layout protocol) para wrapping de chips de labels
+- Poll 30s via `.task { while !Task.isCancelled { ... } }` — padrão do WorkflowGraphView
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/Kanban/BacklogKanbanModels.swift` — data layer
+- `ClaudeTerminal/Features/Kanban/KanbanView.swift` — UI (colunas, cards, FlowLayout)
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift` — enum case + tab item
+
+---
+
 ## [fix] kickstart-dirty-guard — pre-flight check antes de sync/propagação — 2026-03-06
 
 **Tipo:** fix

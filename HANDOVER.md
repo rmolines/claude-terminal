@@ -925,3 +925,32 @@ Lista auto-trigger skills (`~/.claude/skills/`), global commands (`~/.claude/com
 - `ClaudeTerminal/Features/Dashboard/DashboardView.swift` — botão + sheet
 
 **Próximos passos possíveis:** mostrar o trigger condition de skills auto-trigger; abrir o arquivo da skill no Finder ao clicar.
+
+## 2026-03-06 — delivery-event-log / Kanban tab (PR #60)
+
+**O que foi feito:** Adicionada aba Kanban read-only ao `ProjectDetailView`. Mostra features
+do `backlog.json` em 3 colunas (Todo/Doing/Done), agrupadas por milestone com headers,
+auto-refresh a cada 30s. O app é somente leitura — skills continuam editando o JSON.
+
+**Decisões técnicas:**
+- `BacklogKanbanModels.swift` criado como camada de dados independente — `WorkflowStateReader`
+  não foi tocado para evitar risco de regressão no WorkflowGraphView
+- Novos campos (`labels`, `sortOrder`, `updatedAt`) são opcionais com default nil — backward-compatible;
+  `backlog.json` em disco não precisou de migração
+- `FlowLayout` custom (SwiftUI Layout protocol) para wrapping de chips de labels
+- Poll 30s via `.task { while !Task.isCancelled { sleep; reload } }` — padrão estabelecido
+  pelo WorkflowGraphView; file watching nativo ficou fora do escopo v1
+- `project.path` (git root) em vez de `project.displayPath` (cwd atual) — correto para
+  encontrar `.claude/backlog.json` independente de qual worktree está ativa
+
+**Armadilhas encontradas:**
+- `ForEach(grouped, id: \.milestone?.id ?? "__unknown")` não compila — `??` não funciona
+  em KeyPath context. Fix: `ForEach(Array(grouped.enumerated()), id: \.offset)`
+
+**Arquivos-chave:**
+- `ClaudeTerminal/Features/Kanban/BacklogKanbanModels.swift` — structs + KanbanReader
+- `ClaudeTerminal/Features/Kanban/KanbanView.swift` — view principal, colunas, cards, FlowLayout
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift` — +1 enum case, +1 tab item
+
+**Próximos passos possíveis:** file watching nativo (FSEvents) para refresh instantâneo;
+mostrar milestone ativo com destaque visual; card click → abre terminal na branch da feature.
