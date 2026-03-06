@@ -19,6 +19,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
+        // Close extra windows restored by macOS state restoration — this is a single-window app.
+        // WindowGroup allows macOS to reopen all windows from the previous session; we want only one.
+        DispatchQueue.main.async {
+            let mainWindows = NSApp.windows.filter { !($0 is NSPanel) }
+            mainWindows.dropFirst().forEach { $0.close() }
+        }
+
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: self,

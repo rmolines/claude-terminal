@@ -52,8 +52,11 @@ public struct AgentEvent: Codable, Sendable {
     /// True when the Claude Code session was spawned by Claude Terminal (CLAUDE_TERMINAL_MANAGED=1 in PTY env).
     /// False for sessions started externally (e.g. iTerm). Nil from older helper versions = treated as external.
     public let isManagedByApp: Bool?
+    /// Tool name forwarded from the Claude Code hook payload (e.g. "Bash", "Write", "Edit").
+    /// Non-nil only for permissionRequest and bashToolUse events.
+    public let toolName: String?
 
-    public init(sessionID: String, type: AgentEventType, cwd: String, detail: String? = nil, tokenUsage: TokenUsage? = nil, isManagedByApp: Bool? = nil) {
+    public init(sessionID: String, type: AgentEventType, cwd: String, detail: String? = nil, tokenUsage: TokenUsage? = nil, isManagedByApp: Bool? = nil, toolName: String? = nil) {
         self.sessionID = sessionID
         self.type = type
         self.cwd = cwd
@@ -61,6 +64,7 @@ public struct AgentEvent: Codable, Sendable {
         self.detail = detail
         self.tokenUsage = tokenUsage
         self.isManagedByApp = isManagedByApp
+        self.toolName = toolName
     }
 }
 

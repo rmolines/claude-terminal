@@ -56,13 +56,15 @@ final class HookHandler: @unchecked Sendable {
             detail = nil
         }
         let isManagedByApp = ProcessInfo.processInfo.environment["CLAUDE_TERMINAL_MANAGED"] == "1"
+        let forwardToolName = (eventType == .permissionRequest || eventType == .bashToolUse) ? payload.toolName : nil
         let event = AgentEvent(
             sessionID: payload.sessionID,
             type: eventType,
             cwd: payload.cwd,
             detail: detail,
             tokenUsage: payload.usage,
-            isManagedByApp: isManagedByApp
+            isManagedByApp: isManagedByApp,
+            toolName: forwardToolName
         )
 
         if eventType == .permissionRequest {
