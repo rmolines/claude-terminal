@@ -52,8 +52,10 @@ struct SessionCardView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(2)
                 .truncationMode(.tail)
-        } else if session.recentMessages.isEmpty {
-            Text("Idle")
+        } else {
+            // Synthetic = terminal open with no Claude Code running yet.
+            // Real session = Claude is active but hasn't used a tool (e.g. pure conversation).
+            Text(session.isSynthetic ? "Idle" : "Running…")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
