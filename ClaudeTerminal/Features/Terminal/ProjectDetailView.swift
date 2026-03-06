@@ -21,7 +21,7 @@ struct ProjectDetailView: View {
     @State private var currentBranch: String = "—"
     @State private var headerWorktrees: [WorktreeInfo] = []
 
-    private enum ProjectTab: String { case terminal, skills, worktrees, workflow, kanban }
+    private enum ProjectTab: String { case terminal, skills, worktrees, workflow, kanban, sessions }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,6 +51,10 @@ struct ProjectDetailView: View {
                 KanbanView(projectPath: project.path)
                     .tabItem { Label("Kanban", systemImage: "rectangle.split.3x1") }
                     .tag(ProjectTab.kanban)
+
+                WorkSessionPanelView(rootDirectory: project.displayPath)
+                    .tabItem { Label("Sessions", systemImage: "square.stack.3d.up") }
+                    .tag(ProjectTab.sessions)
             }
         }
         .onAppear {

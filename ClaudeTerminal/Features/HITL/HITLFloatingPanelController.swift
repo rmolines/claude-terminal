@@ -44,6 +44,16 @@ final class HITLFloatingPanelController {
             .filter { $0.status == .awaitingInput }
             .sorted { $0.lastEventAt < $1.lastEventAt }
 
+        // Suppress floating panel when the Sessions tab has inline HITL buttons visible.
+        // WorkSessionService.workSessions is non-empty only when a project is open and
+        // the service has a root directory — i.e. the Sessions tab has been shown.
+        let hasInlineHITL = WorkSessionService.shared.workSessions.contains { $0.urgency == .hitlPending }
+        if hasInlineHITL {
+            panelState.pendingItems = []
+            panel.orderOut(nil)
+            return
+        }
+
         // Rebuild the items list — SwiftUI diffs ForEach by sessionID, so only changed items re-render.
         panelState.pendingItems = pendingSessions.map { session in
             let description = session.currentActivity ?? "Agent at \(session.cwd) awaiting approval"
