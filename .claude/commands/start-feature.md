@@ -444,6 +444,17 @@ git worktree list | tail -n +2 | wc -l
 
 Se ≥ 5: emitir aviso e aguardar confirmação do usuário antes de prosseguir.
 
+**ASSERT antes de prosseguir:** confirmar que a branch não existe no remote antes de criar a worktree.
+
+```bash
+git ls-remote --heads origin worktree-<nome>
+```
+
+- Se retornar output (branch já existe no remote): **PARAR** e perguntar ao usuário — pode ser uma worktree de sessão anterior. Opções: retomar a branch existente ou criar com nome diferente.
+- Se retornar vazio: prosseguir normalmente.
+
+**Se a branch ja existir no remote: PARAR e reportar ao usuario.**
+
 Criar: `EnterWorktree name=<nome>`
 
 ### Passo C.4 — Atualizar backlog.json

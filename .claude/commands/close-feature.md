@@ -40,6 +40,22 @@ Se não encontrado: perguntar ao usuário o número ou pular o update de backlog
 
 ### 1. Atualizar documentação
 
+**ASSERT antes de prosseguir:** confirmar REPO_ROOT antes de qualquer write de documentação.
+Executar este bloco primeiro e parar se falhar:
+
+```bash
+REPO_ROOT=$(git worktree list | head -1 | awk '{print $1}')
+if [ -z "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT" ]; then
+  echo "ERRO: nao foi possivel determinar REPO_ROOT. Abortando."
+  exit 1
+fi
+echo "REPO_ROOT confirmado: $REPO_ROOT"
+```
+
+**Se REPO_ROOT falhar: PARAR e reportar ao usuario antes de qualquer write.**
+
+Usar `$REPO_ROOT/` como prefixo em todos os paths de documentacao dos passos abaixo.
+
 Execute cada item em sequência:
 
 #### 1a. HANDOVER.md
@@ -48,11 +64,11 @@ Gerar entrada com:
 - Data atual (`YYYY-MM-DD`)
 - O que foi feito, decisões tomadas, armadilhas encontradas, próximos passos, arquivos-chave
 
-Fazer append em `HANDOVER.md` na raiz do projeto (criar se não existir).
+Fazer append em `$REPO_ROOT/HANDOVER.md` (criar se não existir).
 
 #### 1b. CHANGELOG.md — prepend no topo
 
-Gerar entrada no `CHANGELOG.md` (raiz do repo). Criar o arquivo se não existir.
+Gerar entrada em `$REPO_ROOT/CHANGELOG.md`. Criar o arquivo se não existir.
 
 **Coletar dados necessários:**
 - Ler `.claude/feature-plans/<nome>/plan.md` (se existir) para contexto
@@ -136,7 +152,7 @@ git -C "$REPO_ROOT" push origin main
 
 #### 1d. LEARNINGS.md (se houver novidades)
 
-Verificar se `{{LEARNINGS_PATH}}` existe no projeto.
+Verificar se `$REPO_ROOT/LEARNINGS.md` existe no projeto.
 
 **Você** decide se algo desta sessão vale registrar — não pergunte ao usuário.
 Critério: algo não documentado que causou surpresa, ou que seria útil em situações futuras.
@@ -154,14 +170,14 @@ Se não houver nada novo: pular sem perguntar.
 **Você** decide se houve armadilha nova — não pergunte ao usuário.
 Critério: problema não-óbvio que outro agente cometeria no mesmo contexto.
 
-Se sim: propor ao usuário e, com aprovação, adicionar à tabela de armadilhas no CLAUDE.md.
+Se sim: propor ao usuário e, com aprovação, adicionar à tabela de armadilhas em `$REPO_ROOT/CLAUDE.md`.
 Se não houver nada novo: pular sem perguntar.
 
 #### 1f. backlog.json (se existir)
 
 ```bash
 command -v jq >/dev/null || { echo "jq não encontrado — pular update de backlog.json (brew install jq para habilitar)"; }
-BACKLOG=".claude/backlog.json"
+BACKLOG="$REPO_ROOT/.claude/backlog.json"
 if [ -f "$BACKLOG" ] && command -v jq >/dev/null; then
   TODAY=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   jq --arg id "<nome>" \
@@ -239,10 +255,19 @@ Se `make sync-skills` não existir: avisar e sugerir verificar o Makefile.
 
 ### 2. Remover worktree e branch local
 
+**ASSERT antes de prosseguir:** confirmar que a sessao atual nao esta dentro da worktree a ser removida.
+
 ```bash
 REPO_ROOT=$(git worktree list | head -1 | awk '{print $1}')
 WORKTREE_PATH="$REPO_ROOT/.claude/worktrees/<nome>"
+CURRENT_DIR=$(pwd)
+if [[ "$CURRENT_DIR" == "$WORKTREE_PATH"* ]]; then
+  echo "ERRO: sessao atual esta dentro da worktree a ser removida. Saia da worktree antes de continuar."
+  exit 1
+fi
 ```
+
+**Se CWD estiver dentro da worktree: PARAR e reportar ao usuario.**
 
 Verificar se a worktree existe:
 ```bash
