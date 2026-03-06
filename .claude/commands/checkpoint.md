@@ -116,7 +116,9 @@ Para novas assunções mencionadas pelo usuário que não constavam no plan.md: 
 
 Se o usuário identificou drift de escopo: adicionar nota na seção `## Problema` do plan.md com prefixo `<!-- checkpoint-N: ... -->`.
 
-Se o usuário mencionar que uma questão aberta foi resolvida ou refutada: mover o item do bucket "Resolver antes de começar" ou "A implementação vai responder" para um novo bucket `**Resolvidas neste checkpoint:**` na seção `## Questões abertas` do plan.md. Não inferir resolução — só mover se o usuário mencionar explicitamente.
+Se o usuário mencionar que uma questão aberta foi resolvida ou refutada: mover o item do bucket "Resolver antes de começar" ou
+"A implementação vai responder" para um novo bucket `**Resolvidas neste checkpoint:**` na seção `## Questões abertas` do plan.md.
+Não inferir resolução — só mover se o usuário mencionar explicitamente.
 
 ### 6b — Registrar em checkpoints.md
 
