@@ -2,6 +2,34 @@
 
 ---
 
+## [improvement] Delivery summary no /close-feature — 2026-03-06
+
+**Tipo:** improvement
+**Tags:** skills, workflow, developer-experience
+**PR:** [#61](https://github.com/rmolines/claude-terminal/pull/61) [#62](https://github.com/rmolines/claude-terminal/pull/62) · **Complexidade:** simples
+
+### O que mudou
+
+`/close-feature` Step 4 agora exibe um bloco "O que foi entregue" antes do checklist de
+documentação: resumo da feature, o que mudou e arquivos principais — extraídos do `plan.md`
+ou do título do PR. Também sincroniza `checkpoint.md` do upstream kickstart.
+
+### Detalhes técnicos
+
+- `.claude/commands/close-feature.md`: Step 4 reescrito com template de delivery summary
+- `.claude/commands/checkpoint.md`: sincronizado do kickstart (c511012)
+- Propagado para `rmolines/claude-kickstart` PR #26
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/commands/close-feature.md` — Step 4 com delivery summary block
+
+---
+
 ## [feat] Kanban tab — visão kanban read-only do backlog.json — 2026-03-06
 
 **Tipo:** feat

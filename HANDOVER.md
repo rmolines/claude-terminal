@@ -4,6 +4,49 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — close-feature delivery summary + HITL crash root cause
+
+**Branch:** `chore/skills-close-feature-delivery-summary` → PRs #61 + #62 (merged)
+
+### O que foi feito
+
+1. **Delivery summary no `/close-feature`**: Step 4 agora exibe um bloco "O que foi entregue"
+   antes do checklist de documentação — campo `Resumo`, `O que mudou` e `Arquivos principais`
+   populados a partir do `plan.md` da feature ou do título do PR.
+2. **Sync de skills do kickstart**: `checkpoint.md` sincronizado do upstream (c511012).
+   `SYNC_VERSION` atualizado.
+3. **Debug de crash em produção**: Investigação de `EXC_BREAKPOINT` em
+   `_postWindowNeedsUpdateConstraints` no HITL panel. Identificado segundo gatilho além
+   do `rootView =` conhecido: `sizingOptions = [.minSize]` + `@Observable` state mutation
+   causa re-entrância durante `NSDisplayCycleFlush`. CLAUDE.md e MEMORY.md atualizados
+   com a análise completa.
+
+### Decisões técnicas
+
+- Delivery summary foi propagado para o kickstart (PR #26 no `rmolines/claude-kickstart`)
+- Para o crash HITL: código revertido pelo usuário (investigação apenas) — fix documentado
+  mas não aplicado nesta sessão
+
+### Armadilhas encontradas
+
+- Ver tabela em CLAUDE.md: `NSHostingView` + layout cycle — segundo gatilho confirmado:
+  `sizingOptions = [.minSize]` é suficiente para disparar o crash independente de `rootView =`
+
+### Próximos passos possíveis
+
+- Aplicar o fix do crash HITL: `frame(width: 400, height: 140)` + remover `.minSize`
+- Fechar worktrees stale: `skill-handoff-context` (PR #59 já mergeado)
+- `ship-close-skill-remaining-gaps` explore.md ainda ativo — feature de robustez de skills pendente
+
+### Arquivos-chave
+
+- `.claude/commands/close-feature.md` — Step 4 com delivery summary
+- `.claude/commands/checkpoint.md` — sincronizado do kickstart
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — crash análise
+- `ClaudeTerminal/Features/HITL/HITLPanelView.swift` — crash análise
+
+---
+
 ## 2026-03-06 — kickstart-dirty-guard (PR #58)
 
 **O que foi feito:** Adicionado pre-flight check em `close-feature.md` e `sync-skills.md` para detectar
