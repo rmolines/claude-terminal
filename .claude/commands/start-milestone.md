@@ -25,6 +25,32 @@ e prepara o terreno para o `/start-feature` saber exatamente o que executar em s
 **4. Carregue o roadmap:**
 Leia `.claude/feature-plans/<projeto>/roadmap.md`. Se não existir:
 
+**5. Verifique se você está no repo certo:**
+
+```bash
+REPO_NAME=$(git rev-parse --show-toplevel 2>/dev/null | xargs basename)
+```
+
+- Se `$REPO_NAME` == slug do projeto → prosseguir normalmente
+- Se diferente → emitir aviso e aguardar confirmação:
+
+  ```text
+  ⚠️  Repo atual: <repo-atual>
+      Projeto do roadmap: <projeto>
+
+  Se '<projeto>' é um repo separado, você está no repo errado.
+  Worktrees serão criadas em '<repo-atual>' — provavelmente não é o que você quer.
+
+  Opções:
+  a) Ctrl+C → cd ~/git/<projeto> → /start-milestone M1 (recomendado)
+  b) Continuar mesmo assim → artefatos ficam em '<repo-atual>'
+
+  Confirme: [a/b]
+  ```
+
+**6. Carregue o roadmap (continuação do passo 4):**
+(este passo é a continuação do passo 4 acima — execute após o check do repo)
+
 - Verificar se `.claude/backlog.json` existe:
   - Se sim: ler e listar milestones com `"status": "pending"` ou `"status": "active"` como alternativa ao roadmap
   - Informar ao usuário e perguntar se quer prosseguir com backlog.json ou primeiro criar o roadmap
