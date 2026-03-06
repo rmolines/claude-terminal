@@ -15,6 +15,8 @@ struct ProjectDetailView: View {
     @State private var terminalRevision: [String: UUID] = [:]
     /// Paths where the PTY process has exited — shows "session ended" overlay.
     @State private var deadPaths: Set<String> = []
+    /// Initial input to inject once per path — consumed on first terminal creation; cleared on restart.
+    @State private var pendingInitialInput: [String: String] = [:]
     @State private var selectedTab: ProjectTab = .terminal
     @State private var currentBranch: String = "—"
     @State private var headerWorktrees: [WorktreeInfo] = []
@@ -34,10 +36,10 @@ struct ProjectDetailView: View {
                     .tabItem { Label("Skills", systemImage: "bolt.horizontal") }
                     .tag(ProjectTab.skills)
 
-                WorktreesView(rootDirectory: project.displayPath) { path in
+                WorktreesView(rootDirectory: project.displayPath) { path, initialInput in
                     selectedTab = .terminal
                     project.displayPath = path
-                    openPath(path)
+                    openPath(path, initialInput: initialInput)
                 }
                 .tabItem { Label("Worktrees", systemImage: "arrow.triangle.branch") }
                 .tag(ProjectTab.worktrees)
@@ -140,6 +142,7 @@ struct ProjectDetailView: View {
                     .foregroundStyle(.primary)
                 Button("Restart") {
                     deadPaths.remove(path)
+                    pendingInitialInput.removeValue(forKey: path)
                     terminalRevision[path] = UUID()
                 }
                 .buttonStyle(.borderedProminent)
@@ -170,6 +173,7 @@ struct ProjectDetailView: View {
             executable: "/bin/zsh",
             args: ["-l", "-i", "-c", "cd '\(escaped)' && claude"],
             environment: envArray,
+            initialInput: pendingInitialInput[path],
             projectID: project.id,
             path: path,
             restoreContent: restoreContent,
@@ -201,14 +205,18 @@ struct ProjectDetailView: View {
     private func restartCurrentTerminal() {
         let path = project.displayPath
         deadPaths.remove(path)
+        pendingInitialInput.removeValue(forKey: path)
         // Bump the revision — SwiftUI will destroy the old terminal view (closing the PTY)
         // and create a new one. No snapshot is saved, so the new session starts clean.
         terminalRevision[path] = UUID()
     }
 
-    private func openPath(_ path: String) {
+    private func openPath(_ path: String, initialInput: String? = nil) {
         if !openedPaths.contains(path) {
             openedPaths.append(path)
+        }
+        if let input = initialInput, !input.isEmpty {
+            pendingInitialInput[path] = input
         }
         SessionStore.shared.update(
             AgentSession(sessionID: "synthetic-\(path)", cwd: path, isSynthetic: true)
