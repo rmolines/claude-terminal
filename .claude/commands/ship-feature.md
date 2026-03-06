@@ -182,7 +182,19 @@ Com base no `plan.md` (passo 0), verificar cada item antes de mergear:
 - `git log origin/main..HEAD --oneline` — garantir que só os commits desta feature estão
 - Se aparecer algo inesperado, investigar antes de mergear
 
-### 6. Merge e acompanhamento do CI
+### 6. CI gate e merge
+
+**ASSERT antes de prosseguir:** verificar que todos os checks do PR estão passando antes de mergear.
+
+```bash
+gh pr checks <pr_number> --watch
+```
+
+- Se todos os checks passarem: prosseguir para o merge
+- Se algum check falhar: exibir o erro detalhado e **PARAR** — corrigir na branch e rodar `/ship-feature` novamente
+- Se não houver checks configurados (repo sem CI): avisar ao usuário e prosseguir
+
+**Se CI falhar: PARAR e reportar ao usuario. Nunca mergear com CI vermelho.**
 
 Mergear diretamente **sem pedir confirmação**, usando a tool `mcp__plugin_github_github__merge_pull_request` com:
 
@@ -194,7 +206,8 @@ Mergear diretamente **sem pedir confirmação**, usando a tool `mcp__plugin_gith
 
 A branch remota é deletada automaticamente pelo MCP — não usar `gh api -X DELETE`.
 
-Monitorar o run de CI disparado pelo merge:
+Monitorar o run de CI disparado pelo merge para confirmar que o deploy passou:
+
 ```bash
 gh run list --limit 3
 # identificar o run de deploy
