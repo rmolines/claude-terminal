@@ -189,6 +189,7 @@ Cole na nova sessão após /clear:
 Feature "<nome>" — Discovery concluído.
 Contexto salvo em: .claude/feature-plans/<nome>/discovery.md
 Próximo comando: /start-feature --deep <nome>
+Tipo de sessão: A (somente texto — Xcode MCP não necessário)
 ────────────────────────────────────────────────
 ```
 
@@ -298,6 +299,7 @@ Cole na nova sessão após /clear:
 Feature "<nome>" — Research concluído.
 Contexto salvo em: .claude/feature-plans/<nome>/research.md
 Próximo comando: /start-feature <nome>
+Tipo de sessão: A (somente texto — Xcode MCP não necessário)
 ────────────────────────────────────────────────
 ```
 
@@ -405,6 +407,11 @@ Salvar em `.claude/feature-plans/<nome>/plan.md`:
 <Lista de learnings relevantes — ou "nenhum impacto identificado">
 ````
 
+Antes de emitir o handoff, determinar o tipo de sessão:
+- Olhar a seção "Arquivos a modificar" no plan.md recém-gerado
+- Se qualquer arquivo listar `*View.swift`, `*Screen.swift`, ou a seção mencionar `SwiftUI` → **Tipo B**
+- Caso contrário → **Tipo A**
+
 Apresentar e aguardar:
 
 ```text
@@ -420,8 +427,11 @@ Cole na nova sessão após /clear (se optar por limpar):
 Feature "<nome>" — Plan pronto.
 Contexto salvo em: .claude/feature-plans/<nome>/plan.md
 Próximo comando: /start-feature <nome>
+Tipo de sessão: [A: somente texto — Xcode MCP não necessário | B: precisa de MCP — abra Package.swift no Xcode antes de iniciar]
 ────────────────────────────────────────────────
 ```
+
+> Substituir a linha `Tipo de sessão:` pelo tipo determinado acima — não emitir ambas as opções.
 
 ---
 
@@ -430,6 +440,15 @@ Próximo comando: /start-feature <nome>
 ### Passo C.1 — Ler o plano
 
 Ler `.claude/feature-plans/<nome>/plan.md` integralmente.
+
+Após ler o plano (ou gerar o mini plan.md), verificar se a seção "Arquivos a modificar"
+lista arquivos `*View.swift`, `*Screen.swift`, ou menciona `SwiftUI`. Se sim, exibir:
+
+```text
+[PREREQUISITO UI] Esta feature inclui mudanças de UI.
+Antes de iniciar: confirme que Package.swift está aberto no Xcode.
+(Necessário para RenderPreview via Xcode MCP em /design-review.)
+```
 
 **Se não existir plan.md (Fase C fast):**
 1. Ler CLAUDE.md + arquivos mais relevantes (sem subagentes — leitura direta)

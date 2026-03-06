@@ -19,6 +19,26 @@ Antes de qualquer análise, leia o `CLAUDE.md` e extraia:
 - **Ferramenta de preview visual** — procure por Storybook, RenderPreview, live reload,
   screenshot CI ou equivalente → `{{VISUAL_PREVIEW_CMD}}`
 
+**Preflight MCP** (executar quando `{{VISUAL_PREVIEW_CMD}}` depende de Xcode MCP, ex: `RenderPreview`):
+
+Tentar `ListMcpResourcesTool` para verificar se o servidor Xcode MCP está conectado.
+
+- Se conectado (retorna recursos do servidor Xcode): prosseguir normalmente, `MCP_AVAILABLE = true`
+- Se falhar ou retornar lista vazia de recursos Xcode:
+
+```text
+[SEM MCP] Xcode MCP nao esta conectado nesta sessao.
+RenderPreview nao esta disponivel — revisao visual bloqueada para todas as views.
+
+Para reconectar: feche esta sessao (/clear ou nova janela), abra Package.swift no Xcode,
+e inicie uma nova sessao do Claude Code.
+(Nota: /clear destroi conexoes MCP irreversivelmente — sem reconnect mid-session.)
+
+Continuar revisao somente de codigo, sem render? [sim/nao]
+```
+
+Aguardar resposta antes de continuar. Se "nao": encerrar. Se "sim": continuar com `MCP_AVAILABLE = false`.
+
 Se o `CLAUDE.md` não listar spec files de UX:
 
 ```text
@@ -244,17 +264,20 @@ Encontrar o arquivo da view correspondente. Verificar se existe preview block/st
 Se **não existir preview:**
 
 ```text
-⚠️ [NomeDaView] não tem preview configurado.
-{{VISUAL_PREVIEW_CMD}} não disponível. Revisão visual bloqueada.
+[NomeDaView] nao tem preview configurado.
+{{VISUAL_PREVIEW_CMD}} nao disponivel. Revisao visual bloqueada.
 
-Opções:
-  1. Adicionar preview antes de continuar a revisão visual
-  2. Continuar revisão só de código (sem render)
+Opcoes:
+  1. Adicionar preview antes de continuar a revisao visual
+  2. Continuar revisao so de codigo (sem render)
 ```
 
 Aguardar decisão do dev antes de prosseguir.
 
-Se **existir preview:** executar `{{VISUAL_PREVIEW_CMD}}` e aguardar resultado visual.
+Se **existir preview** e **MCP_AVAILABLE = true:** executar `{{VISUAL_PREVIEW_CMD}}` e aguardar resultado visual.
+
+Se **existir preview** mas **MCP_AVAILABLE = false:** pular render; continuar revisão somente de código.
+Anotar no relatório: `RenderPreview: indisponivel (Xcode MCP nao conectado — ver Preflight MCP)`.
 
 ### Passo 2 — Checklist de padrões
 
