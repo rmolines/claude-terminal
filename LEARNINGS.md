@@ -2,6 +2,55 @@
 
 Gotchas, limitations, and non-obvious behaviors discovered while working on this project.
 
+## 2026-03-06 — `gh pr create` dentro de worktree retorna "Head sha can't be blank"
+
+`gh pr create` sem flags adicionais falha com `Head sha can't be blank, No commits between main and <branch>`
+quando executado de dentro de uma worktree — o CLI não resolve o repositório correto a partir do path da worktree.
+
+**Fix:** usar `--repo owner/repo` explicitamente:
+
+```bash
+gh pr create --repo rmolines/claude-terminal --head <branch> --base main --title "..." --body "..."
+```
+
+---
+
+## 2026-03-06 — `WindowGroup` + macOS state restoration abre múltiplas janelas no launch
+
+`WindowGroup` no SwiftUI macOS salva e restaura todas as janelas abertas na última sessão.
+Em apps single-window, isso faz o app abrir 2-3 janelas após desenvolvimento iterativo no Xcode.
+
+**Fix:** fechar extras em `applicationDidFinishLaunching` via `DispatchQueue.main.async`:
+
+```swift
+DispatchQueue.main.async {
+    let mainWindows = NSApp.windows.filter { !($0 is NSPanel) }
+    mainWindows.dropFirst().forEach { $0.close() }
+}
+```
+
+Alternativa mais robusta a longo prazo: migrar de `WindowGroup` para `Window` (macOS 13+).
+
+---
+
+## 2026-03-06 — Dashboard sobre ZStack: nunca substituir o ZStack de PTYs com if/else
+
+Mostrar uma view de dashboard via `if showDashboard { Dashboard() } else { ZStack { terminals } }`
+destrói todos os PTYs quando o dashboard é exibido — SwiftUI remove o ZStack do tree.
+
+**Fix:** manter o ZStack de terminais sempre presente; sobrepor o dashboard via outer ZStack:
+
+```swift
+ZStack {
+    ZStack { /* terminais com opacity/allowsHitTesting */ }
+    if showDashboard { DashboardView() }
+}
+```
+
+Os PTYs sobrevivem ao toggle e retomam exatamente onde pararam.
+
+---
+
 ## 2026-03-05 — Actor que muta estado local não reflete no @Observable automaticamente
 
 `SessionManager` (actor) e `SessionStore` (@Observable, @MainActor) são stores separados.

@@ -2,6 +2,39 @@
 
 ---
 
+## [feat] Session dashboard + HITL approval queue — 2026-03-06
+
+**Tipo:** feat
+**Tags:** ui, hitl, supervision, session-management
+**PR:** [#64](https://github.com/rmolines/claude-terminal/pull/64) · **Complexidade:** alta
+
+### O que mudou
+
+O app agora tem um dashboard "All Sessions" no sidebar que mostra todos os terminais abertos em tempo real com identidade (projeto, branch, fase, status, elapsed time). O painel de aprovação HITL foi substituído por uma fila que exibe todos os agentes pendentes simultaneamente — cada um com approve/reject independente e badge de risco.
+
+### Detalhes técnicos
+
+- `SessionCardsContainerView`: grid por projeto com TimelineView pai (elapsed time a cada segundo), filtrado para projetos com terminal aberto no app
+- `SessionCardView/Header`: status badge colorido, branch (git query async via Thread), fase WorkflowPhase, currentActivity, última notificação do Claude, token badge
+- `RiskSurfaceComputer`: pattern matching isolado para critical (rm -rf, push --force) / elevated / normal
+- `HITLQueueView + ApprovalCardView`: substitui single-modal por fila scrollável — todos os HITLs pendentes visíveis ao mesmo tempo
+- `SessionManager`: adiciona `branch` e `pendingToolName` ao `AgentSession`; toolName forwarded por toda a pipeline de hooks
+- `SessionStore`: evicção de synthetic sessions escopada por cwd (bug: era global)
+- `MainView`: ZStack externo mantém PTYs vivos quando o dashboard está visível
+- `AppDelegate`: fecha janelas extras de macOS state restoration no launch
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/SessionCards/` — 5 novos arquivos (container, card, header, approval, risk)
+- `ClaudeTerminal/Features/HITL/HITLPanelView.swift` — HITLQueueView + HITLPanelState com lista
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — "All Sessions" + ZStack preservado
+
+---
+
 ## [improvement] mcp-session-preflight: preflight probes + session-type annotation — 2026-03-06
 
 **Tipo:** improvement

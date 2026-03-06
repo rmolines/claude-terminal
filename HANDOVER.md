@@ -4,6 +4,44 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — session-cards-hitl-ui: session dashboard + HITL approval queue
+
+**Branch:** `worktree-session-cards-hitl-ui` → PR #64 (merged)
+
+**O que foi feito:**
+- `SessionCardsContainerView`: dashboard cross-project com TimelineView pai, filtrado para projetos com terminal aberto (`openedProjectIDs`)
+- `SessionCardView + SessionCardHeaderView`: status badge, branch (git async), fase WorkflowPhase, currentActivity, última msg do Claude, token badge
+- `RiskSurfaceComputer`: pattern matching isolado para risco critical/elevated/normal
+- `HITLQueueView + ApprovalCardView`: substitui single-HITL panel por fila de todos os pendentes com approve/reject independente
+- `HITLFloatingPanelController`: coleta todos `awaitingInput` simultaneamente; panel 440×360
+- `SessionManager`: `branch` (git query via Thread dedicada), `pendingToolName`; toolName forwarded HookHandler → AgentEvent
+- `SessionStore`: evicção de synthetic sessions escopada por cwd (era global — apagava todas)
+- `MainView`: "All Sessions" no sidebar; ZStack de terminais preservado por baixo do dashboard via outer ZStack
+- `AppDelegate`: fecha janelas extras de macOS state restoration no launch
+
+**Decisões tomadas:**
+- Synthetic sessions incluídas no dashboard para mostrar terminals idle — filtragem por `openedProjectIDs` evita mostrar projetos sem tab aberta
+- Sessões reais sem evento há >15min consideradas stale e filtradas (processos mortos sem Stop hook)
+- Conversas sem tool use mostram "Running…" (real session) ou "Idle" (synthetic) — texto da resposta do Claude não chega via hooks
+- `WindowGroup` mantido (não migrado para `Window`) — fechamento de extras via `DispatchQueue.main.async` no AppDelegate
+
+**Armadilhas encontradas:**
+- `SessionStore.update()` apagava TODAS as synthetic sessions ao receber nova — corrigido para escopo por cwd
+- Dashboard como `if showDashboard { SessionCardsContainerView() } else { ZStack... }` destruía PTYs — fix: outer ZStack sempre vivo, dashboard sobreposto
+- `gh pr create` dentro de worktree retorna "Head sha can't be blank" — usar `--repo owner/repo` como workaround
+
+**Próximos passos:**
+- Tier 3 expansível por card (histórico completo, sub-agents, etc.) se necessário
+- Parsing do transcript `.jsonl` para mostrar conteúdo de conversa no card (fora de escopo atual)
+
+**Arquivos-chave:**
+- `ClaudeTerminal/Features/SessionCards/` — 5 novos arquivos
+- `ClaudeTerminal/Features/HITL/HITLPanelView.swift` — HITLQueueView + HITLPanelState com lista
+- `ClaudeTerminal/Features/Terminal/MainView.swift` — "All Sessions" + ZStack preservado
+- `ClaudeTerminal/Services/SessionStore.swift` — evicção por cwd
+
+---
+
 ## 2026-03-06 — mcp-session-preflight: preflight probes + session-type annotation
 
 **Branch:** `worktree-mcp-session-preflight` → PR #63 (merged)
