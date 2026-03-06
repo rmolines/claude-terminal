@@ -94,7 +94,7 @@ Mostrar output completo — não resumir. Só avançar com ambos passando.
 
    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
    ```
-4. Executar `git add <arquivos específicos>` + `git commit` **sem pedir confirmação da mensagem**
+4. Usar o sub-skill `commit-commands:commit` para criar o commit (ou executar `git add <arquivos específicos>` + `git commit` diretamente) **sem pedir confirmação da mensagem**
 
 ### 1.5. Preflight de hot files
 
@@ -185,6 +185,22 @@ gh pr checks <pr_number> --watch
 - Se todos os checks passarem: prosseguir para o merge
 - Se algum check falhar: exibir o erro detalhado e **PARAR** — corrigir na branch e rodar `/ship-feature` novamente
 - Se não houver checks configurados (repo sem CI): avisar ao usuário e prosseguir
+
+> **Atenção após re-push de fix de CI:** `gh pr checks --watch` pode exibir o resultado
+> do run *anterior* (já concluído) em vez de aguardar o novo run disparado pelo push.
+> Sintoma: o status aparece imediatamente como `fail` sem aguardar, ou o timestamp do
+> run é anterior ao push.
+>
+> Nesse caso, obter o run ID explicitamente e aguardar o run correto:
+>
+> ```bash
+> sleep 5  # aguardar GitHub registrar o novo run
+> BRANCH=$(git branch --show-current)
+> LATEST_RUN=$(gh run list --branch "$BRANCH" --limit 1 --json databaseId -q '.[0].databaseId')
+> gh run watch "$LATEST_RUN" --exit-status
+> ```
+>
+> Só mergear após este run passar — nunca com base em resultado de run anterior.
 
 **Se CI falhar: PARAR e reportar ao usuario. Nunca mergear com CI vermelho.**
 
