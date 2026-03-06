@@ -48,8 +48,9 @@ struct MainView: View {
                         }
                     }
                     // Dashboard sits on top — terminals stay alive underneath.
+                    // Pass openedProjectIDs so the dashboard only shows projects with open tabs.
                     if showDashboard {
-                        SessionCardsContainerView()
+                        SessionCardsContainerView(openedProjectIDs: Set(openedProjectIDs))
                     }
                 }
                 .frame(minWidth: 700, minHeight: 400)

@@ -3,8 +3,16 @@ import SwiftData
 import Shared
 
 /// Cross-project dashboard: session cards grouped by project, updated every second via a single TimelineView.
+/// Only shows projects that have an open terminal tab in the app (openedProjectIDs).
 struct SessionCardsContainerView: View {
+    /// IDs of projects with open terminal tabs — limits the dashboard to what the user has open.
+    let openedProjectIDs: Set<PersistentIdentifier>
+
     @Query(sort: \ClaudeProject.sortOrder) var projects: [ClaudeProject]
+
+    private var openProjects: [ClaudeProject] {
+        projects.filter { openedProjectIDs.contains($0.persistentModelID) }
+    }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1.0)) { context in
@@ -30,6 +38,7 @@ struct SessionCardsContainerView: View {
                 }
                 .padding(16)
             }
+
         }
     }
 
@@ -82,6 +91,6 @@ struct SessionCardsContainerView: View {
     }
 
     private func projectsHavingSessions() -> [ClaudeProject] {
-        projects.filter { !activeSessions(for: $0).isEmpty }
+        openProjects.filter { !activeSessions(for: $0).isEmpty }
     }
 }
