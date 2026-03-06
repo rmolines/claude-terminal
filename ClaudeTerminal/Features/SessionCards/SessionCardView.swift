@@ -24,8 +24,17 @@ struct SessionCardView: View {
     // MARK: - Activity row
 
     private var activityRow: some View {
-        HStack(spacing: 6) {
-            activityContent
+        HStack(alignment: .top, spacing: 6) {
+            VStack(alignment: .leading, spacing: 3) {
+                activityContent
+                if let lastMsg = session.recentMessages.first {
+                    Text(lastMsg)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
+                }
+            }
             Spacer()
             if totalTokens > 0 {
                 tokenBadge
@@ -43,8 +52,8 @@ struct SessionCardView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(2)
                 .truncationMode(.tail)
-        } else {
-            Text("Running…")
+        } else if session.recentMessages.isEmpty {
+            Text("Idle")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
