@@ -26,6 +26,10 @@ ORIENTAÇÃO (qualquer momento)
 ──────────────────────────────────────────
   /project-compass
 
+POLISH (N itens pequenos, uma branch, um PR)
+──────────────────────────────────────────
+  /polish [lista de itens] → micro-commit por item → PR único (sem squash)
+
 INVESTIGAÇÃO (sem commit)
 ──────────────────────────────────────────
   /debug <descrição> → relatório de causa raiz → /fix (se necessário)
@@ -54,6 +58,7 @@ AD-HOC (feature sem roadmap)
 | `/start-feature` | Começar implementação (default: fast, sem pesquisa) | Nome da feature | Worktree + `plan.md` | `/validate`, `/ship-feature` |
 | `/start-feature --deep` | Feature complexa que precisa de pesquisa técnica | Nome da feature | `research.md` + `plan.md` + worktree | `/validate`, `/ship-feature` |
 | `/start-feature --discover` | Explorar um problema antes de fazer o bet | Nome/ideia | `discovery.md` | `/start-feature --deep <nome>` ou `/start-feature <nome>` |
+| `/polish` | N melhorias pequenas e conhecidas, uma branch, um PR | Lista de itens | Branch `chore/polish-<data>` + N micro-commits + PR | `/close-feature` |
 | `/debug` | Investigar erro sem modificar nada | Descrição do problema | Relatório de causa raiz + fix sugerido | `/fix` (opcional) |
 | `/validate` | Verificar alinhamento antes de fazer PR | Branch com código | Relatório drift/cobertura | `/design-review` (se UI) ou `/ship-feature` |
 | `/design-review` | Gate de UI antes do PR (obrigatório para features com mudanças de UI) | View modificada | Veredito APROVADO/REPROVADO | `/ship-feature` |
