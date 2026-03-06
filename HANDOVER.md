@@ -4,6 +4,45 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — feature-start-ux: New Worktree sheet + terminal wiring
+
+**PR:** #55 (merged)
+
+### O que foi feito
+
+Adicionada a capacidade de criar worktrees diretamente pela aba Worktrees do app:
+
+- `NewWorktreeSheet.swift`: sheet modal com campo de nome (coerce automático para kebab-case), preview do branch (`feature/<nome>`), toggle "Open /start-feature" e botão Create
+- `GitStateService.addWorktree(name:in:)`: roda `git worktree add -b feature/<nome>` com fallback `main` → `master`
+- `WorktreesView`: botão "+" no header abre a sheet; callback `onSelect` expandido para `(path, initialInput?) -> Void`
+- `ProjectDetailView`: `pendingInitialInput` armazenado por path, passado para `makeTerminal`, limpo ao Restart (não re-injeta)
+
+### Decisões tomadas
+
+- Toggle ativo → injeta `/start-feature <nome>` via `initialInput` após 1.5s (mesmo mecanismo já existente)
+- Toggle desativado → terminal abre limpo, sem injeção
+- Restart do terminal limpa `pendingInitialInput` para aquele path — comportamento esperado: restart é restart limpo
+
+### Armadilhas encontradas
+
+- Build local no worktree passou com cache mesmo com `sendInput` faltando em `TerminalRegistry` — CI revelou o bug
+- `origin/main` avançou 4 commits durante a sessão (incluindo o próprio fix de `sendInput`); rebase automático dropou o commit duplicado
+- HANDOVER.md tinha 2 linhas longas (MD013) de sessões anteriores — CI as reportou ao mudar o contexto do diff
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/Worktrees/NewWorktreeSheet.swift` — novo
+- `ClaudeTerminal/Features/Worktrees/WorktreesView.swift` — botão + callback
+- `ClaudeTerminal/Services/GitStateService.swift` — `addWorktree`
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift` — `pendingInitialInput`
+
+### Próximos passos
+
+- Deletar worktrees pela UI (fora do escopo desta feature)
+- Selecionar baseBranch pelo usuário (sempre usa main/master hoje)
+
+---
+
 ## 2026-03-06 — skill-flow-robustness
 
 ### O que foi feito

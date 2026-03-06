@@ -2,6 +2,37 @@
 
 ---
 
+## [feat] New Worktree sheet — criar worktrees diretamente pelo app — 2026-03-06
+
+**Tipo:** feat
+**Tags:** worktrees, terminal, ux
+**PR:** [#55](https://github.com/rmolines/claude-terminal/pull/55) · **Complexidade:** média
+
+### O que mudou
+
+Dev pode criar um novo worktree git e abrir o terminal nele sem sair do app.
+Botão "+" na aba Worktrees abre uma sheet com validação, preview do branch e opção de injetar `/start-feature` automaticamente.
+
+### Detalhes técnicos
+
+- `NewWorktreeSheet.swift`: validação kebab-case em tempo real, coerce automático, toggle de injeção
+- `GitStateService.addWorktree(name:in:)`: `git worktree add` com fallback `main` → `master`
+- `WorktreesView`: callback `onSelect(path, initialInput?)` — agora passa input opcional
+- `ProjectDetailView`: `pendingInitialInput` por path, limpo no Restart
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/Worktrees/NewWorktreeSheet.swift` — novo
+- `ClaudeTerminal/Features/Worktrees/WorktreesView.swift`
+- `ClaudeTerminal/Services/GitStateService.swift`
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift`
+
+---
+
 ## [fix] Skill flow robustness: CI gate + sync-skills rebase + rule accuracy — 2026-03-06
 
 **Tipo:** fix
