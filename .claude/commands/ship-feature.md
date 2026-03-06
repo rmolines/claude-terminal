@@ -179,8 +179,7 @@ Com base no `plan.md` (passo 0), verificar cada item antes de mergear:
 **ASSERT antes de prosseguir:** verificar que todos os checks do PR estão passando antes de mergear.
 
 ```bash
-REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "rmolines/claude-terminal")
-gh pr checks <pr_number> --watch -R "$REPO"
+gh pr checks <pr_number> --watch
 ```
 
 - Se todos os checks passarem: prosseguir para o merge
@@ -197,8 +196,8 @@ gh pr checks <pr_number> --watch -R "$REPO"
 > ```bash
 > sleep 5  # aguardar GitHub registrar o novo run
 > BRANCH=$(git branch --show-current)
-> LATEST_RUN=$(gh run list --branch "$BRANCH" --limit 1 --json databaseId -q '.[0].databaseId' -R "$REPO")
-> gh run watch "$LATEST_RUN" --exit-status -R "$REPO"
+> LATEST_RUN=$(gh run list --branch "$BRANCH" --limit 1 --json databaseId -q '.[0].databaseId')
+> gh run watch "$LATEST_RUN" --exit-status
 > ```
 >
 > Só mergear após este run passar — nunca com base em resultado de run anterior.
@@ -207,9 +206,15 @@ gh pr checks <pr_number> --watch -R "$REPO"
 
 Mergear diretamente **sem pedir confirmação**:
 
-Usar GitHub MCP `merge_pull_request` com `owner`, `repo`, `pullNumber`, `mergeMethod: "squash"` e `deleteBranch: true` — independente de contexto de diretório ou worktree.
-
-`gh pr merge` falha silenciosamente em worktrees onde `main` já está checked out no repo pai.
+```bash
+BRANCH=$(git branch --show-current)
+gh pr merge --squash
+# --delete-branch falha silenciosamente em worktree (main já checked out no repo pai)
+# Deletar remote branch explicitamente:
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" 2>/dev/null \
+  || echo "⚠️  Remote branch não deletada automaticamente — limpar com: gh api -X DELETE repos/$REPO/git/refs/heads/$BRANCH"
+```
 
 Monitorar o run de CI disparado pelo merge para confirmar que o deploy passou:
 
