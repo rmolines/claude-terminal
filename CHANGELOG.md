@@ -2,6 +2,30 @@
 
 ---
 
+## [fix] HITL buttons now dismiss terminal TUI dialog — 2026-03-05
+
+**Tipo:** fix
+**Tags:** hitl, pty, terminal, ux
+**PR:** [#54](https://github.com/rmolines/claude-terminal/pull/54) · **Complexidade:** simples
+
+### Problema
+
+Clicar Approve/Reject no painel HITL flutuante não tinha efeito visível no terminal.
+Claude Code usa dois mecanismos simultâneos: hook `PermissionRequest` (socket, já funcionava)
+e um TUI dialog interativo no PTY (raw mode, exigia input de teclado). O TUI ficava travado.
+
+### Fix aplicado
+
+Após responder ao socket, `approveHITL` envia `[0x31]` ("1") e `rejectHITL` envia `[0x1b]`
+(Escape) diretamente ao PTY via `TerminalRegistry.sendInput(_:forCwd:)`, descartando o TUI dialog.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Services/SessionManager.swift` — `approveHITL` + `rejectHITL`
+- `ClaudeTerminal/Services/TerminalRegistry.swift` — novo método `sendInput(_:forCwd:)`
+
+---
+
 ## [fix] ASSERT guards nas skills ship/close/start-feature — 2026-03-06
 
 **Tipo:** fix

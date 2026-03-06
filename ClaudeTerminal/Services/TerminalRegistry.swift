@@ -30,6 +30,12 @@ final class TerminalRegistry {
         entries.removeValue(forKey: path)
     }
 
+    /// Sends raw bytes to the PTY of the terminal registered at `cwd`.
+    func sendInput(_ bytes: [UInt8], forCwd cwd: String) {
+        guard let coordinator = entries[cwd]?.coordinator else { return }
+        coordinator.terminalView?.send(data: bytes[...])
+    }
+
     /// Captures scrollback from all live terminals.
     /// Returns `(projectID, path, content)` tuples for use at quit time.
     func captureAll() -> [(projectID: UUID, path: String, data: Data)] {

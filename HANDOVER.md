@@ -4,6 +4,32 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-05 — HITL PTY bridge fix (PR #54)
+
+**O que foi feito:**
+Depurado e corrigido o comportamento dos botões Approve/Reject do painel HITL flutuante.
+
+**Problema raiz:**
+Claude Code usa dois mecanismos simultâneos de permissão em sessões interativas:
+1. Hook `PermissionRequest` (bloqueante via Unix socket) — o app já respondia corretamente
+2. TUI dialog interativo no terminal (raw mode, `1`=Yes / `Esc`=cancel) — ficava travado aguardando input de teclado
+
+O botão aprovava o socket mas o TUI continuava bloqueado, fazendo o terminal parecer congelado.
+
+**Fix aplicado:**
+- `SessionManager.approveHITL`: após `respondHITL`, faz `TerminalRegistry.shared.sendInput([0x31], forCwd: cwd)` — byte `0x31` ("1") descarta o TUI dialog
+- `SessionManager.rejectHITL`: após `respondHITL`, faz `sendInput([0x1b], forCwd: cwd)` — Escape cancela o TUI dialog
+- `TerminalRegistry`: adicionado método `sendInput(_:forCwd:)` que busca o coordinator pelo path (com fallback de prefix matching)
+
+**Armadilha encontrada:**
+Usar `[0x31, 0x0d]` ("1\r") funcionava no primeiro dialog mas o `\r` vazava para o buffer do próximo dialog, auto-confirmando silenciosamente. Fix: usar apenas `[0x31]` — raw mode processa um byte de cada vez.
+
+**Arquivos-chave:**
+- `ClaudeTerminal/Services/SessionManager.swift` — `approveHITL` + `rejectHITL`
+- `ClaudeTerminal/Services/TerminalRegistry.swift` — `sendInput(_:forCwd:)`
+
+---
+
 ## 2026-03-05 — ship-close-skill-overhead (PR #53)
 
 **O que foi feito:**
