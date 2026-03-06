@@ -86,20 +86,31 @@ actor SessionManager {
 
     func approveHITL(sessionID: String) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
+        let cwd = sessions[sessionID]?.cwd
         sessions[sessionID]?.status = .running
         if let session = sessions[sessionID] {
             Task { @MainActor in SessionStore.shared.update(session) }
         }
         await HookIPCServer.shared.respondHITL(sessionID: sessionID, approved: true)
+        // Forward "1" keypress to the PTY to dismiss Claude Code's interactive TUI permission dialog.
+        // Claude Code's permission menu is in raw mode — a single "1" keypress confirms "Yes" immediately.
+        if let cwd {
+            Task { @MainActor in TerminalRegistry.shared.sendInput([0x31], forCwd: cwd) }
+        }
     }
 
     func rejectHITL(sessionID: String) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
+        let cwd = sessions[sessionID]?.cwd
         sessions[sessionID]?.status = .blocked
         if let session = sessions[sessionID] {
             Task { @MainActor in SessionStore.shared.update(session) }
         }
         await HookIPCServer.shared.respondHITL(sessionID: sessionID, approved: false)
+        // Forward Escape to the PTY to cancel Claude Code's interactive TUI permission dialog.
+        if let cwd {
+            Task { @MainActor in TerminalRegistry.shared.sendInput([0x1b], forCwd: cwd) }
+        }
     }
 
     // MARK: - Private
