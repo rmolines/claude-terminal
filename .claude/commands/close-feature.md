@@ -192,7 +192,26 @@ git diff origin/main...HEAD --name-only | grep "^\.claude/commands/"
 
 Se **nenhum skill foi tocado**: pular sem mensagem.
 
-Se **há skills novos ou modificados**, avaliar cada um:
+Se **há skills novos ou modificados**, verificar primeiro que o kickstart está limpo:
+
+```bash
+KICKSTART=/Users/rmolines/git/claude-kickstart
+DIRTY=$(git -C "$KICKSTART" status --porcelain 2>/dev/null)
+if [ -n "$DIRTY" ]; then
+  echo "⚠️  kickstart tem mudanças locais não-commitadas:"
+  echo "$DIRTY"
+  echo ""
+  echo "Resolver antes de prosseguir:"
+  echo "  a) git -C $KICKSTART stash"
+  echo "  b) git -C $KICKSTART add . && git -C $KICKSTART commit -m 'chore: wip'"
+  echo "  c) Abortar e resolver manualmente"
+  exit 1
+fi
+```
+
+**Se kickstart estiver sujo: PARAR e reportar ao usuário antes de qualquer operação de propagação.**
+
+Avaliar cada skill:
 
 **Você** decide se o skill tem lógica genérica o suficiente para outros projetos — não pergunte ao usuário.
 Critério: o skill resolve um problema que qualquer projeto com esse workflow teria, e a lógica

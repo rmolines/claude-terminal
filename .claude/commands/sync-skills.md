@@ -31,6 +31,16 @@ echo "Upstream: $UPSTREAM"
 if [ "$CURRENT" = "$UPSTREAM" ]; then
   echo "✅ Already up to date."
 else
+  # Check for local uncommitted changes before applying (would be overwritten)
+  DIRTY_LOCAL=$(git status --porcelain .claude/commands/ 2>/dev/null)
+  if [ -n "$DIRTY_LOCAL" ]; then
+    echo "⚠️  .claude/commands/ tem mudanças locais não-commitadas:"
+    echo "$DIRTY_LOCAL"
+    echo ""
+    echo "Commitar ou stash antes de sync para evitar perda de mudanças."
+    exit 1
+  fi
+
   # Show what would change
   git diff HEAD upstream/main -- .claude/commands/
 
