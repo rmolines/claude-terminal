@@ -2,6 +2,29 @@
 
 ---
 
+## [fix] Sparkle updater não iniciava — chave EdDSA ausente — 2026-03-06
+
+**Tipo:** fix
+**Tags:** updater, sparkle, infoplist
+**PR:** [#52](https://github.com/rmolines/claude-terminal/pull/52) · **Complexidade:** simples
+
+### Problema
+
+Ao clicar "Check for Updates…", o app exibia "The updater failed to start".
+`SUPublicEDKey` em `Info.plist` tinha o placeholder `REPLACE_WITH_PUBLIC_KEY_FROM_generate_keys`
+desde o bootstrap — o Sparkle recusa iniciar sem uma chave EdDSA válida.
+
+### Fix aplicado
+
+Rodado `.build/artifacts/sparkle/Sparkle/bin/generate_keys` — retornou a chave pré-existente
+no Keychain e inserida em `Info.plist`.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/App/Info.plist` — `SUPublicEDKey` com valor real
+
+---
+
 ## [fix] Terminal mostra overlay "Session ended" ao sair do Claude — 2026-03-06
 
 **Tipo:** fix

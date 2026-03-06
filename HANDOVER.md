@@ -4,6 +4,58 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — feat(skills): nova skill /polish para sessões de batch cleanup (PR #50)
+
+**O que foi feito:**
+Nova skill `/polish` criada em `.claude/commands/polish.md`. Resolve o gap identificado
+no `explore.md` de polish-sprint: não havia como executar N melhorias pequenas e conhecidas
+com micro-commits individuais sem o overhead de um ciclo completo de feature por item.
+
+**Como funciona:**
+1. Usuário informa lista de itens upfront
+2. Skill abre branch `chore/polish-<data>` uma vez
+3. Para cada item: implementa → micro-commit → próximo
+4. No final: um único PR com todos os commits preservados (sem squash)
+
+**Decisões tomadas:**
+- PR usa `mergeMethod: "merge"` (não squash) — squash destrói a rastreabilidade por item
+- Loop de execução é autônomo — sem parar entre itens pedindo confirmação
+- Item complexo inesperado → parar e reportar; nunca continuar silenciosamente
+
+**Propagação:**
+- Projeto: PR #50 (mergeado, CI verde após fix MD022 em PR #51)
+- Kickstart: PR #20 em `rmolines/claude-kickstart` (mergeado)
+
+**Arquivos-chave:**
+- `.claude/commands/polish.md` — skill criada
+- `.claude/rules/workflow.md` — /polish adicionado ao fluxo visual e tabela
+
+---
+
+## 2026-03-06 — fix(updater): chave EdDSA real do Sparkle em Info.plist (PR #52)
+
+**O que foi feito:**
+`SUPublicEDKey` em `Info.plist` tinha o valor placeholder `REPLACE_WITH_PUBLIC_KEY_FROM_generate_keys`
+desde o bootstrap. O Sparkle valida a chave na inicialização e recusava iniciar completamente,
+exibindo "The updater failed to start". A chave real já existia no Keychain (gerada anteriormente)
+e no GitHub Secrets como `SPARKLE_PRIVATE_KEY` — só faltava colocar a pública no plist.
+
+**Fix:**
+- Rodado `.build/artifacts/sparkle/Sparkle/bin/generate_keys` (binário pré-compilado no artefato SPM)
+- A chave pré-existente no Keychain foi retornada e inserida em `Info.plist`
+- Verificado com `make install` + "Check for Updates…" no menu bar — updater iniciou sem erros
+
+**Armadilha:**
+`swift run generate_keys` falha — o pacote SPM do Sparkle é `binaryTarget` e não expõe executáveis.
+O binário está em `.build/artifacts/sparkle/Sparkle/bin/generate_keys`.
+
+**Arquivos-chave:**
+- `ClaudeTerminal/App/Info.plist:26` — `SUPublicEDKey`
+
+**Próximos passos:** nenhum — fix pontual.
+
+---
+
 ## 2026-03-06 — fix(terminal): session-ended overlay quando PTY encerra (PR #49)
 
 **O que foi feito:**
