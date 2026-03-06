@@ -29,26 +29,30 @@ struct MainView: View {
             NavigationSplitView {
                 projectSidebar
             } detail: {
-                if showDashboard {
-                    SessionCardsContainerView()
-                        .frame(minWidth: 700, minHeight: 400)
-                } else if openedProjectIDs.isEmpty {
-                    ContentUnavailableView("Select a Project", systemImage: "folder")
-                        .frame(minWidth: 700, minHeight: 400)
-                } else {
-                    // ZStack keeps every opened terminal alive — switching projects
-                    // just changes visibility, never destroys the PTY process.
-                    ZStack {
-                        ForEach(openedProjectIDs, id: \.self) { pid in
-                            if let project = projects.first(where: { $0.persistentModelID == pid }) {
-                                ProjectDetailView(project: project)
-                                    .opacity(selectedProject?.persistentModelID == pid ? 1 : 0)
-                                    .allowsHitTesting(selectedProject?.persistentModelID == pid)
+                // Outer ZStack keeps terminals alive even when dashboard is shown.
+                // Never gate the terminal ZStack behind an if/else — that destroys PTY processes.
+                ZStack {
+                    if openedProjectIDs.isEmpty && !showDashboard {
+                        ContentUnavailableView("Select a Project", systemImage: "folder")
+                    } else {
+                        // Inner ZStack: keep every opened terminal alive.
+                        // Opacity controls visibility; allowsHitTesting prevents ghost clicks.
+                        ZStack {
+                            ForEach(openedProjectIDs, id: \.self) { pid in
+                                if let project = projects.first(where: { $0.persistentModelID == pid }) {
+                                    ProjectDetailView(project: project)
+                                        .opacity(!showDashboard && selectedProject?.persistentModelID == pid ? 1 : 0)
+                                        .allowsHitTesting(!showDashboard && selectedProject?.persistentModelID == pid)
+                                }
                             }
                         }
                     }
-                    .frame(minWidth: 700, minHeight: 400)
+                    // Dashboard sits on top — terminals stay alive underneath.
+                    if showDashboard {
+                        SessionCardsContainerView()
+                    }
                 }
+                .frame(minWidth: 700, minHeight: 400)
             }
             .frame(minWidth: 750, minHeight: 400)
             .onAppear {
@@ -76,7 +80,7 @@ struct MainView: View {
 
     private var activeSessionCount: Int {
         SessionStore.shared.sessions.values.filter {
-            !$0.isSynthetic && $0.status != .completed && $0.status != .blocked
+            $0.status != .completed && $0.status != .blocked
         }.count
     }
 

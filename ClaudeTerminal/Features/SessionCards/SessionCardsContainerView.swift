@@ -74,10 +74,9 @@ struct SessionCardsContainerView: View {
     private func activeSessions(for project: ClaudeProject) -> [AgentSession] {
         SessionStore.shared.sessions.values
             .filter { session in
-                !session.isSynthetic &&
                 session.status != .completed &&
                 session.status != .blocked &&
-                session.cwd.hasPrefix(project.path)
+                (session.cwd.hasPrefix(project.path) || session.cwd.hasPrefix(project.displayPath))
             }
             .sorted { $0.startedAt < $1.startedAt }
     }
