@@ -70,10 +70,16 @@ Aguardar resposta. Se "continuar": prosseguir normalmente (não é bloqueante).
 
 ### 0.5. Verificação local (HARD GATE)
 
-Antes de qualquer commit ou push, rodar:
+Antes de qualquer commit ou push, rodar build e testes:
+
+**Build:** Tentar `BuildProject` (Xcode MCP) para saída estruturada de erros.
+
+- Se **suceder**: usar o resultado do `BuildProject`.
+- Se **falhar com erro de MCP** (ferramenta indisponivel, servidor nao conectado):
+  Emitir `[SEM MCP] Xcode MCP nao conectado — usando {{BUILD_CMD}} (saida menos estruturada).`
+  Rodar `{{BUILD_CMD}}` como fallback.
 
 ```bash
-{{BUILD_CMD}}    # ex: npm run build, swift build, make build
 {{TEST_CMD}}     # ex: npm test, swift test, make test
 ```
 
