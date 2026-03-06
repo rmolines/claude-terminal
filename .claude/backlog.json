@@ -270,6 +270,19 @@
       "startedAt": "2026-03-02T00:00:00Z",
       "completedAt": "2026-03-02T00:00:00Z",
       "createdAt": "2026-03-02"
+    },
+    {
+      "id": "delivery-event-log",
+      "title": "Aba Kanban read-only do backlog.json",
+      "status": "done",
+      "milestone": "m4",
+      "path": "deep",
+      "dependencies": [],
+      "branch": "worktree-delivery-event-log",
+      "prNumber": 60,
+      "startedAt": "2026-03-06T14:11:21Z",
+      "completedAt": "2026-03-06T14:11:21Z",
+      "createdAt": "2026-03-06T14:11:21Z"
     }
   ],
   "pitches": [
