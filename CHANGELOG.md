@@ -10,7 +10,10 @@
 
 ### O que mudou
 
-O app agora tem um dashboard "All Sessions" no sidebar que mostra todos os terminais abertos em tempo real com identidade (projeto, branch, fase, status, elapsed time). O painel de aprovação HITL foi substituído por uma fila que exibe todos os agentes pendentes simultaneamente — cada um com approve/reject independente e badge de risco.
+O app agora tem um dashboard "All Sessions" no sidebar que mostra todos os terminais abertos em tempo real
+com identidade (projeto, branch, fase, status, elapsed time). O painel de aprovação HITL foi substituído
+por uma fila que exibe todos os agentes pendentes simultaneamente — cada um com approve/reject independente
+e badge de risco.
 
 ### Detalhes técnicos
 
