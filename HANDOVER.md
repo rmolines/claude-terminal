@@ -4,6 +4,23 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — kickstart-dirty-guard (PR #58)
+
+**O que foi feito:** Adicionado pre-flight check em `close-feature.md` e `sync-skills.md` para detectar
+estado sujo antes de operações de propagação/sync. Fecha o último gap do `ship-close-skill-remaining-gaps` (Ponto 4).
+
+**Arquivos modificados:**
+
+- `.claude/commands/close-feature.md` — assert kickstart limpo antes do step 1g (propagação)
+- `.claude/commands/sync-skills.md` — assert `.claude/commands/` limpo antes do `git checkout upstream/main`
+
+**Decisões:** Check via `git status --porcelain` — detecta arquivos modificados e untracked.
+Mostra os arquivos sujos + 3 opções (stash/commit/abort) e para com exit 1 antes de qualquer operação destrutiva.
+
+**Próximos passos:** Propagar `close-feature.md` e `sync-skills.md` ao kickstart.
+
+---
+
 ## 2026-03-06 — fix(hitl): HITL panel crash com @Observable state (PR #57)
 
 **O que foi feito:**

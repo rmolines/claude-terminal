@@ -2,6 +2,29 @@
 
 ---
 
+## [fix] kickstart-dirty-guard — pre-flight check antes de sync/propagação — 2026-03-06
+
+**Tipo:** fix
+**Tags:** skills, developer-experience, sync-skills, close-feature
+**PR:** [#58](https://github.com/rmolines/claude-terminal/pull/58) · **Complexidade:** simples
+
+### Problema
+
+`close-feature` e `sync-skills` falhavam com "Your local changes would be overwritten" quando o kickstart
+ou `.claude/commands/` tinham mudanças locais não-commitadas. Nenhuma skill verificava o estado antes de iniciar o fluxo.
+
+### Fix aplicado
+
+Adicionado `git status --porcelain` como pre-flight em ambas as skills. Se sujo: exibe os arquivos
+afetados + opções (stash/commit/abort) e sai com erro antes de qualquer operação destrutiva.
+
+### Arquivos-chave
+
+- `.claude/commands/close-feature.md` — guard no início do passo 1g
+- `.claude/commands/sync-skills.md` — guard antes do `git checkout upstream/main`
+
+---
+
 ## [fix] HITL panel crash — @Observable state elimina rootView= no macOS 26 — 2026-03-06
 
 **Tipo:** fix

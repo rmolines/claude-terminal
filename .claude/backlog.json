@@ -261,14 +261,14 @@
     {
       "id": "skill-workflow-ux",
       "title": "Skill workflow UX — inverter default start-feature, backlog.json, /debug",
-      "status": "in-progress",
+      "status": "done",
       "milestone": "m4",
       "path": "discover",
       "dependencies": [],
       "branch": "worktree-skill-workflow-ux",
-      "prNumber": null,
+      "prNumber": 20,
       "startedAt": "2026-03-02T00:00:00Z",
-      "completedAt": null,
+      "completedAt": "2026-03-02T00:00:00Z",
       "createdAt": "2026-03-02"
     }
   ],
