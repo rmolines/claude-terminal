@@ -21,8 +21,11 @@ final class SessionStore {
 
     func update(_ session: AgentSession) {
         if session.isSynthetic {
-            // Only one terminal exists at a time — evict stale synthetic sessions from previous cwds.
-            for key in sessions.values.filter({ $0.isSynthetic }).map(\.sessionID) {
+            // Evict any previous synthetic session for the same cwd — one synthetic per cwd.
+            // Do NOT evict synthetics from other cwds: multiple projects can be open simultaneously.
+            for key in sessions.values
+                .filter({ $0.isSynthetic && $0.cwd == session.cwd })
+                .map(\.sessionID) {
                 sessions.removeValue(forKey: key)
             }
         } else if let synthetic = sessions.values.first(where: { $0.isSynthetic && $0.cwd == session.cwd }) {
