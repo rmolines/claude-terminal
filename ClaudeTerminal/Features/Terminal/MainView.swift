@@ -14,6 +14,8 @@ struct MainView: View {
     @State private var selectedProject: ClaudeProject?
     /// Projects whose terminals have been opened this session — kept alive in ZStack.
     @State private var openedProjectIDs: [PersistentIdentifier] = []
+    /// True when the "All Sessions" dashboard is selected instead of a specific project.
+    @State private var showDashboard = false
 
     // Legacy storage — read once for migration, not written after migration
     @AppStorage("workingDirectory") private var legacyWorkingDirectory: String = ""
@@ -27,7 +29,10 @@ struct MainView: View {
             NavigationSplitView {
                 projectSidebar
             } detail: {
-                if openedProjectIDs.isEmpty {
+                if showDashboard {
+                    SessionCardsContainerView()
+                        .frame(minWidth: 700, minHeight: 400)
+                } else if openedProjectIDs.isEmpty {
                     ContentUnavailableView("Select a Project", systemImage: "folder")
                         .frame(minWidth: 700, minHeight: 400)
                 } else {
@@ -69,18 +74,52 @@ struct MainView: View {
 
     // MARK: - Sidebar
 
+    private var activeSessionCount: Int {
+        SessionStore.shared.sessions.values.filter {
+            !$0.isSynthetic && $0.status != .completed && $0.status != .blocked
+        }.count
+    }
+
     private var projectSidebar: some View {
         // Manual selection via onTapGesture — List(selection:) with @Model objects
         // conflicts between the explicit `var id: UUID` and SwiftData's generated
         // Identifiable conformance (persistentModelID), causing clicks to be ignored.
         List {
+            // Dashboard row — shows cross-project session overview
+            HStack(spacing: 6) {
+                Label("All Sessions", systemImage: "rectangle.grid.2x2")
+                    .lineLimit(1)
+                Spacer()
+                if activeSessionCount > 0 {
+                    Text("\(activeSessionCount)")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.quaternary)
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.vertical, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .listRowBackground(showDashboard ? Color.accentColor.opacity(0.2) : Color.clear)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                showDashboard = true
+                selectedProject = nil
+            }
+
             ForEach(projects) { project in
                 ProjectRow(
                     project: project,
-                    isSelected: selectedProject?.persistentModelID == project.persistentModelID
+                    isSelected: !showDashboard && selectedProject?.persistentModelID == project.persistentModelID
                 )
                 .contentShape(Rectangle())
-                .onTapGesture { selectedProject = project }
+                .onTapGesture {
+                    showDashboard = false
+                    selectedProject = project
+                }
                 .contextMenu {
                     Button("Remove", role: .destructive) {
                         if selectedProject?.persistentModelID == project.persistentModelID {

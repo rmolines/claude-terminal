@@ -43,6 +43,7 @@ actor SessionManager {
             if event.isManagedByApp == true {
                 updateOrCreate(sessionID: event.sessionID, cwd: event.cwd, status: .awaitingInput)
                 sessions[event.sessionID]?.currentActivity = event.detail ?? "Awaiting approval"
+                sessions[event.sessionID]?.pendingToolName = event.toolName
                 await NotificationService.shared.requestHITLApproval(
                     sessionID: event.sessionID,
                     description: "Agent at \(event.cwd) awaiting approval"
@@ -120,11 +121,46 @@ actor SessionManager {
         cwd: String,
         status: AgentStatus = .running
     ) {
-        if sessions[sessionID] == nil {
+        let isNew = sessions[sessionID] == nil
+        if isNew {
             sessions[sessionID] = AgentSession(sessionID: sessionID, cwd: cwd)
+            // Fetch git branch on a dedicated Thread — never block the actor with waitUntilExit().
+            Task {
+                if let branch = await Self.fetchBranch(cwd: cwd) {
+                    self.sessions[sessionID]?.branch = branch
+                    if let session = self.sessions[sessionID] {
+                        Task { @MainActor in SessionStore.shared.update(session) }
+                    }
+                }
+            }
         }
         sessions[sessionID]?.status = status
         sessions[sessionID]?.lastEventAt = Date()
+    }
+
+    /// Runs `git branch --show-current` in a dedicated Thread so the actor is never blocked.
+    nonisolated private static func fetchBranch(cwd: String) async -> String? {
+        await withCheckedContinuation { continuation in
+            let thread = Thread {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+                process.arguments = ["-C", cwd, "branch", "--show-current"]
+                let outPipe = Pipe()
+                process.standardOutput = outPipe
+                process.standardError = Pipe()
+                do {
+                    try process.run()
+                    process.waitUntilExit()
+                    let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+                    let raw = String(data: data, encoding: .utf8)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    continuation.resume(returning: raw.flatMap { $0.isEmpty ? nil : $0 })
+                } catch {
+                    continuation.resume(returning: nil)
+                }
+            }
+            thread.start()
+        }
     }
 }
 
@@ -143,6 +179,10 @@ struct AgentSession: Sendable {
     var totalOutputTokens: Int = 0
     var totalCacheReadTokens: Int = 0
     var recentMessages: [String] = []
+    /// Git branch name at the session's cwd, populated async after session creation.
+    var branch: String?
+    /// Tool name from the most recent permissionRequest event (e.g. "Bash", "Write").
+    var pendingToolName: String?
     /// True for sessions registered by the app before any hook fires (e.g. the main Terminal tab).
     /// Evicted automatically when a real hook arrives for the same cwd.
     var isSynthetic: Bool = false

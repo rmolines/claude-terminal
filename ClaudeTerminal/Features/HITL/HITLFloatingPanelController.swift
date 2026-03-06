@@ -2,18 +2,18 @@ import AppKit
 import SwiftUI
 
 /// Manages a floating NSPanel that appears above all windows — including non-ClaudeTerminal apps —
-/// whenever an agent session requires HITL approval.
+/// whenever any agent session requires HITL approval.
 ///
-/// The panel is created once and reused. It hosts HITLPanelView via NSHostingView and observes
-/// SessionStore for awaitingInput sessions using the same withObservationTracking pattern as AppDelegate.
+/// The panel is created once and reused. It hosts HITLQueueView via NSHostingView and observes
+/// SessionStore for all awaitingInput sessions using the same withObservationTracking pattern as AppDelegate.
 @MainActor
 final class HITLFloatingPanelController {
 
     // MARK: - Private state
 
     private lazy var panel: NSPanel = makePanel()
-    private var hostingView: NSHostingView<HITLPanelView>?
-    /// Shared state read by HITLPanelView. Mutating this lets SwiftUI diff internally
+    private var hostingView: NSHostingView<HITLQueueView>?
+    /// Shared state read by HITLQueueView. Mutating this lets SwiftUI diff internally
     /// without triggering NSHostingView.rootView = which causes constraint invalidation
     /// during AppKit layout cycles (crash in macOS 26: _postWindowNeedsUpdateConstraints).
     private var panelState = HITLPanelState()
@@ -40,36 +40,36 @@ final class HITLFloatingPanelController {
     }
 
     private func updatePanel() {
-        let pending = SessionStore.shared.sessions.values.first { $0.status == .awaitingInput }
-        if let session = pending {
-            show(session: session)
-        } else {
+        let pendingSessions = SessionStore.shared.sessions.values
+            .filter { $0.status == .awaitingInput }
+            .sorted { $0.lastEventAt < $1.lastEventAt }
+
+        // Rebuild the items list — SwiftUI diffs ForEach by sessionID, so only changed items re-render.
+        panelState.pendingItems = pendingSessions.map { session in
+            let description = session.currentActivity ?? "Agent at \(session.cwd) awaiting approval"
+            let risk = RiskSurfaceComputer.compute(toolName: session.pendingToolName, detail: session.currentActivity)
+            return HITLItem(
+                sessionID: session.sessionID,
+                description: description,
+                toolName: session.pendingToolName,
+                riskLevel: risk,
+                onApprove: { Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID) } },
+                onReject: { Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID) } }
+            )
+        }
+
+        if panelState.pendingItems.isEmpty {
             panel.orderOut(nil)
-        }
-    }
-
-    // MARK: - Show / dismiss
-
-    private func show(session: AgentSession) {
-        let description = session.currentActivity ?? "Agent at \(session.cwd) awaiting approval"
-
-        // Update shared state — SwiftUI diffs internally without touching rootView.
-        // Never set hosting.rootView = while the panel is visible: that invalidates
-        // NSHostingView constraints during AppKit layout cycles (macOS 26 crash).
-        panelState.sessionID = session.sessionID
-        panelState.description = description
-        panelState.onApprove = { Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID) } }
-        panelState.onReject = { Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID) } }
-
-        if hostingView == nil {
-            let hosting = NSHostingView(rootView: HITLPanelView(state: panelState))
-            panel.contentView = hosting
-            hostingView = hosting
-        }
-
-        if !panel.isVisible {
-            panel.center()
-            panel.makeKeyAndOrderFront(nil)
+        } else {
+            if hostingView == nil {
+                let hosting = NSHostingView(rootView: HITLQueueView(state: panelState))
+                panel.contentView = hosting
+                hostingView = hosting
+            }
+            if !panel.isVisible {
+                panel.center()
+                panel.makeKeyAndOrderFront(nil)
+            }
         }
     }
 
@@ -77,7 +77,7 @@ final class HITLFloatingPanelController {
 
     private func makePanel() -> NSPanel {
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 160),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 360),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
