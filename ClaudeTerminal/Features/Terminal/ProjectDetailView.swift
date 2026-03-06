@@ -13,6 +13,8 @@ struct ProjectDetailView: View {
     @State private var openedPaths: [String] = []
     /// Revision token per path — bumping forces SwiftUI to destroy and recreate the terminal.
     @State private var terminalRevision: [String: UUID] = [:]
+    /// Paths where the PTY process has exited — shows "session ended" overlay.
+    @State private var deadPaths: Set<String> = []
     @State private var selectedTab: ProjectTab = .terminal
     @State private var currentBranch: String = "—"
     @State private var headerWorktrees: [WorktreeInfo] = []
@@ -113,10 +115,35 @@ struct ProjectDetailView: View {
     private var terminalView: some View {
         ZStack {
             ForEach(openedPaths, id: \.self) { path in
-                makeTerminal(for: path)
-                    .id("\(path)-\(terminalRevision[path]?.uuidString ?? "initial")")
-                    .opacity(project.displayPath == path ? 1 : 0)
-                    .allowsHitTesting(project.displayPath == path)
+                ZStack {
+                    makeTerminal(for: path)
+                        .id("\(path)-\(terminalRevision[path]?.uuidString ?? "initial")")
+                    if deadPaths.contains(path) {
+                        sessionEndedOverlay(for: path)
+                    }
+                }
+                .opacity(project.displayPath == path ? 1 : 0)
+                .allowsHitTesting(project.displayPath == path)
+            }
+        }
+    }
+
+    private func sessionEndedOverlay(for path: String) -> some View {
+        ZStack {
+            Color.black.opacity(0.6)
+            VStack(spacing: 12) {
+                Image(systemName: "terminal")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.secondary)
+                Text("Session ended")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Button("Restart") {
+                    deadPaths.remove(path)
+                    terminalRevision[path] = UUID()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
             }
         }
     }
@@ -138,13 +165,19 @@ struct ProjectDetailView: View {
             TerminalSnapshotStore.shared.delete(projectID: project.id, path: path)
         }
 
+        let deadPathsBinding = $deadPaths
         return TerminalViewRepresentable(
             executable: "/bin/zsh",
             args: ["-l", "-i", "-c", "cd '\(escaped)' && claude"],
             environment: envArray,
             projectID: project.id,
             path: path,
-            restoreContent: restoreContent
+            restoreContent: restoreContent,
+            onProcessTerminated: {
+                var current = deadPathsBinding.wrappedValue
+                current.insert(path)
+                deadPathsBinding.wrappedValue = current
+            }
         )
     }
 
@@ -167,6 +200,7 @@ struct ProjectDetailView: View {
 
     private func restartCurrentTerminal() {
         let path = project.displayPath
+        deadPaths.remove(path)
         // Bump the revision — SwiftUI will destroy the old terminal view (closing the PTY)
         // and create a new one. No snapshot is saved, so the new session starts clean.
         terminalRevision[path] = UUID()

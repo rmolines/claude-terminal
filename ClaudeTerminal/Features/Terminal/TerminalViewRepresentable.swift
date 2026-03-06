@@ -18,6 +18,8 @@ struct TerminalViewRepresentable: NSViewRepresentable {
     var projectID: UUID? = nil
     var path: String? = nil
     var restoreContent: (data: Data, savedAt: Date)? = nil
+    /// Called on the main actor when the PTY process exits (e.g. user typed `exit`).
+    var onProcessTerminated: (@MainActor @Sendable () -> Void)? = nil
 
     /// True when running inside the Xcode canvas (set automatically by Xcode 26.3+).
     static var isPreview: Bool {
@@ -59,8 +61,9 @@ struct TerminalViewRepresentable: NSViewRepresentable {
             execName: nil
         )
 
-        // Wire coordinator for snapshot capture
+        // Wire coordinator for snapshot capture and process-exit callback
         context.coordinator.terminalView = tv
+        context.coordinator.onProcessTerminated = onProcessTerminated
 
         // Intercept Shift+Enter before SwiftTerm sees it — sends \n to the PTY so Claude Code
         // can insert a newline in the input field without submitting. The monitor only acts when
@@ -140,6 +143,7 @@ struct TerminalViewRepresentable: NSViewRepresentable {
         var projectID: UUID?
         var path: String?
         weak var terminalView: LocalProcessTerminalView?
+        var onProcessTerminated: (@MainActor @Sendable () -> Void)?
 
         deinit {
             if let obs = inputObserver {
@@ -168,7 +172,12 @@ struct TerminalViewRepresentable: NSViewRepresentable {
 
         func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
         func setTerminalTitle(source: LocalProcessTerminalView, title: String) {}
-        func processTerminated(source: TerminalView, exitCode: Int32?) {}
+        func processTerminated(source: TerminalView, exitCode: Int32?) {
+            let callback = onProcessTerminated
+            Task { @MainActor in
+                callback?()
+            }
+        }
         func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}
     }
 }
