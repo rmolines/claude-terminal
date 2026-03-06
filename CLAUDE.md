@@ -112,6 +112,7 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | HITL PTY bridge — `\r` vaza para próximo dialog | Ao enviar `[0x31, 0x0d]` ao PTY para confirmar TUI dialog de permissão: `0x0d` (`\r`) fica no buffer de input e auto-confirma silenciosamente o próximo dialog antes do usuário clicar | Enviar apenas `[0x31]` — Claude Code em raw mode processa um byte de cada vez; `\r` é desnecessário e destrutivo |
 | `close-feature` com paths relativos em worktree | Writes de HANDOVER.md, CHANGELOG.md etc. com path relativo dentro de `.claude/worktrees/<feature>` vão para a worktree (deletada no próximo passo) — docs perdidos, agente reescreve tudo em main | Sempre `REPO_ROOT=$(git worktree list \| head -1 \| awk '{print $1}')` no início do close-feature + usar `$REPO_ROOT/HANDOVER.md` etc. |
 | `gh run list` / `gh run watch` sem `--repo` em worktree | `gh` detecta `claude-kickstart` em vez de `claude-terminal` quando rodando de dentro de uma worktree — comandos falham com HTTP 404 no repo errado | Sempre passar `--repo rmolines/claude-terminal` em todos os comandos `gh run` executados de dentro de worktrees |
+| `ForEach` com KeyPath + `??` operador | `ForEach(items, id: \.optionalField ?? "default")` não compila — `??` não é válido em KeyPath context no Swift | Usar `ForEach(Array(items.enumerated()), id: \.offset)` ou criar wrapper `Identifiable` com `id` computado |
 
 ## Worktree convention
 
