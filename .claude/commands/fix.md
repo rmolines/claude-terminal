@@ -148,6 +148,14 @@ diagnosis.md salvo em .claude/fix-plans/<nome>/
 
 Próximo passo: Fase 2 (Execução)
 Recomendo /clear antes de continuar — rode /fix <nome> novamente.
+
+────────────────────────────────────────────────
+Cole na nova sessão após /clear:
+
+Fix "<nome>" — Diagnóstico concluído.
+Contexto salvo em: .claude/fix-plans/<nome>/diagnosis.md
+Próximo comando: /fix <nome>
+────────────────────────────────────────────────
 ```
 
 ---

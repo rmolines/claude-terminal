@@ -182,6 +182,14 @@ discovery.md salvo em .claude/feature-plans/<nome>/
 Próximo passo: Fase A (Pesquisa técnica)
 Recomendo /clear antes de continuar — rode /start-feature --deep <nome> para pesquisa completa,
 ou /start-feature <nome> para execução direta com o discovery como contexto.
+
+────────────────────────────────────────────────
+Cole na nova sessão após /clear:
+
+Feature "<nome>" — Discovery concluído.
+Contexto salvo em: .claude/feature-plans/<nome>/discovery.md
+Próximo comando: /start-feature --deep <nome>
+────────────────────────────────────────────────
 ```
 
 ---
@@ -283,6 +291,14 @@ research.md salvo em .claude/feature-plans/<nome>/
 
 Próximo passo: Fase B (Planejamento)
 Recomendo /clear antes de continuar — rode /start-feature <nome> novamente.
+
+────────────────────────────────────────────────
+Cole na nova sessão após /clear:
+
+Feature "<nome>" — Research concluído.
+Contexto salvo em: .claude/feature-plans/<nome>/research.md
+Próximo comando: /start-feature <nome>
+────────────────────────────────────────────────
 ```
 
 ---
@@ -397,6 +413,14 @@ plan.md salvo em .claude/feature-plans/<nome>/
 Executar agora ou /clear primeiro?
 - Executar agora — contexto ainda é válido
 - /clear — recomendado se a sessão está longa (rode /start-feature <nome> para retomar na Fase C)
+
+────────────────────────────────────────────────
+Cole na nova sessão após /clear (se optar por limpar):
+
+Feature "<nome>" — Plan pronto.
+Contexto salvo em: .claude/feature-plans/<nome>/plan.md
+Próximo comando: /start-feature <nome>
+────────────────────────────────────────────────
 ```
 
 ---
