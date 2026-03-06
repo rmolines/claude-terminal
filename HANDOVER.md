@@ -4,6 +4,29 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — fix(terminal): session-ended overlay quando PTY encerra (PR #49)
+
+**O que foi feito:**
+`processTerminated` em `TerminalViewRepresentable.Coordinator` era um no-op — quando o usuário
+dava `exit` no Claude (ou Ctrl+D), o processo `zsh -c "cd && claude"` encerrava, o PTY morria
+mas a view ficava congelada sem feedback visual e sem forma de recuperar sem usar o botão `↺`.
+
+**Fix:**
+- `TerminalViewRepresentable`: adicionado `onProcessTerminated: (@MainActor @Sendable () -> Void)?`
+- `Coordinator.processTerminated`: captura o closure antes do `Task { @MainActor in ... }` para satisfazer Swift 6 concurrency (sem capturar `self` no closure)
+- `ProjectDetailView`: novo `@State private var deadPaths: Set<String>` — quando processo encerra, path entra no set; ZStack exibe overlay "Session ended" com botão **Restart**
+- Botão Restart do overlay e botão `↺` do header ambos removem de `deadPaths` e bumpam `terminalRevision`
+
+**Armadilha Swift 6:** `DispatchQueue.main.async { [weak self] in self?.callback() }` é rejeitado — "sending self risks data race". Fix: capturar o closure em `let callback = onProcessTerminated` antes do `Task`, e marcar o tipo como `@MainActor @Sendable`.
+
+**Arquivos-chave:**
+- `ClaudeTerminal/Features/Terminal/TerminalViewRepresentable.swift:21,143,175`
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift:17,115,131`
+
+**Próximos passos:** nenhum — fix pontual, sem dívida técnica.
+
+---
+
 ## 2026-03-05 — chore: sync skills + docs (PR #46)
 
 **O que foi feito:**
