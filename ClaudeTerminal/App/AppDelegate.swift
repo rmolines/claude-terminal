@@ -35,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         setupMenuBar()
         setupNotifications()
         Task { await HookIPCServer.shared.start() }
+        WorkSessionService.shared.start()
         hitlPanelController = HITLFloatingPanelController()
         hitlPanelController?.start()
     }
