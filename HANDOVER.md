@@ -31,7 +31,9 @@ nunca tem `rootView =`. Mutações de estado diffadas pelo SwiftUI internamente 
 
 ## 2026-03-06 — skill-drift-notification-to-session
 
-**O que foi feito:** Removida a notificação macOS (`osascript`) do hook `~/.claude/hooks/session-start-freshness.sh` que disparava ao detectar drift de skills. O aviso agora aparece apenas como `system-reminder` no contexto da sessão — sem pop-up.
+**O que foi feito:** Removida a notificação macOS (`osascript`) do hook
+`~/.claude/hooks/session-start-freshness.sh` que disparava ao detectar drift de skills.
+O aviso agora aparece apenas como `system-reminder` no contexto da sessão — sem pop-up.
 
 **Decisão:** O stdout do hook já entregava a informação relevante (lista de skills desatualizadas + comando de sync) diretamente no contexto do agente. A notificação do OS era ruído redundante.
 
