@@ -2,6 +2,37 @@
 
 ---
 
+## [feat] Polish sprint registry — chores[] + --close + compass — 2026-03-06
+
+**Tipo:** feat
+**Tags:** skills, workflow, backlog, polish
+**PR:** [#65](https://github.com/rmolines/claude-terminal/pull/65) · **Complexidade:** simples
+
+### O que mudou
+
+`/polish` agora registra cada sessao em `backlog.json` (array `chores[]`) apos abrir o PR,
+e suporta `/polish --close` para marcar o registro como `"merged"` e limpar a branch.
+`/project-compass` exibe uma tabela "Chores recentes" quando `chores[]` nao esta vazio.
+
+### Detalhes tecnicos
+
+- `backlog.json`: novo array top-level `"chores": []`
+- `polish.md`: flag `--close` (guard + jq status update + delete branch); Passo 5 com `swift test`
+  + RenderPreview para UI; Passo 6b com jq write em `chores[]`
+- `project-compass.md`: Phase 1c extrai `chores[]`; Phase 3 tabela "Chores recentes" (omitida se vazia)
+
+### Impacto
+
+- **Breaking:** Nao
+
+### Arquivos-chave
+
+- `.claude/backlog.json` — array `chores[]` adicionado
+- `.claude/commands/polish.md` — flag `--close` + Passo 6b
+- `.claude/commands/project-compass.md` — Phase 1c + Phase 3
+
+---
+
 ## [feat] Session dashboard + HITL approval queue — 2026-03-06
 
 **Tipo:** feat

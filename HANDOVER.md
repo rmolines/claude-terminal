@@ -4,6 +4,45 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — polish-kanban-integration (PR #65)
+
+### O que foi feito
+
+Integração do ciclo de vida dos polish sprints com o `backlog.json` e com o `/project-compass`.
+Tres mudancas cirurgicas em arquivos de skill:
+
+- `backlog.json`: novo array top-level `"chores": []`
+- `polish.md`: flag `--close` que atualiza `status: "merged"` via jq e deleta branch local + remota;
+  Passo 5 agora roda `swift test` + RenderPreview para UI; Passo 6b escreve entrada em `chores[]`
+  apos criar o PR
+- `project-compass.md`: Phase 1c extrai `chores[]`; Phase 3 mostra tabela "Chores recentes"
+
+### Decisoes tomadas
+
+- Fluxo `--close` usa bold `**Passo A/B/C/D**` em vez de lista numerada — listas numeradas interrompidas
+  por code blocks causam MD029 no markdownlint-cli2
+- Match do `--close` por `branch` (nao `id`) porque `id` e derivado da data e pode colidir se dois
+  polishes sao abertos no mesmo dia; branch e unico
+- `(.chores // [])` null-safe — funciona mesmo antes da key existir no backlog
+
+### Armadilhas encontradas
+
+- CI falhou por linha de 337 chars pre-existente em `CHANGELOG.md:13` — nao relacionada a esta feature;
+  corrigida no mesmo PR para desbloquear o CI
+
+### Arquivos-chave
+
+- `.claude/backlog.json`
+- `.claude/commands/polish.md`
+- `.claude/commands/project-compass.md`
+
+### Proximos passos
+
+- Testar o fluxo completo na proxima sessao de polish real
+- Se necessario: refinar o formato da tabela "Chores recentes" no compass
+
+---
+
 ## 2026-03-06 — session-cards-hitl-ui: session dashboard + HITL approval queue
 
 **Branch:** `worktree-session-cards-hitl-ui` → PR #64 (merged)
