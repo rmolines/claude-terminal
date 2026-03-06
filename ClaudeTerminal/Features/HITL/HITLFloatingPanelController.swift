@@ -13,10 +13,10 @@ final class HITLFloatingPanelController {
 
     private lazy var panel: NSPanel = makePanel()
     private var hostingView: NSHostingView<HITLPanelView>?
-    /// Tracks what the panel is currently showing to avoid redundant rootView updates
-    /// that trigger NSHostingView constraint invalidation during AppKit layout cycles.
-    private var currentSessionID: String?
-    private var currentDescription: String?
+    /// Shared state read by HITLPanelView. Mutating this lets SwiftUI diff internally
+    /// without triggering NSHostingView.rootView = which causes constraint invalidation
+    /// during AppKit layout cycles (crash in macOS 26: _postWindowNeedsUpdateConstraints).
+    private var panelState = HITLPanelState()
 
     // MARK: - Lifecycle
 
@@ -44,8 +44,6 @@ final class HITLFloatingPanelController {
         if let session = pending {
             show(session: session)
         } else {
-            currentSessionID = nil
-            currentDescription = nil
             panel.orderOut(nil)
         }
     }
@@ -55,31 +53,16 @@ final class HITLFloatingPanelController {
     private func show(session: AgentSession) {
         let description = session.currentActivity ?? "Agent at \(session.cwd) awaiting approval"
 
-        // Skip rootView update if the panel is already showing the same content.
-        // Redundant updates invalidate NSHostingView constraints during AppKit layout
-        // cycles, triggering a crash in postWindowNeedsUpdateConstraints on macOS 26.
-        if panel.isVisible,
-           session.sessionID == currentSessionID,
-           description == currentDescription {
-            return
-        }
+        // Update shared state — SwiftUI diffs internally without touching rootView.
+        // Never set hosting.rootView = while the panel is visible: that invalidates
+        // NSHostingView constraints during AppKit layout cycles (macOS 26 crash).
+        panelState.sessionID = session.sessionID
+        panelState.description = description
+        panelState.onApprove = { Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID) } }
+        panelState.onReject = { Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID) } }
 
-        currentSessionID = session.sessionID
-        currentDescription = description
-
-        let view = HITLPanelView(
-            sessionID: session.sessionID,
-            description: description
-        ) {
-            Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID) }
-        } onReject: {
-            Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID) }
-        }
-
-        if let hosting = hostingView {
-            hosting.rootView = view
-        } else {
-            let hosting = NSHostingView(rootView: view)
+        if hostingView == nil {
+            let hosting = NSHostingView(rootView: HITLPanelView(state: panelState))
             hosting.sizingOptions = [.minSize]
             panel.contentView = hosting
             hostingView = hosting
