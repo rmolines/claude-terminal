@@ -2,6 +2,40 @@
 
 ---
 
+## [improvement] mcp-session-preflight: preflight probes + session-type annotation — 2026-03-06
+
+**Tipo:** improvement
+**Tags:** skills, developer-experience, mcp, workflow
+**PR:** [#63](https://github.com/rmolines/claude-terminal/pull/63) · **Complexidade:** simples
+
+### O que mudou
+
+Skills MCP-dependentes agora detectam ativamente quando o Xcode MCP está desconectado e
+exibem uma mensagem de remediação clara em vez de falhar silenciosamente mid-session.
+
+### Detalhes técnicos
+
+- `design-review.md`: `RenderPreview` virou hard gate — obrigatório quando `#Preview` existe.
+  Se a chamada falhar (MCP desconectado), exibe `[SEM MCP]` com instrução: feche a sessão,
+  abra `Package.swift` no Xcode e inicie nova sessão do Claude Code
+- `ship-feature.md` passo 0.5: tenta `BuildProject` (MCP) primeiro para erros estruturados;
+  se falhar, emite aviso e usa `swift build` como fallback transparente
+- `start-feature.md`: handoff blocks de Fase 0 e A anotados como `Tipo de sessão: A`;
+  Fase B determina tipo A/B por presença de `*View.swift` no plan.md; Fase C.1 exibe
+  `[PREREQUISITO UI]` quando plan.md lista views SwiftUI
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/commands/design-review.md` — RenderPreview hard gate + [SEM MCP] message
+- `.claude/commands/ship-feature.md` — BuildProject probe + swift build fallback
+- `.claude/commands/start-feature.md` — session-type annotation + UI prerequisite warning
+
+---
+
 ## [improvement] Delivery summary no /close-feature — 2026-03-06
 
 **Tipo:** improvement

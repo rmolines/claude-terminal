@@ -4,6 +4,47 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — mcp-session-preflight: preflight probes + session-type annotation
+
+**Branch:** `worktree-mcp-session-preflight` → PR #63 (merged)
+
+### O que foi feito
+
+1. **design-review**: `RenderPreview` virou hard gate obrigatório quando `#Preview` existe.
+   Se falhar (Xcode MCP desconectado), exibe `[SEM MCP]` com instrução de remediação
+   (`abra Package.swift no Xcode + nova sessão`) em vez de falhar silenciosamente.
+2. **ship-feature passo 0.5**: tenta `BuildProject` primeiro; se MCP indisponível,
+   emite aviso e usa `swift build` como fallback.
+3. **start-feature**: handoff blocks de Fase 0 e A anotados como `Tipo de sessão: A`;
+   Fase B determina tipo A/B por presença de `*View.swift` no plan.md gerado.
+4. **start-feature Fase C.1**: aviso `[PREREQUISITO UI]` quando plan.md lista views SwiftUI.
+
+### Decisões técnicas
+
+- `ListMcpResourcesTool` descartado como probe — lista recursos de dados, não ferramentas;
+  retorna sucesso mesmo com Xcode desconectado. Único probe confiável: tentar a ferramenta
+  e observar o erro (conforme explore.md da feature).
+- `RenderPreview` probe posto no Passo 1 do Loop de revisão (não no topo do skill) pois só
+  é relevante quando `#Preview` existe e o bloco de revisão está ativo.
+
+### Armadilhas encontradas
+
+- `ListMcpResourcesTool` não detecta conectividade de MCP tools — lista apenas recursos
+  (dados) do servidor, não as ferramentas expostas. Sem precedente óbvio.
+
+### Próximos passos possíveis
+
+- Verificar se ship-feature (passo 0.5 com BuildProject) funciona corretamente com Xcode aberto
+- `ship-close-skill-remaining-gaps` e `session-cards-hitl-ui` ainda pendentes no backlog
+
+### Arquivos-chave modificados
+
+- `.claude/commands/design-review.md` — preflight probe RenderPreview + hard gate
+- `.claude/commands/ship-feature.md` — BuildProject probe + swift build fallback
+- `.claude/commands/start-feature.md` — session-type annotation + UI prerequisite warning
+
+---
+
 ## 2026-03-06 — close-feature delivery summary + HITL crash root cause
 
 **Branch:** `chore/skills-close-feature-delivery-summary` → PRs #61 + #62 (merged)

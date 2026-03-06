@@ -113,6 +113,7 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | `close-feature` com paths relativos em worktree | Writes de HANDOVER.md, CHANGELOG.md etc. com path relativo dentro de `.claude/worktrees/<feature>` vão para a worktree (deletada no próximo passo) — docs perdidos, agente reescreve tudo em main | Sempre `REPO_ROOT=$(git worktree list \| head -1 \| awk '{print $1}')` no início do close-feature + usar `$REPO_ROOT/HANDOVER.md` etc. |
 | `gh run list` / `gh run watch` sem `--repo` em worktree | `gh` detecta `claude-kickstart` em vez de `claude-terminal` quando rodando de dentro de uma worktree — comandos falham com HTTP 404 no repo errado | Sempre passar `--repo rmolines/claude-terminal` em todos os comandos `gh run` executados de dentro de worktrees |
 | `ForEach` com KeyPath + `??` operador | `ForEach(items, id: \.optionalField ?? "default")` não compila — `??` não é válido em KeyPath context no Swift | Usar `ForEach(Array(items.enumerated()), id: \.offset)` ou criar wrapper `Identifiable` com `id` computado |
+| `ListMcpResourcesTool` como probe de conectividade MCP | `ListMcpResourcesTool` lista recursos de dados do servidor MCP (arquivos, endpoints), não as ferramentas expostas — retorna sucesso mesmo com Xcode MCP desconectado; não serve como probe de disponibilidade | Única probe confiável: tentar chamar a ferramenta MCP diretamente (`RenderPreview`, `BuildProject`) e observar se retorna erro de "ferramenta indisponível" |
 
 ## Worktree convention
 
