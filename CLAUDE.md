@@ -67,6 +67,10 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 
 | Componente | Armadilha | Solução |
 |---|---|---|
+| Claude Code hooks | `hookSpecificOutput` JSON não é suportado em `SessionStart` — retorna "hook error" mesmo com exit 0 | Usar plain text stdout para SessionStart; `hookSpecificOutput` só funciona em PreToolUse/PostToolUse |
+| Claude Code hooks | Stderr de hooks não aparece no terminal mesmo com hook síncrono (não-async) | Usar `osascript` para notificações visíveis ao usuário; stderr vai para pipe não exibido |
+| Claude Code hooks | `async: true` em SessionStart descarta stderr completamente (background sem terminal) | Remover `async` para que o hook seja síncrono; ou usar arquivo/notification para output ao usuário |
+| Bash hook scripts | `set -euo pipefail` + `[ cond ] && cmd` — quando condição é falsa, retorna exit 1 e dispara `set -e` | Usar `if/fi` em vez de `[ ] && cmd` em scripts com `set -e`; ou remover `set -e` de hook scripts |
 | SwiftData | Array ordering não preservado ao recarregar | Adicionar `sortOrder: Int` em todos os arrays |
 | SwiftData | Auto-save não é confiável | Sempre `context.save()` após mutations |
 | SwiftData | `ModelContext` não é thread-safe | Um contexto por actor/thread |
