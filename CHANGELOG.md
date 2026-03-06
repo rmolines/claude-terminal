@@ -2,6 +2,31 @@
 
 ---
 
+## [fix] Terminal mostra overlay "Session ended" ao sair do Claude — 2026-03-06
+
+**Tipo:** fix
+**Tags:** terminal, pty, swifttterm, ux
+**PR:** [#49](https://github.com/rmolines/claude-terminal/pull/49) · **Complexidade:** simples
+
+### Problema
+
+Ao digitar `exit` (ou Ctrl+D) no terminal do app, a sessão Claude encerrava mas a view ficava
+congelada — sem feedback visual e sem forma de iniciar uma nova sessão exceto clicando no botão
+`↺` do header (que muitos usuários não descobriam).
+
+### Fix aplicado
+
+`processTerminated` no `Coordinator` era um no-op. Agora dispara `onProcessTerminated` callback
+no `@MainActor`. `ProjectDetailView` rastreia `deadPaths: Set<String>` e exibe overlay
+"Session ended" com botão **Restart** sobre o terminal morto.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/Terminal/TerminalViewRepresentable.swift` — `onProcessTerminated` callback + `processTerminated` implementado
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift` — `deadPaths` state + overlay
+
+---
+
 ## [chore] Sync skills from upstream + docs update — 2026-03-05
 
 **Tipo:** chore
@@ -40,15 +65,18 @@ dos fixes de HITL atualizada em CHANGELOG, HANDOVER, LEARNINGS e CLAUDE.md.
 **PR:** [#45](https://github.com/rmolines/claude-terminal/pull/45) · **Complexidade:** simples
 
 ### Problema
+
 O painel HITL aparecia mas os botões Approve/Reject não faziam nada visualmente (o painel
 ficava aberto). Além disso, o painel sempre mostrava "Awaiting approval" em vez do comando
 real que o agente queria executar.
 
 ### Fix aplicado
+
 - `approveHITL`/`rejectHITL` agora propagam o status atualizado ao `SessionStore`, permitindo que o painel feche imediatamente
 - `HookHandler` agora extrai o comando de `toolInput["command"]` (Bash) em vez de `toolInput["description"]` (que era sempre `nil`)
 
 ### Arquivos-chave
+
 - `ClaudeTerminal/Services/SessionManager.swift` — SessionStore.update() adicionado em approve/reject
 - `ClaudeTerminalHelper/HookHandler.swift` — extração de detail corrigida
 
