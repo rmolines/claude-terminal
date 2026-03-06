@@ -57,7 +57,8 @@ O botão aprovava o socket mas o TUI continuava bloqueado, fazendo o terminal pa
 - `TerminalRegistry`: adicionado método `sendInput(_:forCwd:)` que busca o coordinator pelo path (com fallback de prefix matching)
 
 **Armadilha encontrada:**
-Usar `[0x31, 0x0d]` ("1\r") funcionava no primeiro dialog mas o `\r` vazava para o buffer do próximo dialog, auto-confirmando silenciosamente. Fix: usar apenas `[0x31]` — raw mode processa um byte de cada vez.
+Usar `[0x31, 0x0d]` ("1\r") funcionava mas `\r` vazava para o buffer do próximo dialog, auto-confirmando silenciosamente.
+Fix: usar apenas `[0x31]` — raw mode processa um byte de cada vez.
 
 **Arquivos-chave:**
 - `ClaudeTerminal/Services/SessionManager.swift` — `approveHITL` + `rejectHITL`
@@ -698,7 +699,8 @@ Conectou os 6 fios desconectados do scaffold para que eventos fluam:
 
 - **SessionStore** (`NEW`): `@MainActor @Observable` bridge — actor pusha snapshots via `Task { @MainActor in ... }`; SwiftUI observa sem boilerplate
 - **HookIPCServer**: fd do cliente HITL mantido aberto; `respondHITL(sessionID:approved:)` escreve 1 byte e fecha — protocolo bi-direcional via Unix domain socket
-- **SessionManager**: `handleEvent` tornou-se `async` para chamar `await NotificationService`; dispara notificação em `permissionRequest`; `approveHITL`/`rejectHITL` roteiam resposta real via `HookIPCServer`
+- **SessionManager**: `handleEvent` tornou-se `async` para chamar `await NotificationService`; dispara notificação em `permissionRequest`;
+  `approveHITL`/`rejectHITL` roteiam resposta real via `HookIPCServer`
 - **IPCClient**: `sendAndAwaitResponse()` — bloqueia o helper com `SO_RCVTIMEO` de 5 min enquanto aguarda byte de resposta
 - **HookHandler**: `run()` retorna `Int32`; permissionRequest bloqueia; exit 0 = allow, exit 2 = block (Claude Code spec)
 - **AppDelegate**: inicia servidor no launch; `observeSessionStore()` via `withObservationTracking` + re-subscribe recursivo para badge reativo
