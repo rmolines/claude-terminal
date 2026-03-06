@@ -2,6 +2,52 @@
 
 ---
 
+## [fix] HITL panel crash — @Observable state elimina rootView= no macOS 26 — 2026-03-06
+
+**Tipo:** fix
+**Tags:** hitl, appkit, crash, swiftui
+**PR:** [#57](https://github.com/rmolines/claude-terminal/pull/57) · **Complexidade:** simples
+
+### Problema
+
+Crash `EXC_BREAKPOINT (SIGTRAP)` em `_postWindowNeedsUpdateConstraints` após horas de uso.
+O guard de cache (sessionID + description) evitava atualizações redundantes mas não protegia
+o caso de um segundo request HITL com conteúdo diferente — que ainda chamava `hosting.rootView = view`
+durante um layout cycle ativo do AppKit.
+
+### Fix aplicado
+
+Introduzida `HITLPanelState` (`@Observable`) como estado compartilhado. `NSHostingView` é criado
+uma vez com `HITLPanelView(state:)` e nunca tem `rootView =` chamado novamente. Mutações de estado
+são diffadas internamente pelo SwiftUI sem invalidar constraints.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/HITL/HITLPanelView.swift` — `HITLPanelState` + view refatorada
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — remove `rootView =`, usa `panelState`
+
+---
+
+## [fix] skill-drift-notification — remover pop-up macOS do hook de startup — 2026-03-06
+
+**Tipo:** fix
+**Tags:** hooks, developer-experience, skills
+**PR:** N/A (arquivo global `~/.claude/hooks/`) · **Complexidade:** simples
+
+### Problema
+
+Hook `session-start-freshness.sh` disparava notificação macOS via `osascript` ao detectar drift de skills — pop-up desnecessário pois o aviso já aparecia como `system-reminder` direto na sessão.
+
+### Fix aplicado
+
+Removida a linha `osascript` (linha 88). Aviso de drift agora é apenas via stdout → contexto da sessão.
+
+### Arquivos-chave
+
+- `~/.claude/hooks/session-start-freshness.sh` — linha 88 removida
+
+---
+
 ## [feat] skill-freshness-check — hook de detecção de drift de skills — 2026-03-06
 
 **Tipo:** feat
@@ -9,11 +55,13 @@
 **PR:** N/A (feature global, fora do repo) · **Complexidade:** média
 
 ### O que mudou
+
 Hook de SessionStart que compara `~/.claude/commands/` com o `rmolines/claude-kickstart` remoto
 a cada sessão startup. Detecta arquivos modificados, faltando localmente ou deletados no upstream.
 Notifica via macOS notification e injeta contexto plain text para o Claude.
 
 ### Detalhes técnicos
+
 - `~/.claude/hooks/session-start-freshness.sh` — git fetch + hash comparison (shasum -a 256) por arquivo
 - `~/.claude/settings.json` — entrada `SessionStart` com `matcher: "startup"` (escrita atômica via mktemp + os.replace)
 - Timeout de 3s no fetch via subshell + kill (sem `timeout` command no macOS)
@@ -21,11 +69,13 @@ Notifica via macOS notification e injeta contexto plain text para o Claude.
 - osascript notification para visibilidade garantida (stderr de hooks não aparece no terminal)
 
 ### Impacto
+
 - **Breaking:** Não
 - Notificação macOS ao iniciar sessão quando há drift
 - Claude vê o drift no contexto e menciona proativamente
 
 ### Arquivos-chave
+
 - `~/.claude/hooks/session-start-freshness.sh` — script principal
 - `~/.claude/settings.json` — hook registrado em `hooks.SessionStart`
 
