@@ -69,7 +69,8 @@ mas a view ficava congelada sem feedback visual e sem forma de recuperar sem usa
 - `ProjectDetailView`: novo `@State private var deadPaths: Set<String>` — quando processo encerra, path entra no set; ZStack exibe overlay "Session ended" com botão **Restart**
 - Botão Restart do overlay e botão `↺` do header ambos removem de `deadPaths` e bumpam `terminalRevision`
 
-**Armadilha Swift 6:** `DispatchQueue.main.async { [weak self] in self?.callback() }` é rejeitado — "sending self risks data race". Fix: capturar o closure em `let callback = onProcessTerminated` antes do `Task`, e marcar o tipo como `@MainActor @Sendable`.
+**Armadilha Swift 6:** `DispatchQueue.main.async { [weak self] in self?.callback() }` é rejeitado — "sending self risks data race".
+Fix: capturar o closure em `let callback = onProcessTerminated` antes do `Task`, e marcar o tipo como `@MainActor @Sendable`.
 
 **Arquivos-chave:**
 - `ClaudeTerminal/Features/Terminal/TerminalViewRepresentable.swift:21,143,175`
