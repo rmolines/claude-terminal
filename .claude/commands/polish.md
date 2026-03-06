@@ -92,6 +92,7 @@ Item <N>/<Total>: <descrição da tarefa>
 ### 3b — Implementar
 
 Regras de execução:
+
 - Ler o estado atual de cada arquivo antes de editar — nunca editar às cegas
 - Aplicar a menor mudança possível que resolve o item
 - Não refatorar código vizinho não relacionado
@@ -160,10 +161,12 @@ Se algum item foi pulado: listar separadamente com razão.
 
 ## Passo 5 — Build + testes
 
+Extrair o comando de build do `CLAUDE.md` do projeto (campo `Comando de build`).
+
 Rodar em background (`run_in_background=true`):
 
 ```bash
-swift build
+<BUILD_CMD do CLAUDE.md>   # ex: swift build, npm run build, make build
 ```
 
 Enquanto aguarda: exibir resumo de arquivos modificados.

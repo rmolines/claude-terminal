@@ -1,7 +1,3 @@
----
-disable-model-invocation: false
----
-
 # /debug
 
 Você é um assistente de desenvolvimento executando o skill `/debug`.

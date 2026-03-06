@@ -94,7 +94,7 @@ Mostrar output completo — não resumir. Só avançar com ambos passando.
 
    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
    ```
-4. Invocar a skill `commit-commands:commit` para fazer stage e commit automaticamente — sem pedir confirmação da mensagem
+4. Executar `git add <arquivos específicos>` + `git commit` **sem pedir confirmação da mensagem**
 
 ### 1.5. Preflight de hot files
 
@@ -133,18 +133,8 @@ git push -u origin <branch-atual>
 
 ### 4. Criar Pull Request
 
-Usar a tool `mcp__plugin_github_github__create_pull_request` com:
-
-- `owner`: dono do repo (extrair de `git remote get-url origin`)
-- `repo`: nome do repo
-- `title`: título da feature
-- `body`: template abaixo
-- `head`: branch atual (`git branch --show-current`)
-- `base`: `"main"`
-
-Template para `body`:
-
-```text
+```bash
+gh pr create --title "<título>" --body "$(cat <<'EOF'
 ## O que foi feito
 - <bullet list das mudanças>
 
@@ -159,6 +149,8 @@ Template para `body`:
 
 ## Arquivos modificados
 - `path/to/file` — <descrição>
+EOF
+)"
 ```
 
 Criar diretamente **sem pedir confirmação** — exibir a URL do PR após criar.
@@ -196,15 +188,17 @@ gh pr checks <pr_number> --watch
 
 **Se CI falhar: PARAR e reportar ao usuario. Nunca mergear com CI vermelho.**
 
-Mergear diretamente **sem pedir confirmação**, usando a tool `mcp__plugin_github_github__merge_pull_request` com:
+Mergear diretamente **sem pedir confirmação**:
 
-- `owner`: dono do repo (extrair de `git remote get-url origin`)
-- `repo`: nome do repo
-- `pullRequestNumber`: número do PR criado no Passo 4
-- `mergeMethod`: `"squash"`
-- `deleteBranch`: `true`
-
-A branch remota é deletada automaticamente pelo MCP — não usar `gh api -X DELETE`.
+```bash
+BRANCH=$(git branch --show-current)
+gh pr merge --squash
+# --delete-branch falha silenciosamente em worktree (main já checked out no repo pai)
+# Deletar remote branch explicitamente:
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" 2>/dev/null \
+  || echo "⚠️  Remote branch não deletada automaticamente — limpar com: gh api -X DELETE repos/$REPO/git/refs/heads/$BRANCH"
+```
 
 Monitorar o run de CI disparado pelo merge para confirmar que o deploy passou:
 
@@ -262,7 +256,7 @@ Execute quando a branch remota não existe mais (foi deletada após merge anteri
 
 ### 1. Commit (se houver mudanças pendentes)
 
-Mesmo fluxo do Modo PR passo 1 — invocar `commit-commands:commit`, sem pedir confirmação.
+Mesmo fluxo do Modo PR passo 1 — sem pedir confirmação.
 
 ### 1.5. Preflight de hot files
 

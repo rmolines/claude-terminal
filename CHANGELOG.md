@@ -2,6 +2,38 @@
 
 ---
 
+## [fix] ASSERT guards nas skills ship/close/start-feature — 2026-03-06
+
+**Tipo:** fix
+**Tags:** skills, workflow, ci-gate, worktrees
+**PR:** [#53](https://github.com/rmolines/claude-terminal/pull/53) · **Complexidade:** simples
+
+### Problema
+
+Dois bugs estruturais de ordering causavam retrabalho sistemático:
+
+1. `close-feature` usava paths relativos sem assertar CWD == REPO_ROOT — docs iam para worktree
+   morta e precisavam ser reescritos em main
+2. `ship-feature` chamava `merge_pull_request` antes de verificar CI — merges com CI vermelho
+   geravam branch de emergência + novo PR + nova espera
+
+### Fix aplicado
+
+- `close-feature`: ASSERT REPO_ROOT no início do passo 1 + absolute paths em todos os writes
+  (HANDOVER.md, CHANGELOG.md, LEARNINGS.md, CLAUDE.md, backlog.json); ASSERT CWD ≠ worktree antes
+  do `worktree remove`
+- `ship-feature`: `gh pr checks --watch` antes de `merge_pull_request` — CI vermelho bloqueia merge
+- `start-feature`: `git ls-remote --heads origin` antes de `EnterWorktree` — evita colisão com
+  branch de sessão anterior
+
+### Arquivos-chave
+
+- `.claude/commands/close-feature.md` — REPO_ROOT assert + absolute paths
+- `.claude/commands/ship-feature.md` — CI gate antes do merge
+- `.claude/commands/start-feature.md` — ASSERT branch remota antes de criar worktree
+
+---
+
 ## [fix] Sparkle updater não iniciava — chave EdDSA ausente — 2026-03-06
 
 **Tipo:** fix
@@ -22,6 +54,34 @@ no Keychain e inserida em `Info.plist`.
 ### Arquivos-chave
 
 - `ClaudeTerminal/App/Info.plist` — `SUPublicEDKey` com valor real
+
+---
+
+## [feat] Nova skill /polish para sessões de batch cleanup — 2026-03-06
+
+**Tipo:** feat
+**Tags:** skills, workflow
+**PR:** [#50](https://github.com/rmolines/claude-terminal/pull/50) · **Complexidade:** simples
+
+### O que mudou
+
+Nova skill `/polish` disponível. Use quando tem N melhorias pequenas e conhecidas para
+executar: uma branch, micro-commit por item, um PR com todos os commits preservados.
+
+### Detalhes técnicos
+
+- `/polish` — coleta lista de tarefas upfront, loop autônomo com micro-commit por item, PR único no final
+- PR usa `mergeMethod: "merge"` (não squash) para preservar rastreabilidade por item
+- Skill propagada para `rmolines/claude-kickstart` (PR #20) como template genérico
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `.claude/commands/polish.md` — skill criada
+- `.claude/rules/workflow.md` — /polish adicionado ao fluxo visual e tabela de skills
 
 ---
 

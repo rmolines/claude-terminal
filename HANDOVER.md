@@ -4,6 +4,50 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-05 — ship-close-skill-overhead (PR #53)
+
+**O que foi feito:**
+
+Dois bugs estruturais de ordering nas skills `/ship-feature` e `/close-feature` foram corrigidos,
+mais a adição do padrão "ASSERT antes de prosseguir" como guard antes de cada step destrutivo.
+
+**Bugs corrigidos:**
+
+1. **`close-feature` — docs na branch morta**: a skill usava paths relativos (ex: `HANDOVER.md`) sem
+   assertar que CWD == REPO_ROOT. Em sessões executadas dentro de `.claude/worktrees/<feature>`, os
+   writes iam para a worktree (deletada no próximo passo) — não para main. Fix: ASSERT REPO_ROOT no
+   início do passo 1 + absolute paths em todos os file writes.
+
+2. **`ship-feature` — blind merge**: a skill chamava `merge_pull_request` antes de verificar CI.
+   Fix: `gh pr checks <pr_number> --watch` antes do merge. CI vermelho = PARAR.
+
+**Guards adicionados (padrão ASSERT):**
+
+- `close-feature`: ASSERT REPO_ROOT antes de qualquer write; ASSERT CWD ≠ worktree antes do remove
+- `ship-feature`: ASSERT CI passing antes de `merge_pull_request`
+- `start-feature`: ASSERT branch não existe no remote antes de `EnterWorktree`
+
+**Propagado para:** `/Users/rmolines/git/claude-kickstart/.claude/commands/` (close, ship, start).
+
+**Decisões tomadas:**
+
+- Mantido docs retrospectivos pós-merge (HANDOVER, LEARNINGS) — legítimos; só precisavam de
+  absolute paths para aterrar em main, não em worktree morta
+- Descartado `gh pr merge --auto` como solução de CI gate — requer branch protection settings
+  (decisão de governança maior)
+
+**Próximos passos:**
+
+- Commit + PR dos fixes no kickstart (pendente — edições locais não commitadas)
+
+**Arquivos-chave:**
+
+- `.claude/commands/close-feature.md` — ASSERT REPO_ROOT + absolute paths + assert CWD
+- `.claude/commands/ship-feature.md` — CI gate antes do merge
+- `.claude/commands/start-feature.md` — ASSERT branch remota
+
+---
+
 ## 2026-03-06 — feat(skills): nova skill /polish para sessões de batch cleanup (PR #50)
 
 **O que foi feito:**
