@@ -4,6 +4,41 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — skill-flow-robustness
+
+### O que foi feito
+
+Corrigidos 4 pontos de fricção residual no fluxo ship→close identificados na sessão
+anterior (`ship-close-skill-overhead`):
+
+1. **ship-feature passo 6 (CI gate):** documentado o falso negativo de `gh pr checks --watch`
+   após re-push de fix — padrão correto agora explícito: `gh run list --branch <branch> --limit 1`
+   → `gh run watch <id>` com `--exit-status`
+2. **ship-feature passo 1:** instrução explícita de usar `commit-commands:commit` sub-skill
+3. **close-feature passo 1g:** `git -C "$REPO_ROOT" pull --rebase origin main` adicionado
+   antes de `make sync-skills` — evita conflito de push quando o PR tocou `.claude/commands/`
+4. **close-feature Regras:** corrigida redação de "Nunca fazer commit" para refletir que
+   commits de documentação e sync em main são esperados
+
+### Decisões tomadas
+
+- PR #56 mergeado com CI vermelho: erro em `SessionManager.swift:98` (`TerminalRegistry.shared.sendInput`) era pré-existente em `main`, não relacionado às mudanças do PR
+- `sleep 5` escolhido como heurística de timing para o GitHub registrar novo run — aceitável para solo dev
+
+### Arquivos-chave
+
+- `.claude/commands/ship-feature.md` — passo 1 e passo 6
+- `.claude/commands/close-feature.md` — passo 1g e seção Regras
+- `.claude/feature-plans/skill-flow-robustness/research.md` — análise das causas raiz
+- `.claude/feature-plans/ship-close-skill-remaining-gaps/explore.md` — contexto original
+
+### Próximos passos
+
+- Investigar e corrigir `TerminalRegistry.sendInput` em `SessionManager.swift` (CI vermelho em main)
+- Próxima feature do backlog
+
+---
+
 ## 2026-03-05 — HITL PTY bridge fix (PR #54)
 
 **O que foi feito:**

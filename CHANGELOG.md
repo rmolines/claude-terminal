@@ -2,6 +2,34 @@
 
 ---
 
+## [fix] Skill flow robustness: CI gate + sync-skills rebase + rule accuracy — 2026-03-06
+
+**Tipo:** fix
+**Tags:** skills, ci, workflow, ship-feature, close-feature
+**PR:** [#56](https://github.com/rmolines/claude-terminal/pull/56) · **Complexidade:** simples
+
+### Problema
+
+3 pontos de fricção residual no fluxo ship→close causavam comportamento inesperado em sessões
+reais: CI gate lia run antigo após re-push de fix (risco de merge com CI vermelho); sync-skills
+conflitava com origin/main quando a feature tocou skills; regra "Nunca fazer commit" no
+close-feature estava incorreta e causava confusão.
+
+### Fix aplicado
+
+- `ship-feature` passo 6: documentado padrão `gh run list → gh run watch <id>` para uso após
+  re-push de fix (evita leitura de run antigo)
+- `ship-feature` passo 1: instrução explícita de usar `commit-commands:commit` sub-skill
+- `close-feature` passo 1g: `git pull --rebase origin main` adicionado antes de `make sync-skills`
+- `close-feature` Regras: redação correta — commits de docs e sync em main são permitidos
+
+### Arquivos-chave
+
+- `.claude/commands/ship-feature.md` — passo 1 e passo 6
+- `.claude/commands/close-feature.md` — passo 1g e seção Regras
+
+---
+
 ## [fix] HITL buttons now dismiss terminal TUI dialog — 2026-03-05
 
 **Tipo:** fix
