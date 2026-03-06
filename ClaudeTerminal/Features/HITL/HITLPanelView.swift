@@ -24,6 +24,8 @@ struct HITLPanelView: View {
             Text(state.description)
                 .font(.body)
                 .foregroundStyle(.secondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack {
                 Button("Reject", role: .destructive) { state.onReject() }
@@ -35,7 +37,7 @@ struct HITLPanelView: View {
             }
         }
         .padding()
-        .frame(width: 400)
+        .frame(width: 400, height: 140)
     }
 }
 

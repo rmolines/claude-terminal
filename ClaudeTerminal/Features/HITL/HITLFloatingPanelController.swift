@@ -63,7 +63,6 @@ final class HITLFloatingPanelController {
 
         if hostingView == nil {
             let hosting = NSHostingView(rootView: HITLPanelView(state: panelState))
-            hosting.sizingOptions = [.minSize]
             panel.contentView = hosting
             hostingView = hosting
         }
