@@ -2,6 +2,15 @@
 
 Gotchas, limitations, and non-obvious behaviors discovered while working on this project.
 
+## 2026-03-06 — Service launch init pattern: `start()` vs `updateRoot()`
+
+Services `@MainActor @Observable` que precisam iniciar no launch (AppDelegate) mas dependem de contexto do usuário (ex: path do projeto) devem separar essas duas responsabilidades:
+
+- `start()` — chamado em `applicationDidFinishLaunching`, inicializa apenas o timer/loop sem contexto
+- `updateRoot(_ path: String)` — chamado em `View.onAppear` e `onChange(of:)`, define o contexto e dispara o primeiro poll
+
+Padrão oposto (passar rootDirectory em `start()`) força o AppDelegate a conhecer paths de projeto — acoplamento errado. Com a separação, o AppDelegate só inicia o serviço; a View é responsável por prover o contexto quando o usuário seleciona um projeto.
+
 ## 2026-03-06 — `gh pr create` dentro de worktree retorna "Head sha can't be blank"
 
 `gh pr create` sem flags adicionais falha com `Head sha can't be blank, No commits between main and <branch>`

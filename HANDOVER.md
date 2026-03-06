@@ -4,6 +4,34 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-06 — worksession-panel (PR #66)
+
+### O que foi feito
+
+Nova aba **Sessions** no `ProjectDetailView` que agrega `worktree + AgentSession + KanbanFeature` por projeto numa entidade runtime `WorkSession`, ordenada por urgência (`HITL_PENDING > ERROR > RUNNING > DONE > IDLE`), com aprovação de HITL inline nas rows.
+
+**Arquivos criados:** `WorkSession.swift`, `WorkSessionService.swift`, `WorkSessionPanelView.swift`, `WorkSessionRowView.swift`
+
+**Arquivos modificados:** `ProjectDetailView.swift` (+tab Sessions), `HITLFloatingPanelController.swift` (supressão inline HITL adaptada para HITLQueueView), `AppDelegate.swift` (WorkSessionService.start() no launch)
+
+### Decisões tomadas
+
+- Identidade via `worktree.path` — estável entre recomputes, evita row flickering
+- Poll timer 2s em vez de `withObservationTracking` — join multi-source perde updates com tracking (Swift issue #83359)
+- `start()` sem rootDirectory — AppDelegate inicia timer; `ProjectDetailView.onAppear` chama `updateRoot()`
+- Supressão adaptada para HITLQueueView — rebase conflito resolvido manualmente, lógica integrada em `panelState.pendingItems`
+
+### Armadilhas encontradas
+
+- `origin/main` avançou durante a feature e reescreveu `HITLFloatingPanelController.updatePanel()` — rebase gerou conflito; merge manual necessário para integrar supressão inline HITL na nova API `HITLQueueView`/`panelState.pendingItems`
+
+### Próximos passos
+
+- Mergear ou fechar `session-restore-install` — branch divergiu muito do main (AppDelegate antigo sem `SPUUpdaterDelegate`)
+- Verificar se `session-cards-hitl-ui` e `docs-lifecycle` têm trabalho útil ou podem ser descartadas
+
+---
+
 ## 2026-03-06 — polish-kanban-integration (PR #65)
 
 ### O que foi feito

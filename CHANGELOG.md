@@ -2,6 +2,38 @@
 
 ---
 
+## [feat] worksession-panel — Sessions tab com inline HITL e urgency sort — 2026-03-06
+
+**Tipo:** feat
+**Tags:** ui, hitl, worktrees, sessions
+**PR:** [#66](https://github.com/rmolines/claude-terminal/pull/66) · **Complexidade:** média
+
+### O que mudou
+
+Nova aba **Sessions** dentro de cada projeto mostra todas as worktrees ativas ordenadas por urgência — HITL pendente primeiro, idle por último. Sessions com aprovação pendente exibem botões Approve/Reject inline, sem abrir o floating panel.
+
+### Detalhes técnicos
+
+- `WorkSession` struct runtime com `UrgencyTier` (hitlPending > error > running > done > idle)
+- `WorkSessionService` singleton `@MainActor @Observable`: poll 2s, join `worktree↔AgentSession↔KanbanFeature`, urgency sort
+- `WorkSessionPanelView` + `WorkSessionRowView`: List com inline HITL buttons (`.buttonStyle(.plain)`)
+- `HITLFloatingPanelController`: suprime floating panel quando inline HITL disponível na aba Sessions
+- `AppDelegate`: `WorkSessionService.shared.start()` no launch
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Models/WorkSession.swift` — struct + UrgencyTier
+- `ClaudeTerminal/Services/WorkSessionService.swift` — singleton, poll, join
+- `ClaudeTerminal/Features/WorkSession/WorkSessionPanelView.swift` — List view
+- `ClaudeTerminal/Features/WorkSession/WorkSessionRowView.swift` — row com inline HITL
+- `ClaudeTerminal/Features/Terminal/ProjectDetailView.swift` — +tab Sessions
+
+---
+
 ## [feat] Polish sprint registry — chores[] + --close + compass — 2026-03-06
 
 **Tipo:** feat
