@@ -237,6 +237,11 @@ Exibir URL do PR e aguardar confirmação de merge antes de continuar.
 Após merge confirmado, sincronizar a versão genérica de volta ao projeto:
 
 ```bash
+# Garantir que local main está em cima do squash-merge antes de sync.
+# Sem isso, o push falha com conflito em .claude/commands/ quando o PR
+# que acabou de mergear tocou skills (mesma causa: squash-merge já está
+# em origin/main, local main pode estar desatualizado).
+git -C "$REPO_ROOT" pull --rebase origin main
 make sync-skills
 ```
 
@@ -308,5 +313,5 @@ Próximos passos:
 
 ## Regras
 
-- Nunca fazer commit, push ou PR — responsabilidade do `/ship-feature`
+- Nunca commitar código da feature em main — commits de documentação (HANDOVER.md, CHANGELOG.md, MEMORY.md coordinator) e sync de skills em main são esperados e permitidos
 - Se chamado sem feature validada em produção: lembrar de rodar `/ship-feature` primeiro
