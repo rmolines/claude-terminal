@@ -54,7 +54,7 @@ Para cada sprint.md encontrado, extrair:
 cat .claude/backlog.json 2>/dev/null || echo "(sem backlog.json)"
 ```
 
-Se existir: extrair milestones com status, features por milestone com status e path, pitches pendentes.
+Se existir: extrair milestones com status, features por milestone com status e path, pitches pendentes, e `chores[]` com data, prNumber, itens e status de cada sessao de polish.
 
 ### 1d. PRs merged (features entregues)
 
@@ -151,6 +151,16 @@ Bloqueios abertos: <PRs abertos em review, ou "nenhum">
 | <título> | <problema curto> | awaiting-bet |
 
 _(Omitir esta seção se não houver pitches no backlog.json)_
+
+---
+
+### 🧹 Chores recentes (se houver no backlog.json)
+
+| Data | PR | Itens | Status |
+|------|-----|-------|--------|
+| <YYYY-MM-DD> | #N | K itens | merged / open |
+
+_(Omitir esta seção se `chores[]` estiver vazio ou ausente no backlog.json)_
 
 ---
 
