@@ -254,10 +254,11 @@ Opcoes:
 
 Aguardar decisão do dev antes de prosseguir.
 
-Se **existir preview:** tentar `{{VISUAL_PREVIEW_CMD}}` (ex: `RenderPreview`).
+Se **existir preview:** chamar `{{VISUAL_PREVIEW_CMD}}` (ex: `RenderPreview`) **agora — obrigatorio, nao pular**.
+Nunca ir direto para o relatório sem antes executar este passo quando um `#Preview` block existe.
 
-- Se **suceder**: exibir resultado visual e prosseguir normalmente.
-- Se **falhar com erro de MCP** (ferramenta indisponivel, servidor nao conectado, ou similar):
+- Se **suceder**: exibir resultado visual e prosseguir com a revisão.
+- Se **falhar com qualquer erro** (ferramenta indisponivel, MCP desconectado, timeout):
 
 ```text
 [SEM MCP] RenderPreview falhou — Xcode MCP nao esta conectado nesta sessao.
@@ -271,7 +272,7 @@ Continuar revisao somente de codigo? [sim/nao]
 ```
 
 Aguardar resposta. Se "nao": encerrar. Se "sim": pular render em todas as views restantes e anotar
-`RenderPreview: indisponivel (Xcode MCP nao conectado)` no relatório.
+`RenderPreview: indisponivel (Xcode MCP nao conectado)` no relatorio.
 
 ### Passo 2 — Checklist de padrões
 
@@ -390,7 +391,7 @@ corrigidos na próxima feature que tocar essa view:
 
 ## Restrições finais
 
-- **Nunca pular o preview visual** quando configurado — revisão visual não é opcional
+- **Nunca pular o preview visual** quando `#Preview` existir — chamar `RenderPreview` antes do relatório é obrigatorio; ler o codigo nao substitui o render
 - **Nunca adicionar à spec** sem confirmação — a spec é fonte de verdade, não um log de features
 - **Nunca aprovar** uma view com drift Maior — drift Maior = job errado = feature errada
 - **Foco no job, não na estética** — "bonito" não é critério; "serve o job declarado" é o critério
