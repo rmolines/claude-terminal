@@ -3,18 +3,37 @@ import SwiftUI
 /// Aba "Worktrees" — visão macro de todas as branches abertas, estado git e sessão ativa.
 struct WorktreesView: View {
     let rootDirectory: String
-    let onSelect: (String) -> Void
+    let onSelect: (String, String) -> Void
 
     @State private var worktrees: [WorktreeInfo] = []
     @State private var enriched: [String: (changedFiles: Int, commitsAhead: Int)] = [:]
     private let store = SessionStore.shared
+    @State private var showSheet = false
 
     var body: some View {
-        Group {
+        VStack(spacing: 0) {
+            HStack {
+                Spacer()
+                Button { showSheet = true } label: {
+                    Image(systemName: "plus")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .help("New worktree")
+            }
+            .background(.bar)
+            Divider()
             if worktrees.isEmpty {
                 emptyState
             } else {
                 list
+            }
+        }
+        .sheet(isPresented: $showSheet) {
+            NewWorktreeSheet(rootPath: rootDirectory) { path, initialInput in
+                onSelect(path, initialInput)
             }
         }
         .task(id: rootDirectory) {
@@ -54,7 +73,7 @@ struct WorktreesView: View {
                         changedFiles: enriched[wt.id]?.changedFiles,
                         commitsAhead: enriched[wt.id]?.commitsAhead,
                         hasSession: hasSession(for: wt),
-                        onSelect: { onSelect(wt.path) }
+                        onSelect: { onSelect(wt.path, "") }
                     )
                     Divider()
                 }
@@ -161,6 +180,6 @@ private struct WorktreeRow: View {
 }
 
 #Preview {
-    WorktreesView(rootDirectory: NSHomeDirectory()) { _ in }
+    WorktreesView(rootDirectory: NSHomeDirectory()) { _, _ in }
         .frame(width: 500, height: 400)
 }

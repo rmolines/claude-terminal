@@ -98,6 +98,33 @@ actor GitStateService {
         return 0
     }
 
+    /// Creates a new worktree at `.claude/worktrees/<name>` on branch `feature/<name>`.
+    /// Returns the absolute path of the created worktree.
+    func addWorktree(name: String, in rootPath: String) async throws -> String {
+        // Validate: kebab-case only — block shell injection (CVE-2025-59536)
+        guard name.range(of: "^[a-z][a-z0-9-]{0,48}$", options: .regularExpression) != nil else {
+            throw GitError.invalidWorktreeName
+        }
+
+        let worktreePath = (rootPath as NSString)
+            .appendingPathComponent(".claude/worktrees/\(name)")
+
+        // Try main, fallback to master — same pattern as commitsAhead
+        var lastError: Error = GitError.nonZeroExit(-1)
+        for base in ["main", "master"] {
+            do {
+                _ = try await runGit(
+                    args: ["worktree", "add", worktreePath, "-b", "feature/\(name)", base],
+                    cwd: rootPath
+                )
+                return worktreePath
+            } catch {
+                lastError = error
+            }
+        }
+        throw lastError
+    }
+
     // MARK: - Private
 
     private func runGit(args: [String], cwd: String) async throws -> String {
@@ -129,6 +156,7 @@ actor GitStateService {
 
 enum GitError: Error {
     case nonZeroExit(Int32)
+    case invalidWorktreeName
 }
 
 private extension String {
