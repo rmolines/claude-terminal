@@ -8,11 +8,13 @@ Newest entries at the top.
 
 ### O que foi feito
 
-Nova aba **Sessions** no `ProjectDetailView` que agrega `worktree + AgentSession + KanbanFeature` por projeto numa entidade runtime `WorkSession`, ordenada por urgência (`HITL_PENDING > ERROR > RUNNING > DONE > IDLE`), com aprovação de HITL inline nas rows.
+Nova aba **Sessions** no `ProjectDetailView` que agrega `worktree + AgentSession + KanbanFeature` por projeto numa entidade runtime `WorkSession`,
+ordenada por urgência (`HITL_PENDING > ERROR > RUNNING > DONE > IDLE`), com aprovação de HITL inline nas rows.
 
 **Arquivos criados:** `WorkSession.swift`, `WorkSessionService.swift`, `WorkSessionPanelView.swift`, `WorkSessionRowView.swift`
 
-**Arquivos modificados:** `ProjectDetailView.swift` (+tab Sessions), `HITLFloatingPanelController.swift` (supressão inline HITL adaptada para HITLQueueView), `AppDelegate.swift` (WorkSessionService.start() no launch)
+**Arquivos modificados:** `ProjectDetailView.swift` (+tab Sessions), `HITLFloatingPanelController.swift` (supressão inline HITL adaptada para HITLQueueView),
+`AppDelegate.swift` (WorkSessionService.start() no launch)
 
 ### Decisões tomadas
 
