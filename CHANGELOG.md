@@ -10,7 +10,8 @@
 
 ### O que mudou
 
-Nova aba **Sessions** dentro de cada projeto mostra todas as worktrees ativas ordenadas por urgência — HITL pendente primeiro, idle por último. Sessions com aprovação pendente exibem botões Approve/Reject inline, sem abrir o floating panel.
+Nova aba **Sessions** dentro de cada projeto mostra todas as worktrees ativas ordenadas por urgência — HITL pendente primeiro, idle por último.
+Sessions com aprovação pendente exibem botões Approve/Reject inline, sem abrir o floating panel.
 
 ### Detalhes técnicos
 
@@ -50,7 +51,7 @@ e suporta `/polish --close` para marcar o registro como `"merged"` e limpar a br
 
 - `backlog.json`: novo array top-level `"chores": []`
 - `polish.md`: flag `--close` (guard + jq status update + delete branch); Passo 5 com `swift test`
-  + RenderPreview para UI; Passo 6b com jq write em `chores[]`
+  - RenderPreview para UI; Passo 6b com jq write em `chores[]`
 - `project-compass.md`: Phase 1c extrai `chores[]`; Phase 3 tabela "Chores recentes" (omitida se vazia)
 
 ### Impacto
