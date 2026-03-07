@@ -115,6 +115,7 @@ socket → `HookIPCServer` (actor) → `SessionManager` (actor) → `@MainActor`
 | `gh run list` / `gh run watch` sem `--repo` em worktree | `gh` detecta `claude-kickstart` em vez de `claude-terminal` quando rodando de dentro de uma worktree — comandos falham com HTTP 404 no repo errado | Sempre passar `--repo rmolines/claude-terminal` em todos os comandos `gh run` executados de dentro de worktrees |
 | `ForEach` com KeyPath + `??` operador | `ForEach(items, id: \.optionalField ?? "default")` não compila — `??` não é válido em KeyPath context no Swift | Usar `ForEach(Array(items.enumerated()), id: \.offset)` ou criar wrapper `Identifiable` com `id` computado |
 | `ListMcpResourcesTool` como probe de conectividade MCP | `ListMcpResourcesTool` lista recursos de dados do servidor MCP (arquivos, endpoints), não as ferramentas expostas — retorna sucesso mesmo com Xcode MCP desconectado; não serve como probe de disponibilidade | Única probe confiável: tentar chamar a ferramenta MCP diretamente (`RenderPreview`, `BuildProject`) e observar se retorna erro de "ferramenta indisponível" |
+| Swift type-checker timeout em chain longa de `??` | Chain de 5+ `??` com `Optional` subscript em linha única (ex: `a?["x"] ?? b?["y"] ?? c?["z"] ?? d?["w"] ?? e`) causa erro `the compiler is unable to type-check this expression in reasonable time` — mesmo com type annotation explícita | Dividir em duas variáveis intermediárias: `let part1: String? = a?["x"] ?? b?["y"] ?? c?["z"]` + `let result: String? = part1 ?? d?["w"] ?? e` |
 
 ## Worktree convention
 

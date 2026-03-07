@@ -2,6 +2,34 @@
 
 ---
 
+## [feat] hitl-rich-context-card — contexto rico no card de aprovação HITL — 2026-03-07
+
+**Tipo:** feat
+**Tags:** hitl, ui, ux, hook-handler
+**PR:** [#68](https://github.com/rmolines/claude-terminal/pull/68) · **Complexidade:** simples
+
+### O que mudou
+
+O card de aprovação HITL agora mostra o contexto real da operação: para ferramentas de arquivo
+(Write, Edit, Read, Glob, Grep) aparece o file path; para Bash aparece o comando exato. O nome
+da tool virou um badge colorido com ícone SF Symbol por categoria, facilitando triagem visual.
+
+### Detalhes técnicos
+
+- `HookHandler.swift`: chain `command` → `file_path` → `path` → `pattern` → `description` → `toolName` para permissionRequest; prefix 80→120 chars
+- `ApprovalCardView.swift`: `ToolBadge` struct com SF Symbol + capsule colorida (Bash=red, Write/Edit=blue, Read/Glob/Grep=secondary, WebFetch=teal); 3 novos `#Preview` blocks
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `ClaudeTerminalHelper/HookHandler.swift` — extração de detail expandida
+- `ClaudeTerminal/Features/SessionCards/ApprovalCardView.swift` — ToolBadge view
+
+---
+
 ## [feat] agent-message-input — TextField inline para enviar mensagens ao agente — 2026-03-07
 
 **Tipo:** feat

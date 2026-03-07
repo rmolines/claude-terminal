@@ -4,6 +4,37 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-07 — hitl-rich-context-card
+
+### O que foi feito
+
+O card de HITL (ApprovalCardView) mostrava contexto insuficiente: ferramentas de arquivo
+(Write, Edit, Read) exibiam apenas o nome da tool como description porque `toolInput["file_path"]`
+nunca era extraído. Além disso, o `toolName` era texto monoespaçado simples sem distinção visual.
+
+**HookHandler.swift** — expandida a chain de extração de `detail` para `permissionRequest`:
+`command` → `file_path` → `path` → `pattern` → `description` → `toolName`.
+Prefix aumentado de 80 → 120 chars. Fix para um type-checker timeout do Swift: chain de 5+ `??`
+com `Optional` subscript em linha única causa erro de compilação; solução foi dividir em duas
+variáveis intermediárias.
+
+**ApprovalCardView.swift** — novo `ToolBadge` view: capsule com SF Symbol + cor por categoria
+(Bash=terminal/red, Write/Edit=blue, Read/Glob/Grep=magnifyingglass/secondary, WebFetch=globe/teal).
+Adicionados 3 `#Preview` blocks para validação visual.
+
+### Arquivos-chave
+
+- `ClaudeTerminalHelper/HookHandler.swift` — chain de extração expandida
+- `ClaudeTerminal/Features/SessionCards/ApprovalCardView.swift` — ToolBadge + previews
+
+### Próximos passos
+
+- `hitl-ux-v2` — dynamic permission buttons com `permission_suggestions` (plan.md pronto)
+- `hitl-reject-with-reason` — campo "Por quê?" após rejeitar
+- `agent-reply-detection` — status visual distinto de RUNNING
+
+---
+
 ## 2026-03-07 — agent-message-input
 
 ### O que foi feito
