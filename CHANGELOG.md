@@ -2,6 +2,38 @@
 
 ---
 
+## [feat] agent-message-input — TextField inline para enviar mensagens ao agente — 2026-03-07
+
+**Tipo:** feat
+**Tags:** ui, pty, sessions, message-input
+**PR:** [#67](https://github.com/rmolines/claude-terminal/pull/67) · **Complexidade:** simples
+
+### O que mudou
+
+Cada row de sessão ativa no Sessions tab agora tem um TextField "Message agent…".
+Digitar e pressionar Enter injeta o texto diretamente no PTY do agente — permite
+responder mid-run questions sem abrir um terminal separado.
+
+### Detalhes técnicos
+
+- `WorkSessionRowView`: novo `messageInputRow` com `TextField` + botão ↑
+- `sendMessage`: `Array(text.utf8) + [0x0d]` via `TerminalRegistry.shared.sendInput(forCwd:)`
+- Botão desabilitado/cinza quando `messageText.isEmpty`; accent quando há texto
+- Campo visível apenas quando `workSession.session != nil`
+- Suite `.claude/commands/test/` com 5 skills de teste determinísticos (hitl-bash, hitl-write,
+  question, long-run, stop)
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/WorkSession/WorkSessionRowView.swift` — messageInputRow + sendMessage
+- `.claude/commands/test/` — test skills
+
+---
+
 ## [feat] worksession-panel — Sessions tab com inline HITL e urgency sort — 2026-03-06
 
 **Tipo:** feat

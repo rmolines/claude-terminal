@@ -4,6 +4,35 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-07 — agent-message-input
+
+### O que foi feito
+
+Adicionado TextField "Message agent…" inline em cada row do `WorkSessionRowView`.
+Ao submeter (Enter ou botão ↑), o texto é injetado no PTY do agente via
+`TerminalRegistry.shared.sendInput` com `\r` (0x0d), permitindo responder mid-run
+questions sem sair do Sessions tab.
+
+Também criada suite de test skills em `.claude/commands/test/` com 5 cenários
+determinísticos para validar HITL, message injection e lifecycle de sessão.
+
+### Decisões tomadas
+
+- `sendMessage` envia `Array(text.utf8) + [0x0d]` — o `\r` é necessário aqui
+  (diferente do HITL PTY bridge onde ele causava bleeding).
+  No message-input o agente está em modo normal (não raw), então `\r` encerra a linha.
+- Campo aparece apenas quando `workSession.session != nil` — não polui rows de sessões inativas.
+- Indent de 18pt alinha o campo abaixo do texto do urgency dot.
+- Test skills em subdiretório `test/` — invocadas como `/test:hitl-bash`, etc.
+  Precisam estar no repo root `.claude/commands/`, não no worktree.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Features/WorkSession/WorkSessionRowView.swift` — `messageInputRow` + `sendMessage`
+- `.claude/commands/test/` — suite de test skills
+
+---
+
 ## 2026-03-06 — worksession-panel (PR #66)
 
 ### O que foi feito

@@ -283,6 +283,60 @@
       "startedAt": "2026-03-06T14:11:21Z",
       "completedAt": "2026-03-06T14:11:21Z",
       "createdAt": "2026-03-06T14:11:21Z"
+    },
+    {
+      "id": "agent-message-input",
+      "title": "Message agent input no Sessions tab — resposta a perguntas, steering mid-run, confirmacao de plano via PTY injection",
+      "status": "done",
+      "milestone": "m4",
+      "path": null,
+      "dependencies": [],
+      "branch": null,
+      "prNumber": 67,
+      "startedAt": null,
+      "completedAt": "2026-03-07T00:19:59Z",
+      "createdAt": "2026-03-06T00:00:00Z"
+    },
+    {
+      "id": "hitl-rich-context-card",
+      "title": "PermissionRequest card com contexto rico: comando Bash exato, path de arquivo, badge por tipo de tool",
+      "status": "pending",
+      "milestone": "m4",
+      "path": null,
+      "dependencies": [],
+      "branch": null,
+      "prNumber": null,
+      "startedAt": null,
+      "completedAt": null,
+      "createdAt": "2026-03-06T00:00:00Z"
+    },
+    {
+      "id": "hitl-reject-with-reason",
+      "title": "Reject + instrucao: campo opcional apos rejeitar injetado no PTY",
+      "status": "pending",
+      "milestone": "m4",
+      "path": null,
+      "dependencies": [],
+      "branch": null,
+      "prNumber": null,
+      "startedAt": null,
+      "completedAt": null,
+      "createdAt": "2026-03-06T00:00:00Z"
+    },
+    {
+      "id": "agent-reply-detection",
+      "title": "Deteccao de aguardando resposta via PTY output patterns — status visual distinto de RUNNING",
+      "status": "pending",
+      "milestone": "m4",
+      "path": null,
+      "dependencies": [
+        "agent-message-input"
+      ],
+      "branch": null,
+      "prNumber": null,
+      "startedAt": null,
+      "completedAt": null,
+      "createdAt": "2026-03-06T00:00:00Z"
     }
   ],
   "pitches": [

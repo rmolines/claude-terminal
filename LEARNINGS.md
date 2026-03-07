@@ -2,6 +2,17 @@
 
 Gotchas, limitations, and non-obvious behaviors discovered while working on this project.
 
+## 2026-03-07 — `\r` no message-input vs HITL PTY bridge
+
+No HITL PTY bridge, enviar `[0x31, 0x0d]` causava bleeding do `\r` para o próximo dialog
+porque o agente estava em **raw mode** (processa byte a byte, sem aguardar terminador de linha).
+No message-input, `\r` é necessário: o agente está em **modo normal** e só processa a linha
+ao receber `\n`/`\r`. Enviar apenas os bytes UTF-8 sem `\r` faria a mensagem ficar no buffer
+sem ser processada.
+
+Regra: usar `+ [0x0d]` ao injetar input de usuário em modo normal; omitir ao responder
+dialogs TUI em raw mode.
+
 ## 2026-03-06 — Service launch init pattern: `start()` vs `updateRoot()`
 
 Services `@MainActor @Observable` que precisam iniciar no launch (AppDelegate) mas dependem de contexto do usuário (ex: path do projeto) devem separar essas duas responsabilidades:
