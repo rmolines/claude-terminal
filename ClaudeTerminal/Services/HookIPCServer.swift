@@ -47,11 +47,13 @@ actor HookIPCServer {
         try? FileManager.default.removeItem(atPath: socketPath)
     }
 
-    /// Writes a 1-byte approval/rejection response to the waiting helper process and closes the fd.
-    func respondHITL(sessionID: String, approved: Bool) {
+    /// Writes a length-prefixed HookResponse JSON to the waiting helper process and closes the fd.
+    func respondHITL(sessionID: String, response: HookResponse) {
         guard let fd = pendingHITLConnections.removeValue(forKey: sessionID) else { return }
-        var byte: UInt8 = approved ? 1 : 0
-        write(fd, &byte, 1)
+        guard let data = try? JSONEncoder().encode(response) else { close(fd); return }
+        var length = UInt32(data.count).bigEndian
+        withUnsafeBytes(of: &length) { _ = write(fd, $0.baseAddress, 4) }
+        data.withUnsafeBytes { _ = write(fd, $0.baseAddress, data.count) }
         close(fd)
     }
 

@@ -44,6 +44,7 @@ actor SessionManager {
                 updateOrCreate(sessionID: event.sessionID, cwd: event.cwd, status: .awaitingInput)
                 sessions[event.sessionID]?.currentActivity = event.detail ?? "Awaiting approval"
                 sessions[event.sessionID]?.pendingToolName = event.toolName
+                sessions[event.sessionID]?.pendingSuggestions = event.permissionSuggestions ?? []
                 await NotificationService.shared.requestHITLApproval(
                     sessionID: event.sessionID,
                     description: "Agent at \(event.cwd) awaiting approval"
@@ -52,7 +53,7 @@ actor SessionManager {
                 // External session (e.g. iTerm) — auto-approve so Claude Code isn't blocked.
                 // The user handles permissions inline in their terminal.
                 updateOrCreate(sessionID: event.sessionID, cwd: event.cwd)
-                await HookIPCServer.shared.respondHITL(sessionID: event.sessionID, approved: true)
+                await HookIPCServer.shared.respondHITL(sessionID: event.sessionID, response: .allowOnce)
                 return
             }
 
@@ -85,18 +86,17 @@ actor SessionManager {
         }
     }
 
-    func approveHITL(sessionID: String) async {
+    /// Approves a HITL request with the given HookResponse (controls permission level and PTY byte).
+    func approveHITL(sessionID: String, response: HookResponse = .allowOnce) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
         let cwd = sessions[sessionID]?.cwd
         sessions[sessionID]?.status = .running
         if let session = sessions[sessionID] {
             Task { @MainActor in SessionStore.shared.update(session) }
         }
-        await HookIPCServer.shared.respondHITL(sessionID: sessionID, approved: true)
-        // Forward "1" keypress to the PTY to dismiss Claude Code's interactive TUI permission dialog.
-        // Claude Code's permission menu is in raw mode — a single "1" keypress confirms "Yes" immediately.
-        if let cwd {
-            Task { @MainActor in TerminalRegistry.shared.sendInput([0x31], forCwd: cwd) }
+        await HookIPCServer.shared.respondHITL(sessionID: sessionID, response: response)
+        if let cwd, let ptyKey = response.ptyKey {
+            Task { @MainActor in TerminalRegistry.shared.sendInput([ptyKey], forCwd: cwd) }
         }
     }
 
@@ -107,11 +107,21 @@ actor SessionManager {
         if let session = sessions[sessionID] {
             Task { @MainActor in SessionStore.shared.update(session) }
         }
-        await HookIPCServer.shared.respondHITL(sessionID: sessionID, approved: false)
-        // Forward Escape to the PTY to cancel Claude Code's interactive TUI permission dialog.
+        await HookIPCServer.shared.respondHITL(sessionID: sessionID, response: .deny)
         if let cwd {
             Task { @MainActor in TerminalRegistry.shared.sendInput([0x1b], forCwd: cwd) }
         }
+    }
+
+    /// Defers the HITL decision to Claude Code's interactive TUI dialog in the terminal.
+    func showInTerminalHITL(sessionID: String) async {
+        guard sessions[sessionID]?.status == .awaitingInput else { return }
+        sessions[sessionID]?.status = .running
+        if let session = sessions[sessionID] {
+            Task { @MainActor in SessionStore.shared.update(session) }
+        }
+        await HookIPCServer.shared.respondHITL(sessionID: sessionID, response: .ask)
+        // ptyKey is nil for .ask — we deliberately leave the TUI dialog open for the user.
     }
 
     // MARK: - Private
@@ -183,6 +193,8 @@ struct AgentSession: Sendable {
     var branch: String?
     /// Tool name from the most recent permissionRequest event (e.g. "Bash", "Write").
     var pendingToolName: String?
+    /// Permission suggestion IDs from the most recent permissionRequest event (e.g. ["yes-session", "reject"]).
+    var pendingSuggestions: [String] = []
     /// True for sessions registered by the app before any hook fires (e.g. the main Terminal tab).
     /// Evicted automatically when a real hook arrives for the same cwd.
     var isSynthetic: Bool = false

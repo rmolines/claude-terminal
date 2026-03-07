@@ -26,6 +26,9 @@ public struct HookPayload: Codable, Sendable {
     public let usage: TokenUsage?
     /// The user prompt text (only present in UserPromptSubmit hook).
     public let prompt: String?
+    /// Permission suggestion IDs sent by Claude Code in PermissionRequest hooks.
+    /// Examples: "yes-session", "reject". Nil if Claude Code version doesn't send this field.
+    public let permissionSuggestions: [String]?
 
     enum CodingKeys: String, CodingKey {
         case sessionID = "session_id"
@@ -36,6 +39,7 @@ public struct HookPayload: Codable, Sendable {
         case toolInput = "tool_input"
         case usage
         case prompt
+        case permissionSuggestions = "permission_suggestions"
     }
 }
 
@@ -55,8 +59,11 @@ public struct AgentEvent: Codable, Sendable {
     /// Tool name forwarded from the Claude Code hook payload (e.g. "Bash", "Write", "Edit").
     /// Non-nil only for permissionRequest and bashToolUse events.
     public let toolName: String?
+    /// Permission suggestion IDs forwarded from the PermissionRequest hook payload.
+    /// Nil for other event types or if Claude Code version doesn't send this field.
+    public let permissionSuggestions: [String]?
 
-    public init(sessionID: String, type: AgentEventType, cwd: String, detail: String? = nil, tokenUsage: TokenUsage? = nil, isManagedByApp: Bool? = nil, toolName: String? = nil) {
+    public init(sessionID: String, type: AgentEventType, cwd: String, detail: String? = nil, tokenUsage: TokenUsage? = nil, isManagedByApp: Bool? = nil, toolName: String? = nil, permissionSuggestions: [String]? = nil) {
         self.sessionID = sessionID
         self.type = type
         self.cwd = cwd
@@ -65,7 +72,30 @@ public struct AgentEvent: Codable, Sendable {
         self.tokenUsage = tokenUsage
         self.isManagedByApp = isManagedByApp
         self.toolName = toolName
+        self.permissionSuggestions = permissionSuggestions
     }
+}
+
+// MARK: - Hook response sent from app back to helper
+
+/// Response sent from the main app to ClaudeTerminalHelper via socket.
+/// Helper translates this into stdout JSON + exit code for Claude Code.
+public struct HookResponse: Codable, Sendable {
+    /// "allow" = approve (exit 0), "deny" = block (exit 2), "ask" = defer to TUI (exit 0 + stdout JSON).
+    public let decision: String
+    /// PTY byte to inject into the terminal to dismiss Claude Code's interactive TUI dialog.
+    /// Nil means no PTY injection (e.g. for "ask" — the TUI stays visible for the user).
+    public let ptyKey: UInt8?
+
+    public init(decision: String, ptyKey: UInt8? = nil) {
+        self.decision = decision
+        self.ptyKey = ptyKey
+    }
+
+    public static let allowOnce  = HookResponse(decision: "allow", ptyKey: 0x31)
+    public static let allowSession = HookResponse(decision: "allow", ptyKey: 0x32)
+    public static let deny       = HookResponse(decision: "deny",  ptyKey: 0x1b)
+    public static let ask        = HookResponse(decision: "ask",   ptyKey: nil)
 }
 
 // MARK: - Agent status

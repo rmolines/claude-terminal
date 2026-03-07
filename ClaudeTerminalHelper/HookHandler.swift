@@ -64,6 +64,7 @@ final class HookHandler: @unchecked Sendable {
         }
         let isManagedByApp = ProcessInfo.processInfo.environment["CLAUDE_TERMINAL_MANAGED"] == "1"
         let forwardToolName = (eventType == .permissionRequest || eventType == .bashToolUse) ? payload.toolName : nil
+        let suggestions = eventType == .permissionRequest ? payload.permissionSuggestions : nil
         let event = AgentEvent(
             sessionID: payload.sessionID,
             type: eventType,
@@ -71,15 +72,23 @@ final class HookHandler: @unchecked Sendable {
             detail: detail,
             tokenUsage: payload.usage,
             isManagedByApp: isManagedByApp,
-            toolName: forwardToolName
+            toolName: forwardToolName,
+            permissionSuggestions: suggestions
         )
 
         if eventType == .permissionRequest {
-            // Block until app responds — exit code controls Claude Code's action:
-            //   0 = allow the operation
-            //   2 = block the operation (Claude Code spec for permission hooks)
-            let approved = client.sendAndAwaitResponse(event: event)
-            return approved == 1 ? 0 : 2
+            // Block until app responds with a HookResponse.
+            // decision "allow" → exit 0; "deny" → exit 2; "ask" → stdout JSON + exit 0.
+            let response = client.sendAndAwaitResponse(event: event)
+            switch response.decision {
+            case "ask":
+                print("{\"permissionDecision\":\"ask\"}", terminator: "")
+                return 0
+            case "deny":
+                return 2
+            default: // "allow"
+                return 0
+            }
         } else {
             client.send(event: event)
             return 0

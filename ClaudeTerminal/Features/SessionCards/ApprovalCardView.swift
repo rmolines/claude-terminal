@@ -46,14 +46,47 @@ private struct ToolBadge: View {
 
 // MARK: - HITL item
 
+/// A resolved permission suggestion from Claude Code's `permission_suggestions` field.
+/// Maps a suggestion ID (e.g. "yes-session") to a human-readable label and action.
+struct PermissionSuggestion: Identifiable {
+    let id: String
+    let label: String
+    let isDestructive: Bool
+    let action: () -> Void
+}
 /// A single pending HITL item in the approval queue.
 struct HITLItem {
     let sessionID: String
     let description: String
     let toolName: String?
     let riskLevel: RiskLevel
+    /// Dynamic permission buttons from Claude Code's permission_suggestions.
+    /// Empty = show fallback Approve/Reject buttons.
+    let suggestions: [PermissionSuggestion]
     let onApprove: () -> Void
     let onReject: () -> Void
+    /// When non-nil, shows a "Terminal" button that defers the dialog to the PTY TUI.
+    let onShowInTerminal: (() -> Void)?
+
+    init(
+        sessionID: String,
+        description: String,
+        toolName: String?,
+        riskLevel: RiskLevel,
+        suggestions: [PermissionSuggestion] = [],
+        onApprove: @escaping () -> Void,
+        onReject: @escaping () -> Void,
+        onShowInTerminal: (() -> Void)? = nil
+    ) {
+        self.sessionID = sessionID
+        self.description = description
+        self.toolName = toolName
+        self.riskLevel = riskLevel
+        self.suggestions = suggestions
+        self.onApprove = onApprove
+        self.onReject = onReject
+        self.onShowInTerminal = onShowInTerminal
+    }
 }
 
 /// Card for one HITL approval request: tool badge, description, risk indicator, approve/reject.
@@ -113,15 +146,39 @@ struct ApprovalCardView: View {
         }
     }
 
+    @ViewBuilder
     private var actionRow: some View {
-        HStack {
-            Button("Reject", role: .destructive) { item.onReject() }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            Spacer()
-            Button("Approve") { item.onApprove() }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+        if item.suggestions.isEmpty {
+            HStack {
+                Button("Reject", role: .destructive) { item.onReject() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                Spacer()
+                Button("Approve") { item.onApprove() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+            }
+        } else {
+            HStack(spacing: 6) {
+                if let showInTerminal = item.onShowInTerminal {
+                    Button("Terminal") { showInTerminal() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                ForEach(item.suggestions) { suggestion in
+                    if suggestion.isDestructive {
+                        Button(suggestion.label, role: .destructive) { suggestion.action() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                    } else {
+                        Button(suggestion.label) { suggestion.action() }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                    }
+                }
+            }
         }
     }
 
