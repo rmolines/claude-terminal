@@ -300,13 +300,13 @@
     {
       "id": "hitl-rich-context-card",
       "title": "PermissionRequest card com contexto rico: comando Bash exato, path de arquivo, badge por tipo de tool",
-      "status": "pending",
+      "status": "in-progress",
       "milestone": "m4",
       "path": null,
       "dependencies": [],
-      "branch": null,
+      "branch": "worktree-hitl-rich-context-card",
       "prNumber": null,
-      "startedAt": null,
+      "startedAt": "2026-03-07T00:26:56Z",
       "completedAt": null,
       "createdAt": "2026-03-06T00:00:00Z"
     },
