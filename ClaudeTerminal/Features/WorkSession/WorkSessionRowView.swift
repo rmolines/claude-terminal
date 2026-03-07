@@ -4,6 +4,7 @@ struct WorkSessionRowView: View {
     let workSession: WorkSession
 
     @State private var messageText = ""
+    @State private var messageSent = false
     @FocusState private var inputFocused: Bool
 
     var body: some View {
@@ -60,11 +61,11 @@ struct WorkSessionRowView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6))
 
             Button(action: sendMessage) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .foregroundStyle(messageText.isEmpty ? Color.secondary.opacity(0.4) : Color.accentColor)
+                Image(systemName: messageSent ? "checkmark.circle.fill" : "arrow.up.circle.fill")
+                    .foregroundStyle(messageSent ? Color.green : (messageText.isEmpty ? Color.secondary.opacity(0.4) : Color.accentColor))
             }
             .buttonStyle(.plain)
-            .disabled(messageText.isEmpty)
+            .disabled(messageText.isEmpty && !messageSent)
         }
         .padding(.leading, 18) // align with text below the dot
     }
@@ -75,6 +76,10 @@ struct WorkSessionRowView: View {
         let bytes = Array(text.utf8) + [0x0d]
         TerminalRegistry.shared.sendInput(bytes, forCwd: workSession.worktree.path)
         messageText = ""
+        messageSent = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            messageSent = false
+        }
     }
 
     // MARK: - Inline HITL

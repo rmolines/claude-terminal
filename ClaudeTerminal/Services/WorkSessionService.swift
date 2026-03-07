@@ -55,7 +55,7 @@ final class WorkSessionService {
         var result: [WorkSession] = []
         for worktree in worktrees {
             let session = sessions.values.first {
-                $0.cwd.hasPrefix(worktree.path) || worktree.path.hasPrefix($0.cwd)
+                $0.cwd == worktree.path || $0.cwd.hasPrefix(worktree.path + "/")
             }
             let featureName = worktree.displayName
             let feature = kanban?.features.first { f in

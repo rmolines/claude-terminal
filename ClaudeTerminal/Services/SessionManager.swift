@@ -101,6 +101,13 @@ actor SessionManager {
     }
 
     func rejectHITL(sessionID: String) async {
+        await rejectHITL(sessionID: sessionID, reason: "")
+    }
+
+    /// Rejects a HITL request and optionally injects an instruction into the PTY.
+    /// `reason` is injected as text input to the agent 1.5s after the ESC dismiss,
+    /// giving Claude Code time to process the denial and return to the prompt.
+    func rejectHITL(sessionID: String, reason: String) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
         let cwd = sessions[sessionID]?.cwd
         sessions[sessionID]?.status = .blocked
@@ -110,6 +117,14 @@ actor SessionManager {
         await HookIPCServer.shared.respondHITL(sessionID: sessionID, response: .deny)
         if let cwd {
             Task { @MainActor in TerminalRegistry.shared.sendInput([0x1b], forCwd: cwd) }
+            if !reason.isEmpty {
+                let bytes = Array(reason.utf8) + [0x0a]
+                Task { @MainActor in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        TerminalRegistry.shared.sendInput(bytes, forCwd: cwd)
+                    }
+                }
+            }
         }
     }
 
@@ -134,6 +149,7 @@ actor SessionManager {
         let isNew = sessions[sessionID] == nil
         if isNew {
             sessions[sessionID] = AgentSession(sessionID: sessionID, cwd: cwd)
+
             // Fetch git branch on a dedicated Thread — never block the actor with waitUntilExit().
             Task {
                 if let branch = await Self.fetchBranch(cwd: cwd) {
@@ -144,7 +160,12 @@ actor SessionManager {
                 }
             }
         }
-        sessions[sessionID]?.status = status
+        // Never downgrade awaitingInput or blocked via a background event (Notification, bash, etc.).
+        // Those events are informational and should not resolve a pending HITL decision.
+        let current = sessions[sessionID]?.status
+        if current != .awaitingInput && current != .blocked {
+            sessions[sessionID]?.status = status
+        }
         sessions[sessionID]?.lastEventAt = Date()
     }
 
