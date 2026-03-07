@@ -4,6 +4,109 @@ Newest entries at the top.
 
 ---
 
+## 2026-03-07 — hitl-reject-with-reason
+
+### O que foi feito
+
+**Reject com instrução opcional (D1):** `rejectHITL(sessionID:reason:)` em `SessionManager` envia
+`HookResponse.deny` via IPC, injecta `[0x1b]` no PTY para dismissar o diálogo TUI, e 1.5s depois
+injeta `Array(reason.utf8) + [0x0a]` no PTY se `reason` não for vazio.
+
+**Two-step UX no ApprovalCardView:** primeiro clique em "Reject" expande um `TextField` inline
+com "Instruction for agent (optional)". Cancel colapsa o campo. Send (ou onSubmit) chama
+`item.onReject(reason)` — permitindo rejeição silenciosa (reason vazio) ou com instrução.
+
+**3 bug fixes:**
+1. **Message-sent feedback** (`WorkSessionRowView`): botão vira checkmark verde por 2s após envio.
+2. **Session matching** (`WorkSessionService`): fix de `worktree.path.hasPrefix($0.cwd)` — estava
+   matchando TODAS as worktrees quando a sessão era no root do repo (todas são subdiretórios).
+   Corrigido para `$0.cwd == worktree.path || $0.cwd.hasPrefix(worktree.path + "/")`.
+3. **Panel disappearing** (`HITLFloatingPanelController` + `SessionManager`): dois fixes independentes:
+   - `hasInlineHITL` check movido para dentro de `if !panel.isVisible` — panel continua visível quando ya está aberto
+   - `updateOrCreate` preserva `.awaitingInput`/`.blocked` — hooks de Notification/Bash concorrentes
+     não mais downgradam o status para `.running`, o que limpava `pendingSessions` e escondia o panel
+
+### Decisões
+
+- Delay de 1.5s hardcoded — adequado na prática (Claude Code volta ao prompt em ~0.5s após ESC)
+- `0x0a` (`\n`) em vez de `0x0d` (`\r`) para o Enter do texto injetado — Claude Code aceita `\n` no prompt
+- `HITLItem.onReject` mudou de `() -> Void` para `(String) -> Void` — breaking change na interface,
+  mas contido: só o controller e os previews precisaram atualizar
+
+### Armadilhas encontradas
+
+- **Status downgrade silencioso**: `updateOrCreate` usava parâmetro `status: .running` como default.
+  Hooks de background (Notification, Bash) chamam `updateOrCreate` com status default — resetavam
+  `.awaitingInput` sem que nenhum código explicitamente chamasse `sessions[id]?.status = .running`.
+  Fix: checar `current != .awaitingInput && current != .blocked` antes de mudar o status.
+- **`gh pr create` num worktree com upstream**: `gh` detectou o remote `upstream` (claude-kickstart)
+  como repo padrão. Solução: sempre usar `--repo owner/name` explicitamente em worktrees com upstream.
+
+### Próximos passos
+
+Nenhum pendente para esta feature. Próxima feature do M4 a verificar via `/project-compass`.
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Services/SessionManager.swift` — `rejectHITL(reason:)` + status preservation
+- `ClaudeTerminal/Features/SessionCards/ApprovalCardView.swift` — two-step reject UX
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — panel visibility fix
+- `ClaudeTerminal/Features/WorkSession/WorkSessionRowView.swift` — message-sent feedback
+- `ClaudeTerminal/Services/WorkSessionService.swift` — session matching fix
+
+---
+
+## 2026-03-07 — hitl-ux-v2
+
+### O que foi feito
+
+**D1 — HookResponse protocol:** substituiu o protocolo socket de 1-byte por `HookResponse: Codable`
+com JSON length-prefixed (4 bytes big-endian + body). `decision: String` ("allow"/"deny"/"ask") +
+`ptyKey: UInt8?` para injeção no PTY. Statics: `.allowOnce` (0x31), `.allowSession` (0x32), `.deny`
+(0x1b), `.ask` (nil). Helper lê 4+N bytes; switch em `decision` para stdout JSON e exit code.
+`approveHITL(response:)` agora aceita `HookResponse` diretamente — o byte do PTY vem do response
+(elimina `approveHITL(ptyKey:)` adhoc).
+
+**D2 — Dynamic buttons + Show in terminal:** `permission_suggestions` do Claude Code propagado
+por toda a stack: `HookPayload` → `AgentEvent` → `AgentSession.pendingSuggestions`. `PermissionSuggestion`
+struct com id/label/isDestructive/action. `HITLItem` ganha `suggestions` e `onShowInTerminal`.
+`ApprovalCardView.actionRow` usa `@ViewBuilder` com renderização dinâmica; fallback para Approve/Reject
+quando suggestions vazio. `HITLFloatingPanelController.buildSuggestions(for:)` mapeia IDs conhecidos:
+`yes-session` → allowSession (0x32), `reject` → deny (0x1b), default → allowOnce (0x31).
+Botão "Terminal" despacha `HookResponse.ask` — Claude Code mantém TUI aberto para o usuário.
+
+### Decisões
+
+- `PermissionSuggestion.action` é closure baked-in (não retorna `HookResponse` ao caller) — simplifica
+  o binding no `HITLFloatingPanelController` sem precisar de enum de resultado na view
+- `onShowInTerminal` sempre non-nil no controller (sempre visível quando há suggestions) — separado de
+  `suggestions` porque "mostrar no terminal" é sempre válido independente dos IDs recebidos
+- Conflito de rebase com `ApprovalCardView.swift`: main adicionou `ToolBadge` enquanto a branch
+  adicionou `PermissionSuggestion` no mesmo ponto do arquivo — resolvido preservando ambos em ordem
+
+### Armadilhas encontradas
+
+- `git rebase --continue --no-edit` não é uma flag válida — usar `GIT_EDITOR=true git rebase --continue`
+  para aceitar a mensagem de commit sem abrir editor interativo
+
+### Próximos passos
+
+- Validar em runtime que `permission_suggestions` está sendo enviado pelo Claude Code atual (o campo
+  pode variar por versão — o fallback Approve/Reject cobre o caso vazio)
+- Considerar logar os IDs recebidos para descobrir outros valores além de `yes-session`/`reject`
+
+### Arquivos-chave
+
+- `Shared/IPCProtocol.swift` — `HookResponse` struct; `permissionSuggestions` em `HookPayload`/`AgentEvent`
+- `ClaudeTerminalHelper/IPCClient.swift` — lê length-prefixed JSON
+- `ClaudeTerminalHelper/HookHandler.swift` — switch em `decision`; extrai suggestions
+- `ClaudeTerminal/Services/HookIPCServer.swift` — `respondHITL(response:)`
+- `ClaudeTerminal/Services/SessionManager.swift` — `approveHITL(response:)` + `showInTerminalHITL`
+- `ClaudeTerminal/Features/SessionCards/ApprovalCardView.swift` — `PermissionSuggestion`; dynamic `actionRow`
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — `buildSuggestions(for:)`
+
+---
+
 ## 2026-03-07 — hitl-rich-context-card
 
 ### O que foi feito

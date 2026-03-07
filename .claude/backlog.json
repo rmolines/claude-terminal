@@ -313,14 +313,14 @@
     {
       "id": "hitl-reject-with-reason",
       "title": "Reject + instrucao: campo opcional apos rejeitar injetado no PTY",
-      "status": "pending",
+      "status": "done",
       "milestone": "m4",
       "path": null,
       "dependencies": [],
-      "branch": null,
-      "prNumber": null,
-      "startedAt": null,
-      "completedAt": null,
+      "branch": "worktree-hitl-reject-with-reason",
+      "prNumber": 70,
+      "startedAt": "2026-03-07T21:00:13Z",
+      "completedAt": "2026-03-07T21:57:07Z",
       "createdAt": "2026-03-06T00:00:00Z"
     },
     {

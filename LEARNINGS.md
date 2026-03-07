@@ -2,6 +2,29 @@
 
 Gotchas, limitations, and non-obvious behaviors discovered while working on this project.
 
+## 2026-03-07 — Status downgrade silencioso via `updateOrCreate` com default param
+
+`updateOrCreate(sessionID:cwd:status:)` tinha `status: .running` como default. Hooks de background
+(Notification, BashToolUse) chamam essa função sem `status:` explícito — e quando uma sessão estava
+em `.awaitingInput`, a chamada resetava o status para `.running` silenciosamente. Isso limpava
+`pendingSessions` no painel HITL (pois esse filtra por `.awaitingInput`) e escondia o painel após ~5s.
+
+**Sintoma:** painel HITL some após alguns segundos mesmo com o agente ainda aguardando aprovação.
+Sem stack trace, sem erro — o bug aparece apenas quando outro agente ativo dispara eventos concorrentes.
+
+**Fix:** checar o status atual antes de sobrescrever:
+```swift
+let current = sessions[sessionID]?.status
+if current != .awaitingInput && current != .blocked {
+    sessions[sessionID]?.status = status
+}
+```
+
+**Regra geral:** status "stickies" (estados que aguardam input externo) devem ser explicitamente
+preservados contra qualquer função que possa ser chamada por eventos paralelos com valores default.
+
+---
+
 ## 2026-03-07 — `\r` no message-input vs HITL PTY bridge
 
 No HITL PTY bridge, enviar `[0x31, 0x0d]` causava bleeding do `\r` para o próximo dialog

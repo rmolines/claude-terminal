@@ -2,6 +2,75 @@
 
 ---
 
+## [feat] HITL reject with optional reason + 3 session bug fixes — 2026-03-07
+
+**Tipo:** feat
+**Tags:** hitl, ux, sessions, bugfix
+**PR:** [#70](https://github.com/rmolines/claude-terminal/pull/70) · **Complexidade:** média
+
+### O que mudou
+
+Ao rejeitar um PermissionRequest, o usuário agora pode digitar uma instrução opcional que é injetada
+no PTY do agente 1.5s após a rejeição — sem precisar abrir o terminal. Também corrigidos 3 bugs:
+sessões mirrorando estado HITL errado, painel flutuante sumindo após ~5s, e ausência de feedback
+ao enviar mensagem na aba Sessions.
+
+### Detalhes técnicos
+
+- `SessionManager.swift`: `rejectHITL(sessionID:reason:)` injeta `reason` (UTF-8 + `\n`) no PTY via `asyncAfter(1.5s)`; `updateOrCreate` preserva `.awaitingInput`/`.blocked` contra background events
+- `ApprovalCardView.swift`: `onReject: (String) -> Void`; two-step com `@State rejectExpanded` + TextField inline
+- `HITLFloatingPanelController.swift`: `hasInlineHITL` check movido para dentro de `!panel.isVisible`
+- `WorkSessionService.swift`: session matching fix — `$0.cwd == worktree.path || $0.cwd.hasPrefix(worktree.path + "/")`
+- `WorkSessionRowView.swift`: `@State messageSent` com checkmark verde por 2s após envio
+
+### Impacto
+
+- **Breaking:** Não
+
+### Arquivos-chave
+
+- `ClaudeTerminal/Services/SessionManager.swift` — reject com PTY injection
+- `ClaudeTerminal/Features/SessionCards/ApprovalCardView.swift` — two-step reject UX
+- `ClaudeTerminal/Features/WorkSession/WorkSessionRowView.swift` — message-sent feedback
+- `ClaudeTerminal/Services/WorkSessionService.swift` — session matching
+
+---
+
+## [feat] hitl-ux-v2 — HookResponse protocol + dynamic HITL buttons — 2026-03-07
+
+**Tipo:** feat
+**Tags:** hitl, ipc, protocol, ui, ux
+**PR:** [#69](https://github.com/rmolines/claude-terminal/pull/69) · **Complexidade:** alta
+
+### O que mudou
+
+O protocolo de comunicação entre app e helper passou de 1 byte para JSON tipado (`HookResponse`),
+desbloqueando respostas mais ricas. O painel HITL agora mostra botões distintos quando o Claude Code
+envia `permission_suggestions`: "Allow for session", "Reject" e "Terminal" (que delega o diálogo ao
+PTY sem fechar o TUI). Fallback para Approve/Reject quando suggestions não é enviado.
+
+### Detalhes técnicos
+
+- `Shared/IPCProtocol.swift`: `HookResponse: Codable` com `decision`/`ptyKey`; statics `.allowOnce/.allowSession/.deny/.ask`; `permissionSuggestions: [String]?` em `HookPayload` e `AgentEvent`
+- `ClaudeTerminalHelper/IPCClient.swift`: lê 4 bytes de length + JSON body em vez de 1 byte
+- `ClaudeTerminalHelper/HookHandler.swift`: switch em `response.decision` → stdout JSON / exit code; extrai e repassa `permission_suggestions`
+- `ClaudeTerminal/Services/HookIPCServer.swift`: `respondHITL(response:)` com length-prefix
+- `ClaudeTerminal/Services/SessionManager.swift`: `approveHITL(response:)` + `showInTerminalHITL` + `pendingSuggestions: [String]`
+- `ClaudeTerminal/Features/SessionCards/ApprovalCardView.swift`: `PermissionSuggestion` struct; `@ViewBuilder actionRow` dinâmico
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift`: `buildSuggestions(for:)` com mapeamento de IDs
+
+### Impacto
+
+- **Breaking:** Sim — protocolo socket mudou (1-byte → length-prefixed JSON). App e helper devem ser da mesma versão.
+
+### Arquivos-chave
+
+- `Shared/IPCProtocol.swift` — contrato IPC entre app e helper
+- `ClaudeTerminal/Features/SessionCards/ApprovalCardView.swift` — UI dos botões dinâmicos
+- `ClaudeTerminal/Features/HITL/HITLFloatingPanelController.swift` — mapeamento de suggestions
+
+---
+
 ## [feat] hitl-rich-context-card — contexto rico no card de aprovação HITL — 2026-03-07
 
 **Tipo:** feat
