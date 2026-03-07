@@ -66,7 +66,7 @@ final class HITLFloatingPanelController {
                 riskLevel: risk,
                 suggestions: suggestions,
                 onApprove: { Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID) } },
-                onReject: { Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID) } },
+                onReject: { reason in Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID, reason: reason) } },
                 onShowInTerminal: { Task { await SessionManager.shared.showInTerminalHITL(sessionID: session.sessionID) } }
             )
         }

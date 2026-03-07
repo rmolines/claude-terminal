@@ -57,7 +57,7 @@ struct HITLQueueView: View {
             toolName: "Bash",
             riskLevel: .critical,
             onApprove: {},
-            onReject: {}
+            onReject: { _ in }
         )
     ]
     return HITLQueueView(state: state)
@@ -72,7 +72,7 @@ struct HITLQueueView: View {
             toolName: "Bash",
             riskLevel: .elevated,
             onApprove: {},
-            onReject: {}
+            onReject: { _ in }
         ),
         HITLItem(
             sessionID: "preview-session-2",
@@ -80,7 +80,7 @@ struct HITLQueueView: View {
             toolName: "Bash",
             riskLevel: .normal,
             onApprove: {},
-            onReject: {}
+            onReject: { _ in }
         )
     ]
     return HITLQueueView(state: state)

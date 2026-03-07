@@ -64,7 +64,8 @@ struct HITLItem {
     /// Empty = show fallback Approve/Reject buttons.
     let suggestions: [PermissionSuggestion]
     let onApprove: () -> Void
-    let onReject: () -> Void
+    /// Called with the optional rejection reason (empty string = plain reject).
+    let onReject: (String) -> Void
     /// When non-nil, shows a "Terminal" button that defers the dialog to the PTY TUI.
     let onShowInTerminal: (() -> Void)?
 
@@ -75,7 +76,7 @@ struct HITLItem {
         riskLevel: RiskLevel,
         suggestions: [PermissionSuggestion] = [],
         onApprove: @escaping () -> Void,
-        onReject: @escaping () -> Void,
+        onReject: @escaping (String) -> Void,
         onShowInTerminal: (() -> Void)? = nil
     ) {
         self.sessionID = sessionID
@@ -92,6 +93,9 @@ struct HITLItem {
 /// Card for one HITL approval request: tool badge, description, risk indicator, approve/reject.
 struct ApprovalCardView: View {
     let item: HITLItem
+
+    @State private var rejectExpanded = false
+    @State private var rejectReason = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -149,14 +153,35 @@ struct ApprovalCardView: View {
     @ViewBuilder
     private var actionRow: some View {
         if item.suggestions.isEmpty {
-            HStack {
-                Button("Reject", role: .destructive) { item.onReject() }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                Spacer()
-                Button("Approve") { item.onApprove() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
+            if rejectExpanded {
+                VStack(alignment: .trailing, spacing: 6) {
+                    TextField("Instruction for agent (optional)", text: $rejectReason)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.caption)
+                        .onSubmit { sendReject() }
+                    HStack {
+                        Button("Cancel") {
+                            rejectExpanded = false
+                            rejectReason = ""
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        Spacer()
+                        Button("Send", role: .destructive) { sendReject() }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                    }
+                }
+            } else {
+                HStack {
+                    Button("Reject", role: .destructive) { rejectExpanded = true }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    Spacer()
+                    Button("Approve") { item.onApprove() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                }
             }
         } else {
             HStack(spacing: 6) {
@@ -182,6 +207,13 @@ struct ApprovalCardView: View {
         }
     }
 
+    private func sendReject() {
+        let reason = rejectReason
+        rejectExpanded = false
+        rejectReason = ""
+        item.onReject(reason)
+    }
+
     private var riskBorderColor: Color {
         switch item.riskLevel {
         case .critical: return .red.opacity(0.4)
@@ -198,7 +230,7 @@ struct ApprovalCardView: View {
         toolName: "Read",
         riskLevel: .normal,
         onApprove: {},
-        onReject: {}
+        onReject: { _ in }
     ))
     .frame(width: 400)
     .padding()
@@ -211,7 +243,7 @@ struct ApprovalCardView: View {
         toolName: "Bash",
         riskLevel: .critical,
         onApprove: {},
-        onReject: {}
+        onReject: { _ in }
     ))
     .frame(width: 400)
     .padding()
@@ -224,7 +256,7 @@ struct ApprovalCardView: View {
         toolName: "Write",
         riskLevel: .normal,
         onApprove: {},
-        onReject: {}
+        onReject: { _ in }
     ))
     .frame(width: 400)
     .padding()
@@ -239,7 +271,7 @@ struct ApprovalCardView: View {
                 toolName: tool,
                 riskLevel: .normal,
                 onApprove: {},
-                onReject: {}
+                onReject: { _ in }
             ))
         }
     }

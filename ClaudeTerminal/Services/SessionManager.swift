@@ -101,6 +101,13 @@ actor SessionManager {
     }
 
     func rejectHITL(sessionID: String) async {
+        await rejectHITL(sessionID: sessionID, reason: "")
+    }
+
+    /// Rejects a HITL request and optionally injects an instruction into the PTY.
+    /// `reason` is injected as text input to the agent 1.5s after the ESC dismiss,
+    /// giving Claude Code time to process the denial and return to the prompt.
+    func rejectHITL(sessionID: String, reason: String) async {
         guard sessions[sessionID]?.status == .awaitingInput else { return }
         let cwd = sessions[sessionID]?.cwd
         sessions[sessionID]?.status = .blocked
@@ -110,6 +117,14 @@ actor SessionManager {
         await HookIPCServer.shared.respondHITL(sessionID: sessionID, response: .deny)
         if let cwd {
             Task { @MainActor in TerminalRegistry.shared.sendInput([0x1b], forCwd: cwd) }
+            if !reason.isEmpty {
+                let bytes = Array(reason.utf8) + [0x0a]
+                Task { @MainActor in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        TerminalRegistry.shared.sendInput(bytes, forCwd: cwd)
+                    }
+                }
+            }
         }
     }
 
