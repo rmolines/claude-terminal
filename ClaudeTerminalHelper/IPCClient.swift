@@ -16,15 +16,15 @@ final class IPCClient: @unchecked Sendable {
             .path
     }
 
-    /// Sends an event and blocks until the app writes a 1-byte response.
+    /// Sends an event and blocks until the app writes a length-prefixed HookResponse JSON.
     ///
-    /// Returns 1 if approved, 0 if rejected or on any error.
+    /// Returns the decoded HookResponse, or .deny on any error.
     /// Uses a 5-minute socket receive timeout so the helper never hangs indefinitely.
-    func sendAndAwaitResponse(event: AgentEvent) -> UInt8 {
-        guard let data = try? JSONEncoder().encode(event) else { return 0 }
+    func sendAndAwaitResponse(event: AgentEvent) -> HookResponse {
+        guard let data = try? JSONEncoder().encode(event) else { return .deny }
 
         let sockfd = socket(AF_UNIX, SOCK_STREAM, 0)
-        guard sockfd >= 0 else { return 0 }
+        guard sockfd >= 0 else { return .deny }
         defer { close(sockfd) }
 
         var timeout = timeval(tv_sec: 300, tv_usec: 0)
@@ -48,15 +48,22 @@ final class IPCClient: @unchecked Sendable {
                 connect(sockfd, sockaddrPtr, socklen_t(MemoryLayout<sockaddr_un>.size))
             }
         }
-        guard connectResult == 0 else { return 0 }
+        guard connectResult == 0 else { return .deny }
 
         var length = UInt32(data.count).bigEndian
         _ = withUnsafeBytes(of: &length) { write(sockfd, $0.baseAddress, 4) }
         _ = data.withUnsafeBytes { write(sockfd, $0.baseAddress, data.count) }
 
-        var response: UInt8 = 0
-        _ = read(sockfd, &response, 1)
-        return response
+        // Read length-prefixed HookResponse JSON
+        var responseLengthBytes = [UInt8](repeating: 0, count: 4)
+        guard read(sockfd, &responseLengthBytes, 4) == 4 else { return .deny }
+        let responseLength = Int(UInt32(bigEndian: responseLengthBytes.withUnsafeBytes { $0.load(as: UInt32.self) }))
+        guard responseLength > 0 else { return .deny }
+
+        var responseBuffer = [UInt8](repeating: 0, count: responseLength)
+        guard read(sockfd, &responseBuffer, responseLength) == responseLength else { return .deny }
+
+        return (try? JSONDecoder().decode(HookResponse.self, from: Data(responseBuffer))) ?? .deny
     }
 
     func send(event: AgentEvent) {

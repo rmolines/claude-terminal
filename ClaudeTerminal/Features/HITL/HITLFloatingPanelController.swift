@@ -58,13 +58,16 @@ final class HITLFloatingPanelController {
         panelState.pendingItems = pendingSessions.map { session in
             let description = session.currentActivity ?? "Agent at \(session.cwd) awaiting approval"
             let risk = RiskSurfaceComputer.compute(toolName: session.pendingToolName, detail: session.currentActivity)
+            let suggestions = buildSuggestions(for: session)
             return HITLItem(
                 sessionID: session.sessionID,
                 description: description,
                 toolName: session.pendingToolName,
                 riskLevel: risk,
+                suggestions: suggestions,
                 onApprove: { Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID) } },
-                onReject: { Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID) } }
+                onReject: { Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID) } },
+                onShowInTerminal: { Task { await SessionManager.shared.showInTerminalHITL(sessionID: session.sessionID) } }
             )
         }
 
@@ -79,6 +82,39 @@ final class HITLFloatingPanelController {
             if !panel.isVisible {
                 panel.center()
                 panel.makeKeyAndOrderFront(nil)
+            }
+        }
+    }
+
+    // MARK: - Suggestion builder
+
+    /// Maps Claude Code's `permission_suggestions` IDs to `PermissionSuggestion` values.
+    /// Unknown IDs fall back to "Allow" (allow-once). Empty input → empty output (caller uses fallback buttons).
+    private func buildSuggestions(for session: AgentSession) -> [PermissionSuggestion] {
+        guard !session.pendingSuggestions.isEmpty else { return [] }
+        return session.pendingSuggestions.map { id in
+            switch id {
+            case "yes-session":
+                return PermissionSuggestion(
+                    id: id,
+                    label: "Allow for session",
+                    isDestructive: false,
+                    action: { Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID, response: .allowSession) } }
+                )
+            case "reject":
+                return PermissionSuggestion(
+                    id: id,
+                    label: "Reject",
+                    isDestructive: true,
+                    action: { Task { await SessionManager.shared.rejectHITL(sessionID: session.sessionID) } }
+                )
+            default:
+                return PermissionSuggestion(
+                    id: id,
+                    label: "Allow",
+                    isDestructive: false,
+                    action: { Task { await SessionManager.shared.approveHITL(sessionID: session.sessionID) } }
+                )
             }
         }
     }
