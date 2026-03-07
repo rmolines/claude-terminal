@@ -149,6 +149,7 @@ actor SessionManager {
         let isNew = sessions[sessionID] == nil
         if isNew {
             sessions[sessionID] = AgentSession(sessionID: sessionID, cwd: cwd)
+
             // Fetch git branch on a dedicated Thread — never block the actor with waitUntilExit().
             Task {
                 if let branch = await Self.fetchBranch(cwd: cwd) {
@@ -159,7 +160,12 @@ actor SessionManager {
                 }
             }
         }
-        sessions[sessionID]?.status = status
+        // Never downgrade awaitingInput or blocked via a background event (Notification, bash, etc.).
+        // Those events are informational and should not resolve a pending HITL decision.
+        let current = sessions[sessionID]?.status
+        if current != .awaitingInput && current != .blocked {
+            sessions[sessionID]?.status = status
+        }
         sessions[sessionID]?.lastEventAt = Date()
     }
 
