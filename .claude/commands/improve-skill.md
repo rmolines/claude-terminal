@@ -126,6 +126,22 @@ Aguardar confirmação antes de continuar.
 
 ---
 
+## Passo 2.5 — Otimização de description (opcional)
+
+Após aplicar a melhoria, oferecer **somente se a melhoria tocou no campo `description` do frontmatter**:
+
+> "Quer rodar o description optimizer do skill-creator para medir se o trigger melhorou?
+> (usa run_loop.py: 20 queries, 5 iterações, split train/test 60/40)"
+
+**Se sim:** invocar `skill-creator` com `--eval-set` apontando para a skill editada.
+Aguardar `best_description` e aplicar ao frontmatter antes de commitar.
+
+**Se não:** prosseguir direto para Passo 3 (commit + PR).
+
+Não oferecer este passo se a melhoria não tocou no campo `description` do frontmatter.
+
+---
+
 ## Passo 3 — Commit + PR no kickstart
 
 ### 3.1 — Commit
