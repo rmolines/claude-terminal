@@ -23,18 +23,109 @@ Se nenhum dos dois tiver: perguntar ao usuário antes de prosseguir.
 
 ---
 
+## Detecção de caminho (fast vs standard)
+
+Após extrair hot files do CLAUDE.md, detectar o caminho antes de qualquer outro passo:
+
+```bash
+# Linhas alteradas vs. main
+LINES_CHANGED=$(git diff origin/main...HEAD --stat | tail -1 | grep -oE '[0-9]+ (insertion|deletion)' | awk '{sum+=$1} END {print sum+0}')
+
+# Hot files tocados pela branch
+HOT_FILES_TOUCHED=$(git diff origin/main...HEAD --name-only | grep -F "$(echo "$HOT_FILES" | tr ' ' '\n')" | wc -l | tr -d ' ')
+```
+
+| Condição | Caminho |
+|----------|---------|
+| `LINES_CHANGED < 150` **e** `HOT_FILES_TOUCHED == 0` **e** sem flag `--review` | **Fast** — local verification + merge direto |
+| `HOT_FILES_TOUCHED > 0` **ou** `LINES_CHANGED >= 150` **ou** flag `--review` | **Standard** — PR + CI como rastreabilidade |
+
+Anunciar o caminho escolhido em uma linha antes de prosseguir:
+```text
+🚀 Caminho: fast (N linhas, sem hot files)   — ou —   📋 Caminho: standard (hot files tocados / N≥150 linhas)
+```
+
+---
+
+## Modo fast — local-first
+
+> Ativado quando: <150 linhas alteradas, sem hot files, sem `--review`.
+> Objetivo: local verification → commit → PR → merge em ~2 min.
+
+### F1. Simplify + build + test (HARD GATE)
+
+Rodar o skill `simplify` sem confirmação, depois:
+
+```bash
+{{BUILD_CMD}}
+{{TEST_CMD}}
+```
+
+Se qualquer um falhar: **parar**. Não avançar com verificação local quebrada.
+
+### F2. Commit
+
+Mesmo fluxo do Modo standard passo 1 — sem confirmação.
+
+### F3. Rebase + push
+
+```bash
+git fetch origin
+git rebase origin/main
+git push -u origin <branch-atual>
+```
+
+### F4. PR + merge imediato
+
+```bash
+gh pr create --title "<título>" --body "$(cat <<'EOF'
+## O que foi feito
+- <bullet list>
+
+## Arquivos modificados
+- `path/to/file` — descrição
+
+> Fast path: verificação local passou. CI roda como rastreabilidade.
+EOF
+)"
+```
+
+Sem aguardar CI — mergear imediatamente após criar o PR:
+
+```bash
+gh pr merge --squash
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+BRANCH=$(git branch --show-current)
+gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" 2>/dev/null || true
+```
+
+### F5. Resultado
+
+```text
+✅ Feature entregue (fast path)!
+
+PR: <url> — merged
+Verificação local: ✅ build + test passaram
+CI: rodando como rastreabilidade (não bloqueante)
+
+Rode /close-feature para documentação e cleanup.
+```
+
+---
+
 ## Detecção de modo
 
 1. Perguntar o nome da feature se não foi informado
-2. Obter branch atual: `git branch --show-current`
-3. Verificar se a branch existe no remote:
+2. Detectar flag `--review`: se o argumento contém `--review`, forçar standard path com CI blocking gate (ignorar detecção automática de caminho)
+3. Obter branch atual: `git branch --show-current`
+4. Verificar se a branch existe no remote:
    ```bash
    git ls-remote --heads origin <branch>
    ```
    - **Retornou output** → **Modo PR** (primeira execução ou iteração antes do merge)
    - **Retornou vazio** → **Modo direto** (branch já foi mergeada; esta é uma iteração)
 
-4. Verificar se há algo para entregar:
+5. Verificar se há algo para entregar:
    ```bash
    git status --short
    git log origin/main..HEAD --oneline
@@ -59,27 +150,32 @@ O checklist de infra (secrets, scripts de setup) não será verificado.
 Continuando com base apenas no CLAUDE.md.
 ```
 
-### 0.3. Validate rodado?
+### 0.4. Simplify automático
 
-Se `.claude/feature-plans/<nome>/validation-report.md` não existir:
+Rodar o skill `simplify` agora — sem pedir confirmação ao usuário.
 
-> ⚠️  /validate não foi rodado para esta feature.
-> Recomendado antes do PR — rode /validate agora ou continue assim mesmo?
+O simplify revisa o diff atual para reuse, qualidade e eficiência, e corrige problemas encontrados diretamente.
+Aguardar a conclusão antes de avançar. Se não houver problemas, continuar normalmente.
 
-Aguardar resposta. Se "continuar": prosseguir normalmente (não é bloqueante).
+Após o simplify, verificar se o diff toca código Swift:
+
+```bash
+git diff origin/main...HEAD --name-only | grep "\.swift$"
+```
+
+- Se há arquivos `.swift` com views (nome termina em `View.swift` ou diff contém `some View`) → invocar `swiftui-expert-skill` para um review pass
+  [porque a skill detecta anti-patterns de SwiftUI que o simplify genérico não cobre]
+- Se há arquivos `.swift` com código concorrente (diff contém `actor`, `async`, `@MainActor`, `Task {`) → invocar `swift-concurrency` para um review pass
+  [porque data races e isolamento incorreto não aparecem em build — só em runtime]
+
+Se nenhuma condição se aplicar: continuar normalmente.
 
 ### 0.5. Verificação local (HARD GATE)
 
-Antes de qualquer commit ou push, rodar build e testes:
-
-**Build:** Tentar `BuildProject` (Xcode MCP) para saída estruturada de erros.
-
-- Se **suceder**: usar o resultado do `BuildProject`.
-- Se **falhar com erro de MCP** (ferramenta indisponivel, servidor nao conectado):
-  Emitir `[SEM MCP] Xcode MCP nao conectado — usando {{BUILD_CMD}} (saida menos estruturada).`
-  Rodar `{{BUILD_CMD}}` como fallback.
+Antes de qualquer commit ou push, rodar:
 
 ```bash
+{{BUILD_CMD}}    # ex: npm run build, swift build, make build
 {{TEST_CMD}}     # ex: npm test, swift test, make test
 ```
 
@@ -180,35 +276,37 @@ Com base no `plan.md` (passo 0), verificar cada item antes de mergear:
 - `git log origin/main..HEAD --oneline` — garantir que só os commits desta feature estão
 - Se aparecer algo inesperado, investigar antes de mergear
 
-### 6. CI gate e merge
+### 6. CI — rastreabilidade e merge
 
-**ASSERT antes de prosseguir:** verificar que todos os checks do PR estão passando antes de mergear.
+> **Design AI-native:** verificação local (passo 0.5) é o hard gate. CI é rastreabilidade — roda, mas não bloqueia o merge.
+> Exceção: flag `--review` ativa o CI blocking gate do modo legado (ver abaixo).
+
+**Com flag `--review` (opt-in para revisão humana):**
 
 ```bash
 gh pr checks <pr_number> --watch
 ```
 
-- Se todos os checks passarem: prosseguir para o merge
-- Se algum check falhar: exibir o erro detalhado e **PARAR** — corrigir na branch e rodar `/ship-feature` novamente
-- Se não houver checks configurados (repo sem CI): avisar ao usuário e prosseguir
+- Se todos passarem: prosseguir para o merge
+- Se algum falhar: exibir erro detalhado e **PARAR** — corrigir e rodar `/ship-feature` novamente
 
-> **Atenção após re-push de fix de CI:** `gh pr checks --watch` pode exibir o resultado
-> do run *anterior* (já concluído) em vez de aguardar o novo run disparado pelo push.
-> Sintoma: o status aparece imediatamente como `fail` sem aguardar, ou o timestamp do
-> run é anterior ao push.
->
-> Nesse caso, obter o run ID explicitamente e aguardar o run correto:
->
+> **Atenção após re-push de fix de CI:** `gh pr checks --watch` pode exibir resultado do run *anterior*.
+> Nesse caso, obter o run ID explicitamente:
 > ```bash
-> sleep 5  # aguardar GitHub registrar o novo run
+> sleep 5
 > BRANCH=$(git branch --show-current)
 > LATEST_RUN=$(gh run list --branch "$BRANCH" --limit 1 --json databaseId -q '.[0].databaseId')
 > gh run watch "$LATEST_RUN" --exit-status
 > ```
->
-> Só mergear após este run passar — nunca com base em resultado de run anterior.
 
-**Se CI falhar: PARAR e reportar ao usuario. Nunca mergear com CI vermelho.**
+**Sem `--review` (default — standard path):**
+
+```bash
+# Mostrar status atual do CI (informacional — não blocking)
+gh pr checks <pr_number> 2>/dev/null | head -20 || true
+```
+
+Exibir resultado e continuar independentemente — o merge não aguarda CI verde.
 
 Mergear diretamente **sem pedir confirmação**:
 
@@ -221,19 +319,6 @@ REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH" 2>/dev/null \
   || echo "⚠️  Remote branch não deletada automaticamente — limpar com: gh api -X DELETE repos/$REPO/git/refs/heads/$BRANCH"
 ```
-
-Monitorar o run de CI disparado pelo merge para confirmar que o deploy passou:
-
-```bash
-gh run list --limit 3
-# identificar o run de deploy
-gh run watch <id>
-```
-
-- Se o run **falhar**: exibir erro com `gh run view <id> --log-failed` e **parar** — não avançar sem CI verde
-
-> **Nota:** em projetos com tempo de startup longo, o CI pode expirar mesmo com o deploy funcionando (false positive).
-> Antes de declarar falha: verificar se os serviços estão rodando conforme descrito no CLAUDE.md do projeto.
 
 ### 6a. Verificar que o deploy chegou ao ambiente
 
@@ -258,11 +343,11 @@ Se falhar: investigar logs antes de escalar o problema.
 
 Se tudo passou:
 ```text
-✅ Feature em produção e validada!
+✅ Feature entregue (standard path)!
 
-PR: <url>
-CI: ✅ passou em <duração>
-Smoke test: ✅
+PR: <url> — merged
+Verificação local: ✅ build + test passaram
+CI: rodando como rastreabilidade
 
 Se encontrar problemas, corrija na worktree e rode /ship-feature novamente.
 Quando estiver satisfeito, rode /close-feature para documentação e cleanup.
@@ -294,14 +379,14 @@ git push origin HEAD:main
 
 Se houver conflitos no rebase: listar e pedir orientação. Nunca usar `--force`.
 
-### 3. Acompanhar CI
+### 3. Acompanhar CI (informacional)
 
 ```bash
+# Mostrar status — não blocking
 gh run list --limit 3
-gh run watch <id>
 ```
 
-Se falhar: exibir erro e parar.
+CI corre como rastreabilidade. Não aguardar nem bloquear neste passo.
 
 ### 4. Verificar deploy e smoke test
 
