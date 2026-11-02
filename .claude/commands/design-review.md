@@ -244,35 +244,17 @@ Encontrar o arquivo da view correspondente. Verificar se existe preview block/st
 Se **não existir preview:**
 
 ```text
-[NomeDaView] nao tem preview configurado.
-{{VISUAL_PREVIEW_CMD}} nao disponivel. Revisao visual bloqueada.
+⚠️ [NomeDaView] não tem preview configurado.
+{{VISUAL_PREVIEW_CMD}} não disponível. Revisão visual bloqueada.
 
-Opcoes:
-  1. Adicionar preview antes de continuar a revisao visual
-  2. Continuar revisao so de codigo (sem render)
+Opções:
+  1. Adicionar preview antes de continuar a revisão visual
+  2. Continuar revisão só de código (sem render)
 ```
 
 Aguardar decisão do dev antes de prosseguir.
 
-Se **existir preview:** chamar `{{VISUAL_PREVIEW_CMD}}` (ex: `RenderPreview`) **agora — obrigatorio, nao pular**.
-Nunca ir direto para o relatório sem antes executar este passo quando um `#Preview` block existe.
-
-- Se **suceder**: exibir resultado visual e prosseguir com a revisão.
-- Se **falhar com qualquer erro** (ferramenta indisponivel, MCP desconectado, timeout):
-
-```text
-[SEM MCP] RenderPreview falhou — Xcode MCP nao esta conectado nesta sessao.
-Revisao visual bloqueada para todas as views restantes.
-
-Para reconectar: feche esta sessao, abra Package.swift no Xcode,
-e inicie uma nova sessao do Claude Code.
-(/clear destroi conexoes MCP — nao ha reconnect mid-session.)
-
-Continuar revisao somente de codigo? [sim/nao]
-```
-
-Aguardar resposta. Se "nao": encerrar. Se "sim": pular render em todas as views restantes e anotar
-`RenderPreview: indisponivel (Xcode MCP nao conectado)` no relatorio.
+Se **existir preview:** executar `{{VISUAL_PREVIEW_CMD}}` e aguardar resultado visual.
 
 ### Passo 2 — Checklist de padrões
 
@@ -391,7 +373,7 @@ corrigidos na próxima feature que tocar essa view:
 
 ## Restrições finais
 
-- **Nunca pular o preview visual** quando `#Preview` existir — chamar `RenderPreview` antes do relatório é obrigatorio; ler o codigo nao substitui o render
+- **Nunca pular o preview visual** quando configurado — revisão visual não é opcional
 - **Nunca adicionar à spec** sem confirmação — a spec é fonte de verdade, não um log de features
 - **Nunca aprovar** uma view com drift Maior — drift Maior = job errado = feature errada
 - **Foco no job, não na estética** — "bonito" não é critério; "serve o job declarado" é o critério

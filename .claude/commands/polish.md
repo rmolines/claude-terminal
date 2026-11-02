@@ -237,17 +237,18 @@ Enquanto aguarda: exibir resumo de arquivos modificados.
 
 ### Passo 5b — Checklist de testes manuais (UI)
 
-Se algum item da sessao tocou arquivos `*View.swift`, `*Screen.swift` ou mencionou SwiftUI:
+Se algum item da sessao tocou arquivos de view ou mencionou mudancas de interface:
 
-Usar `RenderPreview` do Xcode MCP para cada view modificada:
+Usar ferramenta de preview do projeto (ex: `RenderPreview` do Xcode MCP, Storybook, etc.) para
+cada view modificada:
 
-- Se MCP disponivel: renderizar preview e confirmar layout antes de abrir PR
-- Se MCP nao disponivel: exibir aviso e listar checklist manual:
+- Se preview disponivel: renderizar e confirmar layout antes de abrir PR
+- Se nao disponivel: exibir aviso e listar checklist manual:
 
 ```text
-[MCP nao disponivel] Confirmar manualmente antes de abrir PR:
+[Preview nao disponivel] Confirmar manualmente antes de abrir PR:
 - [ ] <view modificada> — aparencia correta
-- [ ] Dark mode sem quebras de layout
+- [ ] Dark mode / tema alternativo sem quebras de layout
 ```
 
 Aguardar confirmacao do usuario antes de prosseguir para o Passo 6.
