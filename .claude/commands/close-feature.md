@@ -47,74 +47,80 @@ echo "REPO_ROOT confirmado: $REPO_ROOT"
 
 Usar `$REPO_ROOT/` como prefixo em todos os paths de documentacao dos passos abaixo.
 
-Execute cada item em sequência:
+#### 1a–1e. Docs em paralelo (AI-native)
 
-#### 1a. HANDOVER.md
+> **Design:** HANDOVER, CHANGELOG, LEARNINGS e CLAUDE.md são documentos independentes.
+> Disparar como 4 subagentes simultâneos; fazer único commit ao final com todos os artefatos.
 
-Gerar entrada com:
-- Data atual (`YYYY-MM-DD`)
-- O que foi feito, decisões tomadas, armadilhas encontradas, próximos passos, arquivos-chave
+Coletar contexto antes de disparar os subagentes:
+- SHA do commit mergeado: `git log --oneline -5`
+- PR number: usar `PR_NUMBER` do Passo 0.5
+- URL do repo: `git remote get-url origin` (converter SSH → HTTPS)
 
-Fazer append em `$REPO_ROOT/HANDOVER.md` (criar se não existir).
-
-#### 1b. CHANGELOG.md — prepend no topo
-
-Gerar entrada em `$REPO_ROOT/CHANGELOG.md`. Criar o arquivo se não existir.
-
-**Coletar dados necessários:**
-- Ler `.claude/feature-plans/<nome>/plan.md` (se existir) para contexto
-- Número do PR mergeado: `git log --oneline -5` ou perguntar ao usuário se não estiver claro
-- URL do repo: `git remote get-url origin` (converter SSH → HTTPS se necessário)
-- Tipo: `feat` / `fix` / `improvement` / `breaking` (inferir do contexto)
-
-**Formato para feature (feat/improvement/breaking):**
-
-```markdown
-## [<type>] <Título conciso> — YYYY-MM-DD
-
-**Tipo:** <type>
-**Tags:** <tag1>, <tag2>
-**PR:** [#N](<repo-url>/pull/N) · **Complexidade:** <simples|média|alta>
-
-### O que mudou
-<1-2 frases em linguagem simples: o que o usuário/dev vê de diferente>
-
-### Detalhes técnicos
-- <bullet com arquivo ou mudança principal>
-- <bullet 2>
-
-### Impacto
-- **Breaking:** <Não | Sim — descrição>
-
-### Arquivos-chave
-- `path/to/file` — descrição
+Disparar os 4 subagentes com `Task tool` (`run_in_background=true`):
 
 ---
-```
 
-**Formato para fix:**
-
-```markdown
-## [fix] <Título conciso> — YYYY-MM-DD
-
-**Tipo:** fix
-**Tags:** <tag1>, <tag2>
-**PR:** [#N](<repo-url>/pull/N) · **Complexidade:** simples
-
-### Problema
-<1-2 frases descrevendo o bug>
-
-### Fix aplicado
-<o que foi feito para corrigir>
-
-### Arquivos-chave
-- `path/to/file` — descrição
+**Subagente A — HANDOVER.md:**
+> Leia `.claude/feature-plans/<nome>/plan.md` (se existir).
+> Gere uma entrada de HANDOVER com: data atual, o que foi feito, decisões tomadas, armadilhas encontradas, próximos passos, arquivos-chave.
+> Faça append em `$REPO_ROOT/HANDOVER.md` (criar se não existir).
 
 ---
-```
 
-**Inserir:** logo após a linha `# Changelog` (antes da primeira entrada `##`).
-Usar Edit tool com `old_string` = primeira linha após o cabeçalho e `new_string` = nova entrada + essa mesma linha.
+**Subagente B — CHANGELOG.md (git pointer):**
+> Formato AI-native: git history é a fonte de verdade — escreva um pointer, não prose redundante.
+>
+> Coletar: SHA do commit mergeado, número do PR, URL do repo, tipo (feat/fix/improvement).
+>
+> **Formato para qualquer tipo:**
+> ```markdown
+> ## <nome-feature> — PR #N — YYYY-MM-DD
+>
+> **Tipo:** <feat|fix|improvement>
+> **Commit:** `git show <SHA>` para diff completo
+> **Decisões e armadilhas:** ver LEARNINGS.md#<nome-feature>
+>
+> ---
+> ```
+>
+> Inserir logo após a linha `# Changelog` (antes da primeira entrada `##`).
+> Usar Edit tool: `old_string` = primeira linha após o cabeçalho, `new_string` = nova entrada + essa mesma linha.
+> Criar o arquivo se não existir.
+
+---
+
+**Subagente C — LEARNINGS.md:**
+> Avalie se algo desta sessão vale registrar — você decide, não pergunte.
+> Critério: algo não documentado que causou surpresa, ou que seria útil em situações futuras.
+> Se sim: propor o aprendizado ao usuário e, com aprovação, adicionar:
+> ```markdown
+> ## <data> — <título curto>
+> <aprendizado>
+> ```
+> Se não houver nada novo: retornar "nada novo para registrar".
+
+---
+
+**Subagente D — CLAUDE.md pitfalls:**
+> Avalie se houve armadilha nova — você decide, não pergunte.
+> Critério: problema não-óbvio que outro agente cometeria no mesmo contexto.
+> Se sim: propor ao usuário e, com aprovação, adicionar à tabela de armadilhas em `$REPO_ROOT/CLAUDE.md`.
+> Se não houver nada novo: retornar "sem novas armadilhas".
+
+---
+
+Aguardar todos os 4 subagentes com `TaskOutput`.
+
+**Commit único ao final** (após todos os subagentes concluírem):
+
+```bash
+git -C "$REPO_ROOT" add HANDOVER.md CHANGELOG.md LEARNINGS.md CLAUDE.md
+git -C "$REPO_ROOT" commit -m "docs(<nome>): HANDOVER, CHANGELOG, LEARNINGS, CLAUDE.md pitfalls
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+git -C "$REPO_ROOT" push origin main
+```
 
 #### 1c. MEMORY.md coordinator — commit direto em main (se existir)
 
@@ -140,29 +146,6 @@ git -C "$REPO_ROOT" push origin main
 ```
 
 **Se não existir:** pular este passo.
-
-#### 1d. LEARNINGS.md (se houver novidades)
-
-Verificar se `$REPO_ROOT/{{LEARNINGS_PATH}}` existe no projeto.
-
-**Você** decide se algo desta sessão vale registrar — não pergunte ao usuário.
-Critério: algo não documentado que causou surpresa, ou que seria útil em situações futuras.
-
-Se sim: propor o aprendizado ao usuário e, com aprovação, adicionar:
-```markdown
-## <data> — <título curto>
-<aprendizado>
-```
-
-Se não houver nada novo: pular sem perguntar.
-
-#### 1e. CLAUDE.md — armadilhas (se houver novidades)
-
-**Você** decide se houve armadilha nova — não pergunte ao usuário.
-Critério: problema não-óbvio que outro agente cometeria no mesmo contexto.
-
-Se sim: propor ao usuário e, com aprovação, adicionar à tabela de armadilhas em `$REPO_ROOT/CLAUDE.md`.
-Se não houver nada novo: pular sem perguntar.
 
 #### 1f. backlog.json (se existir)
 
@@ -195,7 +178,7 @@ Se **nenhum skill foi tocado**: pular sem mensagem.
 Se **há skills novos ou modificados**, verificar primeiro que o kickstart está limpo:
 
 ```bash
-KICKSTART=/Users/rmolines/git/claude-kickstart
+KICKSTART={{KICKSTART_PATH}}
 DIRTY=$(git -C "$KICKSTART" status --porcelain 2>/dev/null)
 if [ -n "$DIRTY" ]; then
   echo "⚠️  kickstart tem mudanças locais não-commitadas:"
@@ -233,11 +216,11 @@ Com confirmação, criar a versão template:
 1. Ler o skill atual e identificar elementos projeto-específicos
 2. Substituir por `{{PLACEHOLDER}}` — ex: paths hardcoded, nomes de ferramentas, constraints específicas
 3. Adicionar seções `## Quando NÃO usar` e `## Testes` se ausentes (padrão kickstart)
-4. Escrever em `/Users/rmolines/git/claude-kickstart/.claude/commands/<nome>.md`
+4. Escrever em `{{KICKSTART_PATH}}/.claude/commands/<nome>.md`
 5. Fazer commit e PR no kickstart:
 
 ```bash
-KICKSTART=/Users/rmolines/git/claude-kickstart
+KICKSTART={{KICKSTART_PATH}}
 git -C "$KICKSTART" add .claude/commands/<nome>.md
 git -C "$KICKSTART" commit -m "feat(skills): add /<nome> — propagated from <projeto>"
 # Usar gh api diretamente (gh pr create pode detectar repo errado em worktrees):
